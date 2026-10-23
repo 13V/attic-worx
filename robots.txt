@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://atticworx.com.au/sitemap.xml
