@@ -26,15 +26,17 @@
      - about half the floor holds boxes. The rest is the 600 mm walkway from the manhole (about a
        quarter of a typical floor), the edges where the roof comes down, and the gaps between boxes
        and around the roof framing.
-     So boxes ≈ 2 × (m² × 0.5) / (0.42 × 0.32), about 7.4 per m², then rounded to a friendly figure:
-     to the nearest 5 under 50, to the nearest 10 from there.
-     2 m² → 15, 8 m² → 60, 12 m² → 90, 20 m² → 150. */
+     So boxes ≈ 2 × (m² × 0.5) / (0.42 × 0.32), about 7.4 per m², rounded to the nearest 5, so every
+     whole m² changes the figure (by 5 or 10):
+     2 m² → 15, 8 m² → 60, 9 m² → 65, 10 m² → 75, 12 m² → 90, 20 m² → 150.
+     The picture shows a mix (tubs, cases, camping and sports gear stand in for some of the boxes), so
+     it holds fewer boxes than the figure; the footnote says so. */
   var BOX_FLOOR = 0.42 * 0.32;
   var SHARE = 0.5;
   var HIGH = 2;
   var boxes = function (m2) {
     var raw = (HIGH * m2 * SHARE) / BOX_FLOOR;
-    return raw < 50 ? Math.round(raw / 5) * 5 : Math.round(raw / 10) * 10;
+    return Math.round(raw / 5) * 5;
   };
   // The quote form's storage sizes (radios name="size") and the slider values that fall in each.
   // 12 m² goes with "12 m² or more", the option that names it outright.
@@ -58,23 +60,38 @@
   var range = $('[data-room-range]');
   var zones = Array.prototype.slice.call(sec.querySelectorAll('[data-zone]'));
 
+  // The quote form's thank-you: once it shows, the request is sent and the form isn't changed any more
+  var done = document.querySelector('#quote-form [data-done]');
+  var sent = function () { return !!done && !done.hidden; };
+  var said = 8; // the size the text shows (8 in the HTML); the button prices this size
+  var digits = 0;
   var text = function (v) {
     var n = boxes(v);
     var z = zoneOf(v);
     var kyle = v === KYLE;
+    said = v;
     if (valueEl) {
+      // The unit follows the digits by transform: their count and the letter-spacing in use (a
+      // reader's own text spacing included) place it. The spacing is read only when the count
+      // changes (9 to 10), before anything is written, so it costs nothing while dragging.
+      var p = valueEl.parentNode;
+      var count = String(v).length;
+      if (count !== digits) {
+        var ls = parseFloat(getComputedStyle(p).letterSpacing);
+        digits = count;
+        p.style.setProperty('--n', count);
+        p.style.setProperty('--ls', (isNaN(ls) ? 0 : ls) + 'px');
+      }
       valueEl.textContent = v;
-      valueEl.parentNode.style.setProperty('--n', String(v).length);
     }
     if (boxesEl) boxesEl.textContent = n;
-    if (handoff) handoff.textContent = 'Ticks Attic storage and “' + z.label + '” in the quote form.';
+    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'Ticks Attic storage and “' + z.label + '” in the quote form.';
     sec.classList.toggle('is-kyle', kyle); // shows "The size of the floor Kyle M had put in above his garage." 
     input.setAttribute('aria-valuetext', v + ' square metres, room for about ' + n + ' archive boxes' + (kyle ? ', the size of Kyle M’s floor' : ''));
     if (range) range.style.setProperty('--f', ((v - MIN) / (MAX - MIN)).toFixed(4));
     zones.forEach(function (s) { s.classList.toggle('is-on', s.getAttribute('data-zone') === z.id); });
   };
 
-  /* ---------- The picture ---------- */
   /* ---------- The picture ----------
      Every sheet and stored thing is drawn once (scripts/room/build-room.mjs), with the floor size it
      appears at (data-at). It shows while it has .on. A change only touches the parts that cross
@@ -111,9 +128,10 @@
     return r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
   };
 
-  // A value the browser restored (back/forward) wins over the 8 m² written into the HTML
+  // A value the browser restored wins over the 8 m² written into the HTML. Chrome can restore it after
+  // this file runs (by pageshow), so it's read again then: see sync() below.
   var start = Number(input.value) || 8;
-  if (start !== shown) text(start);
+  if (start !== said) text(start);
 
   var waiting = null; // the first build, while it waits for the picture to come into view
   var touched = false; // the visitor has moved the slider
@@ -121,7 +139,18 @@
     if (waiting) { waiting.disconnect(); waiting = null; }
     if (!sec.classList.contains('is-dark')) return;
     sec.classList.remove('is-dark');
-    if (motionOK()) sec.classList.add('is-lighting');
+    if (!motionOK()) return;
+    // the flicker (fx-room.css) runs on the dark overlay and the lamp; once it's over, the overlay is
+    // hidden again, so it costs nothing at rest
+    var over = function (e) {
+      if (e && e.animationName !== 'aw-room-dark') return;
+      sec.removeEventListener('animationend', over);
+      clearTimeout(timer);
+      sec.classList.remove('is-lighting');
+    };
+    var timer = setTimeout(over, 4000); // in case the end never comes
+    sec.addEventListener('animationend', over);
+    sec.classList.add('is-lighting');
   };
   // Transitions are held while the picture is set up (and for two frames after)
   svg.classList.add('is-still');
@@ -145,26 +174,46 @@
     raf(function () { raf(function () { svg.classList.remove('is-still'); }); });
   });
 
-  /* ---------- The slider: text at once, the picture once a frame ---------- */
+  /* ---------- The slider: the text at once (so what a screen reader speaks is never a step behind),
+     the picture once a frame ---------- */
   var queued = false;
   input.addEventListener('input', function () {
     touched = true;
     lightsOn();
+    text(Number(input.value));
     if (queued) return;
     queued = true;
     raf(function () {
       queued = false;
       var v = Number(input.value);
-      text(v);
       paint(v, step(v));
     });
   });
 
-  /* ---------- "Price a floor this size": pick the matching size in the quote form ---------- */
+  // Back to the page (back/forward, or a restored tab): the browser may have put back the slider's
+  // last value after start-up. Bring the text and the picture to it. While the picture waits for its
+  // first showing, the entrance lays out whatever the slider says by then.
+  var sync = function () {
+    var v = Number(input.value);
+    if (!v) return;
+    if (v !== said) text(v);
+    if (!waiting && !sec.classList.contains('is-dark') && v !== shown) paint(v, 0);
+  };
+  window.addEventListener('pageshow', sync);
+
+  // Once the quote is sent, the line under the button says so
+  if (done && 'MutationObserver' in window) {
+    new MutationObserver(function () { text(said); }).observe(done, { attributes: true, attributeFilter: ['hidden'] });
+  }
+
+  /* ---------- "Price a floor this size": pick the matching size in the quote form ----------
+     The size the text shows (and the line under the button names), not a value read afresh. Once the
+     quote is sent, the button only takes you back to the thank-you; the form isn't changed. */
   var cta = $('[data-room-cta]');
   if (cta) {
     cta.addEventListener('click', function () {
-      var radio = document.getElementById(zoneOf(Number(input.value)).id);
+      if (sent()) return;
+      var radio = document.getElementById(zoneOf(said).id);
       if (radio && !radio.checked) {
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));

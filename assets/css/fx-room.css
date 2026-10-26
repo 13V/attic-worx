@@ -23,9 +23,25 @@
   .room-panel { grid-column: 1 / -1; }
 }
 @media (min-width: 641px) and (max-width: 1000px) {
-  /* tablet: the figures beside the slider, the button and the notes under them */
-  .room-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; align-items: center; }
-  .room-cta, .room-handoff, .room-note { grid-column: 1 / -1; }
+  /* tablet: the figures on the left; the slider, then its button and hand-off line, on the right;
+     the footnote under both */
+  .room-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; row-gap: 16px;
+    grid-template-areas: "read ctrl" "read cta" "read hand" "note note";
+  }
+  .room-readout { grid-area: read; align-self: center; }
+  .room-control { grid-area: ctrl; }
+  .room-cta { grid-area: cta; }
+  .room-handoff { grid-area: hand; margin-top: -4px; }
+  .room-note { grid-area: note; }
+}
+@media (min-width: 1001px) and (max-height: 820px) {
+  /* laptop heights: a little less air (above the heading too), so the slider and its button come
+     into view together */
+  .room.band { padding-top: 64px; }
+  .room-grid { row-gap: 28px; }
+  .room-head { row-gap: 12px; }
+  .room-panel { gap: 16px; }
 }
 @media (max-width: 640px) {
   /* phone: the picture runs edge to edge; the figures, then the slider under the thumb */
@@ -50,7 +66,7 @@
 }
 .room-boxes { color: var(--teal-deep); }
 /* the unit sits after the number by transform (--n digits, from fx-room.js): 9 to 10 moves nothing */
-.room-unit { position: absolute; left: 0; bottom: 0; transform: translateX(calc(var(--n, 1) * 1ch + 0.06em)); }
+.room-unit { position: absolute; left: 0; bottom: 0; transform: translateX(calc(var(--n, 1) * (1ch + var(--ls, -0.01em)) + 0.06em)); }
 .room-unit > span { font-size: 0.5em; letter-spacing: 0; color: var(--teal-deep); }
 /* the second line: the mix, or, at 12 m², Kyle M's floor (both always there, one shown) */
 .room-also { grid-column: 1 / -1; font-size: 0.94rem; line-height: 1.45; color: var(--ink-2); }
@@ -59,8 +75,8 @@
 .room-also-kyle { visibility: hidden; color: var(--teal-deep); font-weight: 600; }
 .room.is-kyle .room-also-kyle { visibility: visible; }
 .room.is-kyle .room-also-mix { visibility: hidden; }
-.room-cta { width: 100%; }
-@media (min-width: 641px) and (max-width: 1000px) { .room-cta { justify-self: start; width: auto; min-width: 320px; } }
+/* the button may wrap on the narrowest screens (or with large text) rather than widen the panel */
+.room-cta { width: 100%; white-space: normal; text-align: center; }
 .room-handoff { display: grid; margin-top: -8px; font-size: 0.82rem; line-height: 1.45; color: var(--ink-2); }
 .room-handoff > span { grid-area: 1 / 1; }
 .room-note { font-size: 0.8rem; line-height: 1.45; color: var(--ink-3); }
@@ -85,28 +101,39 @@
   font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; color: var(--ink-3);
   pointer-events: none;
 }
-.room-kyle::after { content: ""; width: 2px; height: 9px; margin-top: 3px; border-radius: 2px; background: currentColor; }
+.room-kyle::after { content: ""; width: 0; height: 9px; margin-top: 3px; border-left: 2px solid currentColor; border-radius: 2px; }
+/* the slider's ends, on the same line */
+.room-end {
+  position: absolute; bottom: calc(100% + 8px);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; color: var(--ink-3);
+  pointer-events: none;
+}
+.room-end-min { left: 0; }
+.room-end-max { right: 0; }
 .room.is-kyle .room-kyle { color: var(--teal-deep); }
 .room-range input {
   position: relative; z-index: 1; display: block; width: 100%; height: 44px; margin: 0;
   -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
 }
-.room-range input:focus-visible { outline: none; }
+/* The visible ring is on the thumb (below). This outline is transparent, so it only shows where colours
+   are forced (Windows High Contrast), where the thumb's ring is dropped. */
+.room-range input:focus-visible { outline: 3px solid transparent; outline-offset: 2px; }
 .room-range input::-webkit-slider-runnable-track { height: 44px; background: transparent; border: 0; }
 .room-range input::-moz-range-track { height: 44px; background: transparent; border: 0; }
+/* the thumb carries a grip (‹ ›): it can be dragged either way */
 .room-range input::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none; width: var(--thumb); height: var(--thumb); margin-top: 5px;
-  border-radius: 50%; background: var(--white); border: 3px solid var(--teal);
+  border-radius: 50%; background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9.5 7.5 5.5 12l4 4.5M14.5 7.5l4 4.5-4 4.5' fill='none' stroke='%23117E79' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat; border: 3px solid var(--teal);
   box-shadow: 0 6px 16px -6px rgba(5, 20, 20, 0.45);
 }
 .room-range input::-moz-range-thumb {
   width: var(--thumb); height: var(--thumb); box-sizing: border-box;
-  border-radius: 50%; background: var(--white); border: 3px solid var(--teal);
+  border-radius: 50%; background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9.5 7.5 5.5 12l4 4.5M14.5 7.5l4 4.5-4 4.5' fill='none' stroke='%23117E79' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat; border: 3px solid var(--teal);
   box-shadow: 0 6px 16px -6px rgba(5, 20, 20, 0.45);
 }
 .room-range input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--white), 0 0 0 6px var(--teal); }
 .room-range input:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--white), 0 0 0 6px var(--teal); }
-.room-range input:active::-webkit-slider-thumb { background: var(--mint-soft); }
+.room-range input:active::-webkit-slider-thumb { background-color: var(--mint-soft); }
 /* The quote form's three sizes, as zones under the track */
 .room-scale {
   display: grid; grid-template-columns: 3.5fr 6fr 8.5fr; gap: 4px;
@@ -117,6 +144,15 @@
 .room-scale span:nth-child(2) { text-align: center; }
 .room-scale span:last-child { text-align: right; }
 .room-scale .is-on { color: var(--teal-deep); border-top-color: var(--teal); }
+
+/* Forced colours (Windows High Contrast): keep the track, the fill, Kyle's mark and the current zone
+   in system colours, so the slider still reads as a slider */
+@media (forced-colors: active) {
+  .room-track { forced-color-adjust: none; background: GrayText; }
+  .room-fill { forced-color-adjust: none; background: Highlight; }
+  .room-scale span { forced-color-adjust: none; color: CanvasText; border-top-color: GrayText; }
+  .room-scale .is-on { color: Highlight; border-top-color: Highlight; }
+}
 
 /* No JS: nothing to drag, so no thumb; the gauge, the picture and the text all rest at 8 m² */
 html:not(.js) .room-range input { visibility: hidden; }
@@ -130,8 +166,13 @@ html.js .room-handoff-nojs { visibility: hidden; }
 .room-svg .rm-i:not(.on) { opacity: 0; }
 /* the warm light of the floor grows with it (fx-room.js sets the scale; this is 8 m²) */
 .room-svg .rm-pool { transform: scale(0.64); }
-/* the work light: off until the picture first shows (fx-room.js), then it flickers on */
+/* The work light: off until the picture first shows (fx-room.js), then it flickers on. While the
+   roof is dark, one overlay in roof colour (.rm-dark, two pieces: behind the floor and over the near
+   slope) holds everything but the manhole and the cut edges in the dark. At rest it's hidden (its
+   visibility attribute), so it costs nothing. */
 .room.is-dark .rm-lit { opacity: 0; }
+.room.is-dark .rm-dark,
+.room.is-lighting .rm-dark { visibility: visible; }
 
 @media (prefers-reduced-motion: no-preference) {
   /* Sheets slide out from the walkway (or the manhole) and settle; things are set down from just
@@ -144,6 +185,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
   .room.is-live .rm-i:not(.on) { transition: opacity 160ms var(--ease-in), transform 200ms var(--ease-in); }
   .room.is-live .rm-pool { transition: transform 800ms var(--ease-out); }
   .room.is-lighting .rm-lit { animation: aw-room-lit 900ms steps(1, end) both; }
+  .room.is-lighting .rm-dark { animation: aw-room-dark 900ms steps(1, end) both; }
   /* while the page starts (and before the first build): hold every transition */
   .room .room-svg.is-still .rm-s,
   .room .room-svg.is-still .rm-i,
@@ -158,4 +200,13 @@ html.js .room-handoff-nojs { visibility: hidden; }
   34% { opacity: 0.85; }
   42% { opacity: 0.3; }
   56%, 100% { opacity: 1; }
+}
+/* the same stutters, on the dark */
+@keyframes aw-room-dark {
+  0% { opacity: 1; }
+  12% { opacity: 0.3; }
+  20% { opacity: 0.9; }
+  34% { opacity: 0.15; }
+  42% { opacity: 0.7; }
+  56%, 100% { opacity: 0; }
 }

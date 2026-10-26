@@ -13,12 +13,14 @@
    The picture: a roof space with its lid off, seen from the front right and above (an orthographic
    camera, so the floor's area reads true and identical things look identical wherever they sit).
    The ridge runs away from you. The near end is cut through and shows its section in brand teal, as
-   the garage scene (#build) shows its cut; the far gable is dark, with its end truss. The ceiling has
-   joists at 600 mm centres with batts between them, and the manhole glows with the light of the
-   room below. The new floor is H2 battens and 2400 × 600 × 19 mm particleboard, laid from the
-   manhole outwards: a 600 mm walkway under the ridge first, then a sheet either side, row by row,
-   then a second run of sheets further in. Stored things stand in lanes either side of the walkway.
-   Everything is modelled in metres at real sizes, in the garage scene's palette.
+   the garage scene (#build) shows its cut; the roof is cut off level at knee height, its two low
+   slopes showing their (dark, tiled) tops. At rest the roof is lit, as the scene's is once its light
+   comes on: a work light hung at the far gable, the ceiling's batts and joists warm, and the manhole
+   glowing with the light of the room below. Before the picture first shows, an overlay in roof colour
+   (.rm-dark) holds it dark but for the manhole, and the light flickers on (fx-room.css). The new
+   floor is H2 battens and 2400 × 600 × 19 mm particleboard, laid from the manhole along the ridge
+   (see ORDER). Stored things stand in lanes either side of the 600 mm walkway. Everything is
+   modelled in metres at real sizes, in the garage scene's palette.
 
    The file holds the largest floor (20 m²). Each sheet and each thing is one <use> of a shared shape
    and carries the floor size at which it appears (data-at, m²). It shows while it has the class "on":
@@ -58,7 +60,7 @@ const mix = (a, b, t) => toHex(hex(a).map((v, i) => v + (hex(b)[i] - v) * t));
 const mul = (a, k) => toHex(hex(a).map((v) => v * k));
 const C = {
   cut: '#117e79', roof: '#0c2122', roof2: '#133433',
-  pine: '#d39b5e', h2: '#a3b99b', board: '#d4cbb6', insul: '#b49f72',
+  pine: '#d39b5e', h2: '#a3b99b', board: '#d4cbb6', insul: '#dcc68c',
   kraft: '#bd915c', band2: '#5f8fb3', tub: '#d3dcd9', lid: '#117e79', tealtub: '#2b8a84',
   suitcase: '#4b7391', esky: '#e2e7e4', eskyLid: '#2f7d95', bag: '#36524e', roll: '#c9945a',
   amber: '#ffcf8a', warm: '#f6b866', mint: '#8fd6cc',
@@ -71,17 +73,25 @@ const R = { half: 3.6, cut: 3.1, y0: 0, y1: 6.6, slab: 0.24, ridge: 1.6 }; // cu
 const PITCH_T = R.ridge / R.half;                                   // ~24°
 const zRoof = (x) => (R.half - Math.abs(x)) * PITCH_T;              // underside of the roof over x
 const JOISTS = []; for (let y = 0.3; y < R.y1; y += 0.6) JOISTS.push(+y.toFixed(2)); // 600 centres
-/* The floor: sheets 600 wide (across) and 2400 long (along the ridge), two runs, the near one first */
-const F = { z: 0.13, t: 0.019, w: 0.6, l: 2.4, runs: [[2.75, 5.15], [0.35, 2.75]], cols: [0, 1, -1, 2, -2, 3, -3] };
+/* The floor: sheets 600 wide (across) and 2400 long (along the ridge), in two runs: 0 next to the
+   manhole, 1 further in. Columns: 0 is the walkway under the ridge, + to the right, - to the left. */
+const F = { z: 0.13, t: 0.019, w: 0.6, l: 2.4, runs: [[2.75, 5.15], [0.35, 2.75]] };
 const HATCH = { x0: -0.28, x1: 0.28, y0: 5.25, y1: 6.25 };
 const WALK = 0.3;                                                    // the walkway: x in [-0.3, 0.3]
 
-/* Sheets in laying order: the walkway sheet, then right, left, outwards; then the far run. Sheet k
-   (1..14) shows from floor size SHEETS[k-1].at m²: each is 2.4 × 0.6 = 1.44 m², and shows once the
-   slider is within 0.9 m² of it, so the drawn floor stays within about 1 m² of the number. */
-const SHEETS = [];
-F.runs.forEach(([y0, y1]) => F.cols.forEach((c) => SHEETS.push({ x0: c * F.w - F.w / 2, x1: c * F.w + F.w / 2, y0, y1, c })));
-SHEETS.forEach((s, i) => { s.k = i + 1; s.at = +(1.44 * (i + 1) - 0.9).toFixed(2); });
+/* Sheets in laying order [run, column]. The floor grows along the ridge first, where the headroom is:
+   the walkway and a sheet either side by the manhole, then the same three further in (a 1.8 × 4.8 m
+   floor at 8 m²), then a column at a time down both runs. So the sizes people pick most end on a
+   finished rectangle: 4 m² (3 sheets), 8–9 m² (6), Kyle M's 12 m² (8, 2.4 × 4.8 m), 14 m² (10),
+   17 m² (12) and 20 m² (14). The first sheet further in is the one right of the walkway, so it
+   carries things at once. Sheet k (1..14) shows from floor size SHEETS[k-1].at m²: each is
+   2.4 × 0.6 = 1.44 m², and shows once the slider is within 0.9 m² of it, so the drawn floor stays
+   within about 1 m² of the number. */
+const ORDER = [[0, 0], [0, 1], [0, -1], [1, 1], [1, 0], [1, -1], [0, 2], [1, 2], [0, -2], [1, -2], [0, 3], [1, 3], [0, -3], [1, -3]];
+const SHEETS = ORDER.map(([r, c], i) => {
+  const [y0, y1] = F.runs[r];
+  return { x0: c * F.w - F.w / 2, x1: c * F.w + F.w / 2, y0, y1, c, r, k: i + 1, at: +(1.44 * (i + 1) - 0.9).toFixed(2) };
+});
 
 /* ---------- Markup ---------- */
 function el(tag, attrs, inner) {
@@ -174,13 +184,33 @@ const BOX = { w: 0.42, d: 0.32, h: 0.26 };
     pth(fSide(D, 0.08, 0.2, h - lid - 0.09, h - lid - 0.04, w + 0.001), mul(C.eskyLid, 0.7)),
   ].join(''));
 }
-/* a cricket kit bag (sports gear) */
+/* a cricket kit bag (sports gear): a soft duffel lying along y, its round-cornered end towards you,
+   two webbing straps round it, a carry handle on top and a mint stripe along its side */
 {
-  const w = 0.36, d = 0.86, h = 0.3;
+  const w = 0.36, d = 0.86, h = 0.3, rc = 0.11, n = 6;
+  // the end profile (x, z): a rectangle with round corners, drawn once at y and once at y + d
+  const prof = [];
+  const arc = (cx, cz, a0) => { for (let i = 0; i <= n; i++) { const a = a0 + (i / n) * (Math.PI / 2); prof.push([cx + rc * Math.cos(a), cz + rc * Math.sin(a)]); } };
+  arc(w - rc, rc, -Math.PI / 2); arc(w - rc, h - rc, 0); arc(rc, h - rc, Math.PI / 2); arc(rc, rc, Math.PI);
+  const ring = (y, k = 1) => prof.map(([x, z]) => D(w / 2 + (x - w / 2) * k, y, h / 2 + (z - h / 2) * k));
+  const body = convexHull([...ring(0), ...ring(d)]);
+  // the lit top: the flat of the profile between its upper corners, along the bag
+  const top = poly([D(rc, 0, h), D(w - rc, 0, h), D(w - rc, d, h), D(rc, d, h)]);
+  // a strap round the bag at y0 (over the top and down the side you see)
+  const strap = (y0, t) => poly([D(rc * 0.3, y0, h - rc * 0.3), D(w - rc, y0, h), D(w, y0, h - rc), D(w, y0, 0.02),
+    D(w, y0 + t, 0.02), D(w, y0 + t, h - rc), D(w - rc, y0 + t, h), D(rc * 0.3, y0 + t, h - rc * 0.3)]);
+  // the carry handle: a flat loop standing up off the top between the straps
+  const hz = h + 0.004, hy0 = d * 0.36, hy1 = d * 0.64, hx = w * 0.5 - 0.02, lift = 0.07, hw = 0.04, m = 8;
+  const loop = (k) => Array.from({ length: m + 1 }, (_, i) => { const t = i / m; return D(hx + k, hy0 + (hy1 - hy0) * t, hz + lift * Math.sin(Math.PI * t)); });
+  const handle = poly([...loop(0), ...loop(hw).reverse()]);
   shape('rm-bag', [w, d, h], [
-    prism(w, d, h, C.bag, { top: 1.25, front: 0.95, side: 0.78 }),
-    pth(fSide(D, 0, d, h * 0.56, h * 0.7, w + 0.001), mul(C.mint, 0.78)),
-    pth(fTop(D, w * 0.42, w * 0.58, d * 0.3, d * 0.7, h + 0.001), mul(C.bag, 0.55)),
+    pth(poly(body), mul(C.bag, 0.86)),
+    pth(top, mul(C.bag, 1.3)),
+    pth(fSide(D, 0, d, h * 0.42, h * 0.56, w + 0.001), mul(C.mint, 0.74)),
+    pth(poly(ring(d)), mul(C.bag, 1.08)),
+    pth(poly(ring(d + 0.001, 0.5)), mul(C.bag, 0.9)),
+    pth(strap(d * 0.2, 0.05) + strap(d * 0.74, 0.05), mul(C.bag, 0.55)),
+    pth(handle, mul(C.bag, 0.5)),
   ].join(''));
 }
 /* rolled camping gear: a tent bag and a sleeping mat, lying along y (round ends towards you) */
@@ -272,26 +302,50 @@ export function build({ v = 8, still = false } = {}) {
 
   const defs = [];
   defs.push(`<radialGradient id="rm-pool"><stop offset="0" stop-color="${C.amber}" stop-opacity=".5"/><stop offset=".55" stop-color="${C.warm}" stop-opacity=".16"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`);
+  defs.push(`<radialGradient id="rm-lamp"><stop offset="0" stop-color="${C.amber}" stop-opacity=".42"/><stop offset=".45" stop-color="${C.warm}" stop-opacity=".16"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`);
   defs.push(`<radialGradient id="rm-spill"><stop offset="0" stop-color="#fff3d6" stop-opacity=".9"/><stop offset=".25" stop-color="${C.amber}" stop-opacity=".45"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`);
   for (const [id, inner] of Object.entries(SHAPES)) defs.push(el('g', { id }, inner));
 
   const out = [];
   const T = (pts, col) => out.push(pth(poly(pts.map((p) => P(...p))), col));
+  const outline = (pts) => poly(pts.map((p) => P(...p)));
 
-  /* a roof slope, cut off level at KNEE, from the slice's side up: its top dark, the rafters on it at
-     600 centres, the level cut along the top in teal. side -1 is the far (left) slope, +1 the near. */
+  /* The light. At rest the roof is lit by the work light hung from the ridge at the far gable and by
+     the room below the manhole, as the garage scene's roof is once its light is on: warm batts and
+     pine, brightest by the lamp and the manhole. Before the picture first shows, one overlay in roof
+     colour (.rm-dark, in two pieces: behind the floor, and over the near slope) holds it dark, with
+     only the manhole lit; the work light's flicker runs on that overlay (fx-room.css). The cut edges
+     stay teal throughout, as the scene's do. */
+  const DARK_OPACITY = 0.8;
+  const darkness = (d) => el('path', { class: 'rm-dark', d, fill: C.roof, 'fill-opacity': DARK_OPACITY, visibility: 'hidden' });
+
+  /* a roof slope, cut off level at KNEE, from the slice's side up. What shows is the top of the roof
+     (its outside), dark, with a few tile courses along it; the level cut along its top is teal and
+     the roof's underside shows as a thin edge of timber under it. side -1 is the far (left) slope,
+     +1 the near. surface() draws the top and the edge under the cut, and returns their outline (for
+     the dark); cut() draws the teal cut. */
   const KNEE = 0.45, TH = 0.1, zS = zRoof(R.cut);
-  const slope = (sd) => {
-    const xe = sd * R.cut, xk = sd * (R.half - KNEE / PITCH_T);
-    T([[xe, R.y0, zS + TH], [xk, R.y0, KNEE + TH], [xk, R.y1, KNEE + TH], [xe, R.y1, zS + TH]], sd > 0 ? C.roof2 : C.roof);
-    for (const y of JOISTS) {
-      const w = 0.03;
-      T([[xe, y - w, zS + TH], [xk, y - w, KNEE + TH], [xk, y + w, KNEE + TH], [xe, y + w, zS + TH]], dark(C.pine, sd > 0 ? 0.28 : 0.42));
+  const slopeAt = (sd) => ({ xe: sd * R.cut, xk: sd * (R.half - KNEE / PITCH_T) });
+  const surface = (sd) => {
+    const { xe, xk } = slopeAt(sd);
+    const top = [[xe, R.y0, zS + TH], [xk, R.y0, KNEE + TH], [xk, R.y1, KNEE + TH], [xe, R.y1, zS + TH]];
+    const base = sd > 0 ? C.roof2 : C.roof;
+    T(top, base);
+    // tile courses: thin lines along the slope, lighter where they catch the light
+    for (const t of [0.3, 0.62]) {
+      const at = (u) => [xe + (xk - xe) * u, zS + TH + (KNEE - zS) * u];
+      const [xa, za] = at(t), [xb, zb] = at(t + 0.035);
+      T([[xa, R.y0, za], [xb, R.y0, zb], [xb, R.y1, zb], [xa, R.y1, za]], mix(base, C.mint, sd > 0 ? 0.14 : 0.1));
     }
-    // the level cut along the top
+    // the roof's underside at the cut: battens and sarking, facing the floor, in the light
+    const xi = xk - sd * 0.22;
+    const edge = [[xi, R.y0, KNEE + TH], [xi, R.y1, KNEE + TH], [xi, R.y1, KNEE + TH - 0.1], [xi, R.y0, KNEE + TH - 0.1]];
+    T(edge, mul(C.pine, sd > 0 ? 0.5 : 0.62));
+    return outline(top) + outline(edge);
+  };
+  const cut = (sd) => {
+    const { xk } = slopeAt(sd);
     T([[xk, R.y0, KNEE + TH], [xk, R.y1, KNEE + TH], [xk - sd * 0.22, R.y1, KNEE + TH], [xk - sd * 0.22, R.y0, KNEE + TH]], sd > 0 ? C.cut : mul(C.cut, 0.85));
-    // the inside face of the cut, down to the slope's underside (it faces the floor)
-    T([[xk - sd * 0.22, R.y0, KNEE + TH], [xk - sd * 0.22, R.y1, KNEE + TH], [xk - sd * 0.22, R.y1, KNEE + TH - 0.1], [xk - sd * 0.22, R.y0, KNEE + TH - 0.1]], sd > 0 ? mul(C.cut, 0.7) : mul(C.cut, 0.62));
   };
   /* a section through the slice at its near end (y = R.y1) or its near side (x = R.cut): the ceiling,
      the dark eave space and the low slope, all cut, in teal */
@@ -310,9 +364,9 @@ export function build({ v = 8, still = false } = {}) {
     T([[x, R.y0, zS], [x, R.y1, zS], [x, R.y1, zS + TH], [x, R.y0, zS + TH]], mul(C.cut, 0.8));
   };
 
-  /* the far gable: its end wall in the dark, the end truss on it */
+  /* the far gable: its end wall, lit by the lamp in front of it, with the end truss on it */
   const gable = poly([P(X0, R.y0, 0), P(X0, R.y0, zS + TH), P(0, R.y0, R.ridge + TH), P(X1, R.y0, zS + TH), P(X1, R.y0, 0)]);
-  out.push(pth(gable, C.roof));
+  out.push(pth(gable, mix(C.roof, C.insul, 0.2)));
   defs.push(el('clipPath', { id: 'rm-gable' }, el('path', { d: gable })));
   const truss = (y, col, k = 0.09) => { // members in the plane y: a strip from a to b (x,z), k wide
     const strip = (a, b, w) => {
@@ -325,29 +379,46 @@ export function build({ v = 8, still = false } = {}) {
     strip([-1.8, 0.05], [-0.03, R.ridge * 0.62], 0.06);
     strip([1.8, 0.05], [0.03, R.ridge * 0.62], -0.06);
   };
-  truss(R.y0 + 0.01, dark(C.pine, 0.2));
-  /* the work light, hung from the king post: it comes on as the picture first shows (.rm-lit) */
+  /* the work light, hung from the king post, and the light it throws on the gable (its tube and that
+     light are .rm-lit: off while the roof is dark) */
+  const L = { x: -0.2, y: 0.18, z: 1.06, w: 0.4, d: 0.07, h: 0.08 };
   {
-    const L = { x: -0.2, y: 0.18, z: 1.06, w: 0.4, d: 0.07, h: 0.08 };
     const c = P(L.x + L.w / 2, L.y, L.z);
-    out.push(el('g', { class: 'rm-lit', 'clip-path': 'url(#rm-gable)' }, el('ellipse', { cx: c[0], cy: c[1], rx: r1(1.5 * CAM.u), ry: r1(1.1 * CAM.u), fill: 'url(#rm-spill)' })));
-    T([[0, L.y, L.z + L.h], [0, L.y, R.ridge - 0.15], [0.02, L.y, R.ridge - 0.15], [0.02, L.y, L.z + L.h]], dark(C.pine, 0.2)); // its hanger
+    out.push(el('g', { class: 'rm-lit', 'clip-path': 'url(#rm-gable)' }, el('ellipse', { cx: c[0], cy: c[1], rx: r1(2.1 * CAM.u), ry: r1(1.35 * CAM.u), fill: 'url(#rm-spill)' })));
+  }
+  truss(R.y0 + 0.01, mul(C.pine, 0.92));
+  {
+    T([[0, L.y, L.z + L.h], [0, L.y, R.ridge - 0.15], [0.02, L.y, R.ridge - 0.15], [0.02, L.y, L.z + L.h]], mul(C.pine, 0.8)); // its hanger
     out.push(pth(poly([P(L.x, L.y + L.d, L.z), P(L.x + L.w, L.y + L.d, L.z), P(L.x + L.w, L.y + L.d, L.z + L.h), P(L.x, L.y + L.d, L.z + L.h)]), '#2c3b3b'));
     out.push(pth(poly([P(L.x, L.y, L.z), P(L.x + L.w, L.y, L.z), P(L.x + L.w, L.y + L.d, L.z), P(L.x, L.y + L.d, L.z)]), '#3a4a4a'));
     out.push(el('g', { class: 'rm-lit' }, pth(poly([P(L.x + 0.02, L.y + L.d + 0.001, L.z + 0.012), P(L.x + L.w - 0.02, L.y + L.d + 0.001, L.z + 0.012), P(L.x + L.w - 0.02, L.y + L.d + 0.001, L.z + 0.045), P(L.x + 0.02, L.y + L.d + 0.001, L.z + 0.045)]), '#fff6e2')));
   }
 
-  /* the ceiling: batts between the joists, in the dark */
-  T([[X0, R.y0, 0], [X1, R.y0, 0], [X1, R.y1, 0], [X0, R.y1, 0]], dark(C.insul, 0.6));
-  for (const y of JOISTS) T([[X0, y - 0.0225, 0.004], [X1, y - 0.0225, 0.004], [X1, y + 0.0225, 0.004], [X0, y + 0.0225, 0.004]], dark(C.pine, 0.58));
-  for (const x of [-2.4, -1.2, 1.2, 2.4]) T([[x, R.y0, 0.003], [x + 0.025, R.y0, 0.003], [x + 0.025, R.y1, 0.003], [x, R.y1, 0.003]], dark(C.insul, 0.68));
+  /* the ceiling: batts between the joists, in the light. The lamp lights the far end; the warm pool
+     of the floor and the manhole's glow light the near end. */
+  const ceil = [[X0, R.y0, 0], [X1, R.y0, 0], [X1, R.y1, 0], [X0, R.y1, 0]];
+  const BATT = mul(C.insul, 0.46);
+  T(ceil, BATT);
+  defs.push(el('clipPath', { id: 'rm-ceil' }, el('path', { d: outline(ceil) })));
+  {
+    const c = P(0, 0.5, 0);
+    out.push(el('g', { 'clip-path': 'url(#rm-ceil)' }, el('ellipse', { cx: c[0], cy: c[1], rx: r1(4.4 * CAM.u), ry: r1(4.4 * CAM.u * se), fill: 'url(#rm-lamp)' })));
+  }
+  out.push(many(JOISTS.map((y) => outline([[X0, y - 0.0225, 0.004], [X1, y - 0.0225, 0.004], [X1, y + 0.0225, 0.004], [X0, y + 0.0225, 0.004]])), mix(BATT, mul(C.pine, 0.5), 0.5)));
   /* the light of the floor: a warm pool that grows with it (fx-room.js scales it; 8 m² in the CSS) */
   {
     const c = P(0, 3.0, 0), o = P(0, HATCH.y0, 0);
-    out.push(el('g', { class: 'rm-lit' }, el('ellipse', { class: 'rm-pool', cx: c[0], cy: c[1], rx: r1(3.3 * CAM.u), ry: r1(3.3 * CAM.u * se), fill: 'url(#rm-pool)', style: `transform-origin:${o[0]}px ${o[1]}px` })));
+    out.push(el('ellipse', { class: 'rm-pool', cx: c[0], cy: c[1], rx: r1(3.3 * CAM.u), ry: r1(3.3 * CAM.u * se), fill: 'url(#rm-pool)', style: `transform-origin:${o[0]}px ${o[1]}px` }));
   }
-  /* the manhole, lit from the garage below: what's in it (its far and left walls, the ladder going
-     down) shows only through the opening */
+
+  /* the roof, cut off level at knee height: the far (left) slope behind the floor */
+  const farTop = surface(-1);
+  /* the dark, behind the floor: the gable, the ceiling and the far slope */
+  out.push(darkness(gable + outline(ceil) + farTop));
+  cut(-1);
+
+  /* the manhole, lit from the garage below (above the dark: it's the light the roof starts with):
+     what's in it (its far and left walls, the ladder going down) shows only through the opening */
   {
     const { x0, x1, y0, y1 } = HATCH;
     const hole = poly([P(x0, y0, 0), P(x1, y0, 0), P(x1, y1, 0), P(x0, y1, 0)]);
@@ -367,11 +438,8 @@ export function build({ v = 8, still = false } = {}) {
     T([[x0 - 0.05, y1, 0.012], [x1 + 0.05, y1, 0.012], [x1 + 0.05, y1 + 0.05, 0.012], [x0 - 0.05, y1 + 0.05, 0.012]], C.pine);
     T([[x1, y0 - 0.05, 0.012], [x1 + 0.05, y0 - 0.05, 0.012], [x1 + 0.05, y1, 0.012], [x1, y1, 0.012]], mul(C.pine, 1.04));
     const c = P(0, (y0 + y1) / 2, 0);
-    out.push(el('ellipse', { cx: c[0], cy: c[1], rx: r1(1.1 * CAM.u), ry: r1(1.25 * CAM.u * se), fill: 'url(#rm-spill)' }));
+    out.push(el('g', { 'clip-path': 'url(#rm-ceil)' }, el('ellipse', { cx: c[0], cy: c[1], rx: r1(1.25 * CAM.u), ry: r1(1.4 * CAM.u * se), fill: 'url(#rm-spill)' })));
   }
-
-  /* the roof, cut off level at knee height: the far (left) slope behind the floor */
-  slope(-1);
 
   /* the floor: sheets drawn far to near, left to right, whatever order they arrive in */
   const sheets = [...SHEETS].sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0);
@@ -390,8 +458,10 @@ export function build({ v = 8, still = false } = {}) {
     out.push(el('use', still ? { href: '#' + it.id, x: px, y: py } : { href: '#' + it.id, x: px, y: py, class: v >= it.at ? 'rm-i on' : 'rm-i', 'data-at': it.at }));
   }
 
-  /* the near (right) slope, in front of everything on the floor */
-  slope(1);
+  /* the near (right) slope, in front of everything on the floor, and its share of the dark */
+  const nearTop = surface(1);
+  out.push(darkness(nearTop));
+  cut(1);
 
   /* the near end and the near side, cut through */
   sectionEnd();
