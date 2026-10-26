@@ -160,18 +160,22 @@
          1800 x 2400). fx-hero.css lays the drawing over the photo exactly as object-fit: cover lays each crop. -->
     <div class="hero-trace" aria-hidden="true">
       <svg viewBox="0 0 1800 2400" preserveAspectRatio="none" focusable="false">
-        <!-- guides to the vanishing point -->
-        <g class="l-guide"><path d="M780.9 909 928.5 657.3"/><path d="M1075 892.9 928.5 657.3"/></g>
+        <defs>
+          <!-- the guides fade out on their way to the vanishing point (wide screens only) -->
+          <linearGradient id="aw-trace-guide" gradientUnits="userSpaceOnUse" x1="0" y1="900" x2="0" y2="762"><stop offset="0"/><stop offset="1" stop-opacity="0"/></linearGradient>
+        </defs>
+        <!-- guides toward the vanishing point (928.5, 657.3), stopped 70% of the way -->
+        <g class="l-guide"><path d="M780.9 909 884.2 732.8"/><path d="M1075 892.9 972.5 728"/></g>
         <g class="l-detail">
           <!-- the edge battens -->
           <path d="M767.4 909.8 0 2101.9" pathLength="1" style="--d:0.26s"/>
           <path d="M1267.7 1158 1800 1934" pathLength="1" style="--d:0.36s"/>
           <!-- truss top chords, from the middle out -->
-          <path d="M900.9 449.1 481.1 1232" pathLength="1" style="--d:0.30s"/>
-          <path d="M900.9 449.1 1265.3 980" pathLength="1" style="--d:0.32s"/>
-          <path d="M863 450 433.3 1265" pathLength="1" style="--d:0.35s"/>
-          <path d="M945.6 380 1381.7 1050" pathLength="1" style="--d:0.37s"/>
-          <path d="M966.5 330 1503.7 1170" pathLength="1" style="--d:0.40s"/>
+          <path class="ch" d="M900.9 449.1 481.1 1232" pathLength="1" style="--d:0.30s"/>
+          <path class="ch" d="M900.9 449.1 1265.3 980" pathLength="1" style="--d:0.32s"/>
+          <path class="ch" d="M863 450 433.3 1265" pathLength="1" style="--d:0.35s"/>
+          <path class="ch" d="M945.6 380 1381.7 1050" pathLength="1" style="--d:0.37s"/>
+          <path class="ch" d="M966.5 330 1503.7 1170" pathLength="1" style="--d:0.40s"/>
           <!-- sheet joints, far to near -->
           <path d="M701.3 1044.9 1155.4 1022.2" pathLength="1" style="--d:0.50s"/>
           <path d="M656.8 1120.8 1033 1103" pathLength="1" style="--d:0.55s"/>
@@ -190,15 +194,15 @@
           <path d="M1075 892.9 1204 1100.4" pathLength="1" style="--d:0.18s"/>
           <path d="M1249.8 1174 1800 2059.1" pathLength="1" style="--d:0.30s"/>
           <!-- truss top chords, from the middle out -->
-          <path d="M901 250 276.4 1480" pathLength="1" style="--d:0.42s"/>
-          <path d="M934.1 150 1731 1440" pathLength="1" style="--d:0.44s"/>
-          <path d="M858 150 224.7 1470" pathLength="1" style="--d:0.47s"/>
-          <path d="M1037.6 150 1800 1442.3" pathLength="1" style="--d:0.49s"/>
-          <path d="M864 0 171.4 1500" pathLength="1" style="--d:0.52s"/>
-          <path d="M1031.3 0 1800 1348.3" pathLength="1" style="--d:0.54s"/>
-          <path d="M708 0 19.1 1640" pathLength="1" style="--d:0.57s"/>
-          <path d="M1205.2 0 1800 1131" pathLength="1" style="--d:0.59s"/>
-          <path d="M355.4 0 0 1079.7" pathLength="1" style="--d:0.64s"/>
+          <path class="ch" d="M901 250 276.4 1480" pathLength="1" style="--d:0.42s"/>
+          <path class="ch" d="M934.1 150 1731 1440" pathLength="1" style="--d:0.44s"/>
+          <path class="ch" d="M858 150 224.7 1470" pathLength="1" style="--d:0.47s"/>
+          <path class="ch" d="M1037.6 150 1800 1442.3" pathLength="1" style="--d:0.49s"/>
+          <path class="ch" d="M864 0 171.4 1500" pathLength="1" style="--d:0.52s"/>
+          <path class="ch" d="M1031.3 0 1800 1348.3" pathLength="1" style="--d:0.54s"/>
+          <path class="ch" d="M708 0 19.1 1640" pathLength="1" style="--d:0.57s"/>
+          <path class="ch" d="M1205.2 0 1800 1131" pathLength="1" style="--d:0.59s"/>
+          <path class="ch" d="M355.4 0 0 1079.7" pathLength="1" style="--d:0.64s"/>
         </g>
       </svg>
     </div>

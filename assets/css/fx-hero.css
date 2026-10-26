@@ -3,13 +3,14 @@
    It is dark in the roof. Mint lines draw themselves over the photo's real edges (the walkway and its far end
    first, then the trusses from the middle outwards, then the sheet joints and the hatch), the work light
    flickers on, the lines stay on the lit photo for a beat and fade. The headline rises word by word from the
-   first paint, the lede and buttons follow, and the quote card arrives as a sheet as the light comes on.
+   first paint, the buttons follow, and the quote card rises in, form and all, alongside the copy, so the
+   drawing plays around a settled card and an early tap on "Get my free quote" lands on a usable form.
    All CSS, from the first frame: it needs no script, but it only plays where scripts run (scripting: enabled)
    and motion is welcome. Without JS or with reduced motion the photo is lit, there is no drawing and
    everything is at rest. The photo (the LCP image) is painted from the first frame, under the darkness. */
 
 /* A clip, not a scroll container, so the photo's view timeline follows the page (the drift below) */
-.hero { overflow: clip; }
+.hero { overflow: clip; --t-light: 2.1s; /* the work light's flicker; the text shade steps with it */ }
 
 /* The drawing: one SVG in master-photo coordinates (walkway-after.jpg, 1800 x 2400), laid over the photo the
    way object-fit: cover lays each crop: the crop's rendered width is max(100cqw, 100cqh * aspect), centred
@@ -47,9 +48,19 @@
 }
 .hero-trace .l-main { stroke-width: calc(var(--k) * 1.7px); }
 .hero-trace .l-detail { stroke-width: calc(var(--k) * 1.2px); stroke-opacity: 0.8; }
+.hero-trace stop { stop-color: var(--mint); }
 .hero-trace .l-guide {
+  stroke: url(#aw-trace-guide); /* fades out short of the vanishing point, clear of the header */
   stroke-width: calc(var(--k) * 1px); stroke-opacity: 0.42;
   stroke-dasharray: calc(var(--k) * 5px) calc(var(--k) * 6px);
+}
+/* Phones and tablets: the copy sits over the top of the photo and the truss chords run behind the headline and
+   lede, so they stay faint and the floor (walkway, battens, joints, hatch) is drawn bright: its far end meets
+   the lede's foot at every width from 320 to 960px. The guides would sit wholly behind the lede, so they go.
+   (Plain opacity, not a gradient paint: a url() stroke on every path cost ~0.2 s of simulated LCP.) */
+@media (max-width: 960px) {
+  .hero-trace .ch { stroke-opacity: 0.24; }
+  .hero-trace .l-guide { display: none; }
 }
 
 /* No JS, reduced motion: the light is simply on */
@@ -57,9 +68,10 @@
 
 @media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
   /* Dark roof, then the work light flickers on (the darkness lifts in steps). In the dark the copy needs
-     less shade, so the drawing reads; the full shade is back the moment the light comes on. */
-  .hero::before { animation: aw-hero-lights 2.1s steps(1, end) both; }
-  .hero::after { animation: aw-hero-shade 1.2s steps(1, end); }
+     less shade, so the drawing reads; the shade steps with the flicker (same duration, same keyframe stops),
+     so the lines behind the copy dim with the light, never before it. */
+  .hero::before { animation: aw-hero-lights var(--t-light) steps(1, end) both; }
+  .hero::after { animation: aw-hero-shade var(--t-light) steps(1, end); }
 
   /* The drawing: guides fade in, every other stroke is drawn with a pen; it lingers on the lit photo, then goes */
   .hero-trace { display: block; }
@@ -71,23 +83,22 @@
   }
   .hero-trace .l-detail [pathLength] { animation-duration: 600ms; }
 
-  /* Copy: the stamp fades in, the headline rises out of its masks word by word, the buttons and the reviews
-     line follow. The lede stays put from the first frame: wherever the photo fills the whole screen (phones,
-     laptops) the browser skips it for LCP and the lede is the largest text, so it must paint at once. */
-  .hero .stamp { animation: aw-fade 800ms var(--ease-out) 50ms backwards; }
+  /* Copy: the stamp fades in and the headline rises out of its masks word by word, both from the first frame,
+     the buttons and the reviews line follow. The lede is painted from the first frame (wherever the photo
+     fills the whole screen, phones and laptops, the browser skips it for LCP and the lede is the largest
+     text, so it must not fade); it only settles a few pixels with the headline, transform only. */
+  .hero .stamp { animation: aw-fade 800ms var(--ease-out) backwards; }
   .hero h1 .w > span {
     animation: aw-rise var(--t-rise) var(--ease-out) backwards;
-    animation-delay: calc(120ms + var(--w, 0) * 55ms);
+    animation-delay: calc(var(--w, 0) * 55ms);
   }
+  .hero .lede { animation: aw-hero-settle 1100ms var(--ease-out) backwards; }
   .hero-actions { animation: aw-fade-up 900ms var(--ease-out) 560ms backwards; }
   .hero .proof { animation: aw-fade-up 900ms var(--ease-out) 680ms backwards; }
 
-  /* The quote card arrives as a sheet as the light comes on: it wipes up from its foot while it rises,
-     then the form settles onto it */
-  .hero .quote-card {
-    animation: aw-hero-sheet 1000ms var(--ease-io) 1000ms backwards, aw-hero-sheet-rise 1150ms var(--ease-out) 1000ms backwards;
-  }
-  .hero .quote-form { animation: aw-fade-up 700ms var(--ease-out) 1500ms backwards; }
+  /* The quote card rises in with the copy, its form inside it, and is settled before the drawing reaches
+     the floor */
+  .hero .quote-card { animation: aw-hero-card 900ms var(--ease-out) 240ms backwards; }
 }
 
 /* Desktop: as the hero leaves, the photo (and the drawing with it) drifts down a little behind the copy */
@@ -110,11 +121,16 @@
   77% { opacity: 0.34; }
   85%, 100% { opacity: 0; }
 }
-@keyframes aw-hero-shade { from { opacity: 0.3; } }
-@keyframes aw-hero-trace-out { to { opacity: 0; visibility: hidden; } }
-@keyframes aw-hero-sheet {
-  from { clip-path: inset(100% -120px 0 -120px); }
-  to { clip-path: inset(-120px); }
+/* The shade follows the darkness: light in the dark, full when lit (the stops match aw-hero-lights) */
+@keyframes aw-hero-shade {
+  0%, 57% { opacity: 0.3; }
+  62% { opacity: 0.9; }
+  66% { opacity: 0.55; }
+  71% { opacity: 1; }
+  77% { opacity: 0.8; }
+  85%, 100% { opacity: 1; }
 }
-@keyframes aw-hero-sheet-rise { from { transform: translateY(36px); } }
+@keyframes aw-hero-trace-out { to { opacity: 0; visibility: hidden; } }
+@keyframes aw-hero-card { from { opacity: 0; transform: translateY(32px); } }
+@keyframes aw-hero-settle { from { transform: translateY(14px); } }
 @keyframes aw-hero-drift { to { translate: 0 10%; scale: 1.06; } }
