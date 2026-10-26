@@ -6,7 +6,13 @@
    - The run (wide screens with motion): the section pins for the length of the track and the page's scroll
      moves the track sideways. Photos drift inside their frames and each lifts in as it slides on; a
      counter and a progress line keep the place; the heading steps down out from under the header whenever
-     it shows (html.hdr-on), in step with it. */
+     it shows (html.hdr-on), in step with it.
+   - The work light (both, with motion): the photos rest a little dim, as if in the roof, and a warm work
+     light travels the run. In the run it hangs near the middle of the rail and each photo lights up as it
+     slides under it, its neighbours catching the edge of it; at the end it moves on to the quote button. In
+     the strip the photo the strip has come to rest on is the lit one. Only overlay opacity and the light's
+     transform change; the photos themselves are never filtered. Without JS or with reduced motion, every
+     photo is simply lit. */
 
 /* ---------- The strip ---------- */
 .work {
@@ -22,7 +28,7 @@
 
 .work-intro {
   display: grid; gap: 14px; justify-items: start;
-  margin: 20px 0 32px; padding-inline: var(--edge);
+  margin: 20px 0 0; padding-inline: var(--edge);
 }
 .work-lead { max-width: 34em; color: var(--ink-2); font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem); }
 
@@ -31,7 +37,9 @@
   overflow-x: auto; overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   padding-inline: var(--edge); scroll-padding-inline: var(--edge);
-  padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #b8c7c4 transparent;
+  /* the room above the photos is the strip's own (not the intro's margin), so the work light's glow
+     around a photo isn't cut off by the strip's edge */
+  padding-top: 32px; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #b8c7c4 transparent;
 }
 .work-strip:focus-visible { outline-offset: -3px; }
 .work-list { display: flex; gap: var(--work-gap); flex: none; }
@@ -78,9 +86,9 @@
    section's height never changes when the scripts start (a link to /#reviews or /#faq lands without a
    shift). Browsers without the feature keep the plain strip with its scrollbar. */
 @media (scripting: enabled) {
-  .work-strip { scrollbar-width: none; padding-bottom: 4px; }
+  .work-strip { scrollbar-width: none; padding-bottom: 26px; } /* (the foot's gap, inside the strip: room for the glow) */
   .work-strip::-webkit-scrollbar { display: none; }
-  .work-foot { display: block; margin-top: 22px; }
+  .work-foot { display: block; margin-top: 0; }
 }
 @media (scripting: enabled) and (hover: hover) and (pointer: fine) {
   .work-nav { display: flex; }
@@ -91,7 +99,7 @@
 @media (max-width: 599px) {
   .work-card { width: 74vw; }
   .work-end { width: 66vw; }
-  .work-intro { margin-bottom: 26px; }
+  .work-strip { padding-top: 26px; }
 }
 
 /* The heading's step under the header (the run): a number, so it can follow the header's timing */
@@ -209,4 +217,74 @@
   html.js .work-end:not(.is-in) .work-end-s, html.js .work-end:not(.is-in) .btn { opacity: 0; translate: 0 10px; }
   .work-progress span { transition: transform 120ms linear; }
   .work.is-h .work-progress span { transition: none; }
+}
+
+/* ---------- The work light ----------
+   Each photo has a .work-shade over it in the roof's colour (aria-hidden): fx-work.js sets its opacity,
+   from 0 in the light (the photo exactly as shot: nothing else ever sits over it) to --wl-dim out of it.
+   The warmth is all around the lit photo, never on it. In the run that's a composited opacity per photo
+   per frame (nothing repaints), and one warm pool (.work-light) moves with the light behind the track.
+   In the strip the light is handed from photo to photo with a short crossfade as the strip comes to rest:
+   the lit photo glows a little (its frame's ::before, from --work-lit), and at the end of the strip the
+   quote button does (--work-lit on it). The counter (01 / 06) names the photo in the light. */
+.work {
+  --wl-warm: 255, 198, 126;  /* the work light: a warm white */
+  --wl-dim: 0.28;            /* a photo out of the light (fx-work.js reads it) */
+}
+.work-light, .work-shade { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .work.is-live .work-card { isolation: isolate; } /* the glow sits behind its photo, over the band */
+  .work.is-live .work-shade {
+    display: block; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    border-radius: var(--r-img); background: var(--roof); opacity: 0;
+  }
+  .work.is-h .work-shade { will-change: opacity; }
+  /* The strip: the glow around the lit photo, a shadow (so it never adds to the strip's scroll width; the
+     strip keeps room for it above and below) */
+  .work.is-live:not(.is-h) .work-frame::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-radius: var(--r-img);
+    box-shadow: 0 -2px 18px 1px rgba(var(--wl-warm), 0.55);
+    opacity: calc(var(--work-lit, 0) * var(--work-lit, 0));
+  }
+  /* ...which waits for its photo's plate to lift (it would ring a blank plate) */
+  .work.is-live .work-card:not(.is-in) .work-frame::before { opacity: 0; }
+  .work.is-live .work-card.is-in:not(.is-instant) .work-frame::before {
+    animation: aw-work-glow 900ms var(--ease-out) calc(var(--d, 0ms) + 650ms) backwards;
+  }
+  /* ...and the quote button in the light at the end of the strip */
+  .work.is-live:not(.is-h) .work-end .btn { position: relative; isolation: isolate; }
+  .work.is-live:not(.is-h) .work-end .btn::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-radius: inherit;
+    box-shadow: 0 4px 56px 10px rgba(var(--wl-warm), 0.42);
+    opacity: var(--work-lit, 0);
+  }
+  /* The strip hands the light over as it settles */
+  .work.is-live:not(.is-h) .work-shade,
+  .work.is-live:not(.is-h) .work-frame::before,
+  .work.is-live:not(.is-h) .work-end .btn::before { transition: opacity 760ms var(--ease-draw); }
+}
+/* The run: the pool of light on the band, behind the track; fx-work.js moves it (transform only) */
+@media (scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference) {
+  .work-rail { position: relative; }
+  .work.is-h .work-light {
+    /* z-index -1: under everything in the stage (the heading too), over the band */
+    display: block; position: absolute; left: 0; top: 0; z-index: -1; pointer-events: none;
+    width: calc(var(--tk-h) * 1.7); height: calc(var(--tk-h) * 1.9);
+    margin: calc(var(--tk-h) * -1.05) 0 0 calc(var(--tk-h) * -0.85); /* centred over the photo's top third */
+    background: radial-gradient(50% 50% at 50% 50%, rgba(var(--wl-warm), 0.62), rgba(var(--wl-warm), 0.38) 30%,
+      rgba(var(--wl-warm), 0.15) 62%, rgba(var(--wl-warm), 0.04) 86%, rgba(var(--wl-warm), 0));
+    will-change: transform;
+  }
+  /* The light comes up as the first photos finish lifting in (it would show their plates) */
+  .work.is-h .work-light { transition: opacity 1200ms var(--ease-draw) 650ms; }
+  @supports selector(:has(*)) {
+    .work.is-h:not(:has(.work-card.is-in)) .work-light { opacity: 0; transition-duration: 0s; transition-delay: 0s; }
+  }
+}
+@keyframes aw-work-glow { from { opacity: 0; } }
+@media (forced-colors: active) {
+  .work .work-shade, .work .work-frame::before, .work .work-end .btn::before,
+  .work .work-light { display: none; }
 }

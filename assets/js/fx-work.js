@@ -8,7 +8,16 @@
      A resize that changes the run's length keeps a visitor reading below the section where they were.
    - The strip (everything else): previous/next buttons for a mouse, a progress line, and the photos lift
      in together as the strip comes into view (so a swipe never lands on a blank frame).
-   Without this file the strip simply swipes, every photo at rest. */
+   - The work light (both): each photo gets a light value (0 to 1), written as its shade's opacity (and,
+     in the strip, as --work-lit for its glow; the quote button's too). In the run it's worked out in the
+     same scroll frame as the track, from where each photo is: the light hangs where the first photo
+     starts (near the middle of the rail), every photo is lit as it passes under it and its neighbours
+     catch the edge of it (a gaussian over the spacing), and over the last two photos the light moves on
+     and comes to rest on the quote button. Its pool on the band (.work-light) moves with it, and the
+     counter names the photo nearest it. In the strip the photo it has come to rest on (the nearest snap
+     position) is lit, its neighbours a little; at the end of the strip, the quote button, with any photos
+     the strip can't snap to (they sit in full view at its end).
+   Without this file the strip simply swipes, every photo at rest and lit. */
 (function () {
   'use strict';
 
@@ -31,6 +40,9 @@
   var frames = all('.work-frame');
   var imgs = frames.map(function (f) { return f.querySelector('img'); });
   var steps = all('[data-work-step]');
+  var light = one('[data-work-light]');
+  var endEl = one('.work-end');
+  var goBtn = endEl && endEl.querySelector('.btn');
   if (!pin || !head || !rail || !track || !strip || !cards.length) return;
 
   // The run's query: the same as the media block in fx-work.css (scripting on, wide, motion allowed)
@@ -58,7 +70,6 @@
   var railW = 0;
   var railX = 0;
   var frameGeo = [];   // each frame's centre along the track
-  var cardGeo = [];    // each card's left edge along the track
   var pinH = 0;
   var hdrStep = 0;     // the heading's full step under the header (the rail's top padding, --hdr-step)
   var lastP = -1;
@@ -68,8 +79,68 @@
   var lastY = window.scrollY; // the page's scroll position and the screen's height as of the last frame
   var lastVh = window.innerHeight;
 
+  /* ---------- The work light ---------- */
+  // Who can be lit: the photos (their shades; and, in the strip, their frames for the glow), then the
+  // end panel's quote button (its glow, in the strip; in the run the pool lights it).
+  var shades = frames.map(function (f) { return f.querySelector('.work-shade'); });
+  var DIM = 0.28;      // a shade's opacity out of the light (fx-work.css --wl-dim, read in measure)
+  var litNow = [];     // the light as last written, per item (cleared when the layout changes)
+  var setLit = function (i, v) {
+    v = Math.round(v * 1000) / 1000;
+    if (litNow[i] === v) return;
+    litNow[i] = v;
+    if (i < frames.length) {
+      if (shades[i]) shades[i].style.opacity = (DIM * (1 - v)).toFixed(3);
+      if (!on) frames[i].style.setProperty('--work-lit', v);
+    } else if (goBtn && !on) {
+      goBtn.style.setProperty('--work-lit', v);
+    }
+  };
+  var SPILL = 0.3;     // the strip: what the lit photo's neighbours catch
+  var FALL = 0.72;     // the run: the light's falloff (its gaussian width) as a share of the photos' spacing
+  var station = 0;     // the run, in rail coordinates: where the light hangs (where the first photo starts)
+  var midY = 0;        // ...the photos' middle line
+  var goX = 0;         // the quote button's centre (track coordinates, across; rail coordinates, down)
+  var goY = 0;
+  var handOff = 1;     // the run's progress at which the light leaves its station for the button
+  var sigma = 1;
+  // An element's centre on screen, less its own translate (a reveal may be holding it a few px down).
+  var centreOf = function (el) {
+    var r = el.getBoundingClientRect();
+    var t = (getComputedStyle(el).translate || '').split(' ');
+    return { x: r.left + r.width / 2 - (parseFloat(t[0]) || 0), y: r.top + r.height / 2 - (parseFloat(t[1]) || 0) };
+  };
+
   /* ---------- The strip ---------- */
   var stripMax = 0;
+  var stripSnap = [];  // where the strip rests for each lit item (card i at the snap line; the end panel at the end)
+  var stripLit = -2;
+  var lit1 = [];       // (scratch) which items are lit
+  // The strip's light: the place it rests nearest (ties go to the later item), and every item that rests
+  // there, its neighbouring photos a little. Mostly that's one photo, the one at the snap line. At the end
+  // of the strip it's the quote button, plus any photos that can't reach the snap line (their spot is
+  // past the end of the strip, so the strip stops short of it): those all sit in full view there, so
+  // they're lit with the button rather than never. On a phone that's the button alone. Everything fits:
+  // everything lit.
+  var lightStrip = function (x) {
+    var a = -1;
+    if (stripMax >= 2) {
+      var best = Infinity;
+      for (var i = 0; i < stripSnap.length; i++) {
+        var d = Math.abs(x - stripSnap[i]);
+        if (d <= best) { best = d; a = i; }
+      }
+    }
+    if (a === stripLit) return;
+    stripLit = a;
+    var n = frames.length + (goBtn ? 1 : 0);
+    var k;
+    for (k = 0; k < n; k++) lit1[k] = a < 0 || Math.abs(stripSnap[k] - stripSnap[a]) < 4;
+    for (k = 0; k < n; k++) {
+      var near1 = k < cards.length && (lit1[k - 1] || lit1[k + 1]);
+      setLit(k, lit1[k] ? 1 : near1 ? SPILL : 0);
+    }
+  };
   var updateStrip = function () {
     if (on) return;
     var x = strip.scrollLeft;
@@ -80,6 +151,7 @@
       var end = dir < 0 ? x <= 2 : x >= stripMax - 2;
       btn.setAttribute('aria-disabled', end ? 'true' : 'false');
     });
+    lightStrip(x);
   };
   var stripTick = false;
   strip.addEventListener('scroll', function () {
@@ -131,19 +203,38 @@
     var vw = window.innerWidth;
     track.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)';
     if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    // The light: at its station until the hand-off, then on (smoothly) to the button, a little smaller.
+    // As it settles at the end it opens up a little, so the last photo keeps some of it.
+    var lx = station;
+    var ly = midY;
+    var ls = 1;
+    var sg = sigma;
+    if (p > handOff) {
+      var t = (p - handOff) / (1 - handOff);
+      t = t * t * (3 - 2 * t);
+      lx += (goX - travel - station) * t;
+      ly += (goY - midY) * t;
+      ls -= 0.22 * t;
+      sg *= 1 + 0.3 * t;
+    }
+    if (light) light.style.transform = 'translate3d(' + lx.toFixed(1) + 'px,' + ly.toFixed(1) + 'px,0) scale(' + ls.toFixed(3) + ')';
+    // The counter names the photo nearest the light (at the very end, the last).
+    var a = 0;
+    var best = Infinity;
     for (var i = 0; i < frames.length; i++) {
+      var dx = x + frameGeo[i] - lx;
+      var g = dx / sg;
+      setLit(i, Math.exp(-g * g));
+      if (Math.abs(dx) < best) { best = Math.abs(dx); a = i; }
       var c = railX + x + frameGeo[i];
       if (c < -vw * 0.5 || c > vw * 1.5) continue; // well off screen: leave it where it was
       if (imgs[i]) imgs[i].style.translate = (((c - vw / 2) / vw) * -DRIFT).toFixed(2) + '% 0';
     }
-    // The counter shows the card nearest the spot a keyboard-focused card lands on; at the end, the last.
-    var a = 0;
-    var best = Infinity;
-    for (var k = 0; k < cardGeo.length; k++) {
-      var d = Math.abs(x + cardGeo[k] - railW * LAND);
-      if (d < best) { best = d; a = k; }
+    if (goBtn) {
+      var ge = (x + goX - lx) / sg;
+      setLit(frames.length, Math.exp(-ge * ge));
     }
-    if (p > 0.999) a = cardGeo.length - 1;
+    if (p > 0.999) a = frames.length - 1;
     if (a !== active) setCount(a);
   };
   // The heading steps down only as far as the header would cover it (CSS applies it while the header
@@ -190,15 +281,23 @@
         track.style.transform = '';
         imgs.forEach(function (im) { if (im) im.style.translate = ''; });
         head.style.removeProperty('--work-step');
+        if (light) light.style.transform = '';
         active = -1;
       }
       lastP = -1;
       lastStep = -1;
+      stripLit = -2;
+      litNow = [];
     }
+    DIM = parseFloat(getComputedStyle(work).getPropertyValue('--wl-dim')) || DIM;
     workH = work.offsetHeight;
     if (!on) {
       stripMax = Math.max(0, strip.scrollWidth - strip.clientWidth);
       work.classList.toggle('is-fit', stripMax < 2);
+      var first = cards[0].getBoundingClientRect().left;
+      stripSnap = cards.map(function (c) { return AW.clamp(c.getBoundingClientRect().left - first, 0, stripMax); });
+      if (goBtn) stripSnap.push(stripMax);
+      stripLit = -2;
       updateStrip();
       var r = strip.getBoundingClientRect();
       if (r.bottom > 0 && r.top < window.innerHeight) revealAll();
@@ -216,7 +315,24 @@
       var fr = f.getBoundingClientRect();
       return fr.left - t0 + fr.width / 2;
     });
-    cardGeo = cards.map(function (c) { return c.getBoundingClientRect().left - t0; });
+    // The light (rail coordinates: the track starts at the rail's left edge). It hangs where the first
+    // photo's middle is when the run starts, kept near the middle of the rail; it hands off to the button
+    // as the second-last photo passes under it, so the last one is lit on the way.
+    var rr = rail.getBoundingClientRect();
+    var f0 = frames[0].getBoundingClientRect();
+    var n = frameGeo.length;
+    midY = f0.top - rr.top + f0.height / 2;
+    station = AW.clamp(frameGeo[0], railW * 0.4, railW * 0.6);
+    sigma = Math.max(1, FALL * (n > 1 ? (frameGeo[n - 1] - frameGeo[0]) / (n - 1) : f0.width));
+    if (goBtn) {
+      var gc = centreOf(goBtn);
+      goX = gc.x - t0;
+      goY = gc.y - rr.top;
+    } else {
+      goX = frameGeo[n - 1];
+      goY = midY;
+    }
+    handOff = travel ? AW.clamp((frameGeo[Math.max(0, n - 2)] - station) / travel, 0, 0.95) : 0.95;
   };
 
   // view says where the visitor is as of the last frame ("inside": the section covers the middle of the
