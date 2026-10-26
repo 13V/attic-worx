@@ -1,8 +1,8 @@
 /* fx-room.js: "How much room?" (#room). Owned by the ROOM agent; uses window.AW from main.js.
    The slider sizes a storage floor (2–20 m²). This file keeps the numbers and the text in step, and
    tells the picture which size to show by toggling .on on just the sheets and things that change
-   (fx-room.css moves them). The first time the picture comes into view, the work light comes on and
-   the floor lays itself out to the slider's size. "Price a floor this size" also
+   (fx-room.css moves them). The first time the picture comes into view, the light comes up through
+   the manhole and the floor lays itself out to the slider's size. "Price a floor this size" also
    picks the matching size in the quote form (main.js's [data-service] handler ticks Attic storage
    and takes you there). Without this file the section shows 8 m², as written in index.html. */
 (function () {
@@ -114,12 +114,15 @@
       var p = parts[i];
       if (p.at <= lo || p.at > hi) continue; // the same at both sizes
       var t = (p.at - from) / (to - from); // 0..1 through this change, in arrival order
-      // growing, things land just after the sheet under them; shrinking, they go before it
-      var d = t * spread + (up ? (p.thing ? 140 : 0) : (p.thing ? 0 : 90));
-      p.el.style.transitionDelay = Math.round(d) + 'ms';
+      // growing, things land just after the sheet under them; shrinking, they go first: lifted
+      // away whole and only fading at the end (the delays follow fx-room.css's order: opacity,
+      // transform), and the sheet under them after
+      var d = Math.round(t * spread + (up ? (p.thing ? 140 : 0) : (p.thing ? 0 : 140)));
+      p.el.style.transitionDelay = !up && p.thing ? (d + 100) + 'ms, ' + d + 'ms' : d + 'ms';
       p.el.classList.toggle('on', up);
     }
-    if (pool) pool.style.transform = 'scale(' + (0.4 + to * 0.03).toFixed(3) + ')';
+    // the warm light on the floor grows with it (from a glow round the hatch, with no floor)
+    if (pool) pool.style.transform = 'scale(' + (to ? 0.4 + to * 0.03 : 0.2).toFixed(3) + ')';
   };
   var step = function (to) { return Math.min(Math.abs(to - shown) * 80, 420); };
 
@@ -140,10 +143,11 @@
     if (!sec.classList.contains('is-dark')) return;
     sec.classList.remove('is-dark');
     if (!motionOK()) return;
-    // the flicker (fx-room.css) runs on the dark overlay and the lamp; once it's over, the overlay is
-    // hidden again, so it costs nothing at rest
+    // the light comes up through the manhole (fx-room.css): the dark draws back from the hatch and
+    // fades, then the lamp comes on. Once it's over, the dark is hidden again, so it costs nothing
+    // at rest
     var over = function (e) {
-      if (e && e.animationName !== 'aw-room-dark') return;
+      if (e && e.animationName !== 'aw-room-fade') return;
       sec.removeEventListener('animationend', over);
       clearTimeout(timer);
       sec.classList.remove('is-lighting');
@@ -177,7 +181,7 @@
   /* ---------- The slider: the text at once (so what a screen reader speaks is never a step behind),
      the picture once a frame ---------- */
   var queued = false;
-  input.addEventListener('input', function () {
+  var changed = function () {
     touched = true;
     lightsOn();
     text(Number(input.value));
@@ -188,6 +192,50 @@
       var v = Number(input.value);
       paint(v, step(v));
     });
+  };
+
+  /* A touch that's really a scroll. On touch screens Chrome (any Blink browser) moves the thumb to
+     where a finger lands on the track at once, and only then decides whether the finger is
+     scrolling the page (pointercancel). So scrolling past with a finger that lands on the slider
+     would change the size. While a touch on the slider is undecided, its value is held back: it
+     shows once the finger lifts (a tap), moves sideways (a drag) or rests a moment, and the size is
+     put back if the browser takes the touch for a scroll. (fx-room.css also gives the input
+     touch-action: pan-y, so only vertical moves can scroll.) Mouse, keyboard and assistive tech
+     change it at once. */
+  var held = null;     // the size when the touch began, while it could still turn out to be a scroll
+  var pending = false; // its value is held back
+  var first = null;    // the value the touch first gave (where the finger landed)
+  var origin = null, rest = 0;
+  var settle = function () { pending = false; held = null; first = null; clearTimeout(rest); };
+  var commit = function () { pending = false; clearTimeout(rest); if (Number(input.value) !== said) changed(); };
+  input.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    settle();
+    held = said; pending = true; origin = [e.clientX, e.clientY];
+  });
+  input.addEventListener('pointermove', function (e) {
+    if (held === null) return;
+    var dx = Math.abs(e.clientX - origin[0]), dy = Math.abs(e.clientY - origin[1]);
+    if (dx >= 6 && dx > dy) { held = null; if (pending) commit(); } // a drag along the slider: it's the visitor's
+  });
+  input.addEventListener('pointerup', function () { held = null; if (pending) commit(); });
+  input.addEventListener('pointercancel', function () {
+    var v = held;
+    settle();
+    if (v === null) return;
+    if (Number(input.value) !== v) input.value = v; // the browser took it for a scroll: put it back
+    if (said !== v) changed(); // (only if it had already shown)
+  });
+  input.addEventListener('lostpointercapture', function () { if (pending) commit(); settle(); }); // in case
+  input.addEventListener('keydown', function () { if (pending) commit(); settle(); });
+  input.addEventListener('input', function () {
+    if (!pending) { changed(); return; }
+    if (first === null) {
+      // where the finger landed: held back. A finger that rests there is pressing, not scrolling, so
+      // it shows after a moment
+      first = input.value;
+      rest = setTimeout(commit, 450);
+    } else if (input.value !== first) commit(); // the thumb is following the finger: a drag
   });
 
   // Back to the page (back/forward, or a restored tab): the browser may have put back the slider's
@@ -213,11 +261,14 @@
   if (cta) {
     cta.addEventListener('click', function () {
       if (sent()) return;
-      var radio = document.getElementById(zoneOf(said).id);
+      var z = zoneOf(said);
+      var radio = document.getElementById(z.id);
       if (radio && !radio.checked) {
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));
       }
+      // so leads that started here can be counted (the form's payload is unchanged)
+      if (window.dataLayer) window.dataLayer.push({ event: 'room_price_floor', size_m2: said, size_option: z.label });
     });
   }
 })();

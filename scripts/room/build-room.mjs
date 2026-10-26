@@ -17,7 +17,8 @@
    slopes showing their (dark, tiled) tops. At rest the roof is lit, as the scene's is once its light
    comes on: a work light hung at the far gable, the ceiling's batts and joists warm, and the manhole
    glowing with the light of the room below. Before the picture first shows, an overlay in roof colour
-   (.rm-dark) holds it dark but for the manhole, and the light flickers on (fx-room.css). The new
+   (.rm-dark) holds it dark but for the manhole, and the light comes up through the manhole: the dark
+   draws back from the hatch (fx-room.css). The new
    floor is H2 battens and 2400 × 600 × 19 mm particleboard, laid from the manhole along the ridge
    (see ORDER). Stored things stand in lanes either side of the 600 mm walkway. Everything is
    modelled in metres at real sizes, in the garage scene's palette.
@@ -309,15 +310,33 @@ export function build({ v = 8, still = false } = {}) {
   const out = [];
   const T = (pts, col) => out.push(pth(poly(pts.map((p) => P(...p))), col));
   const outline = (pts) => poly(pts.map((p) => P(...p)));
+  // the same, snapped to whole units and written with relative steps (shorter, for the many small
+  // soft shapes on the ceiling, where half a unit doesn't show)
+  const rel = (pts) => {
+    const q = pts.map((p) => P(...p).map(Math.round));
+    return 'M' + fmt(q[0]) + 'l' + q.slice(1).map((p, i) => fmt([p[0] - q[i][0], p[1] - q[i][1]])).join(' ') + 'z';
+  };
 
   /* The light. At rest the roof is lit by the work light hung from the ridge at the far gable and by
      the room below the manhole, as the garage scene's roof is once its light is on: warm batts and
      pine, brightest by the lamp and the manhole. Before the picture first shows, one overlay in roof
      colour (.rm-dark, in two pieces: behind the floor, and over the near slope) holds it dark, with
-     only the manhole lit; the work light's flicker runs on that overlay (fx-room.css). The cut edges
+     only the manhole lit; the light coming on runs on that overlay and its mask (fx-room.css). The cut edges
      stay teal throughout, as the scene's do. */
   const DARK_OPACITY = 0.8;
-  const darkness = (d) => el('path', { class: 'rm-dark', d, fill: C.roof, 'fill-opacity': DARK_OPACITY, visibility: 'hidden' });
+  /* When the light comes on, it comes up through the manhole: the dark draws back from the hatch.
+     Its mask holds a soft hole (.rm-rise, black in the middle, white at its rim) centred on the
+     hatch, small while the roof is dark (fx-room.css); fx-room.css scales it up until the whole
+     picture is clear, while the dark fades. Big enough at full size to clear every corner. */
+  {
+    const h = P(0, (HATCH.y0 + HATCH.y1) / 2, 0), k = 0.75, clear = 0.6;
+    const rx = r1(Math.max(...[[0, 0], [W, 0], [0, H], [W, H]].map(([x, y]) => Math.hypot(x - h[0], (y - h[1]) / k))) / clear + 2);
+    defs.push(`<radialGradient id="rm-hollow"><stop offset="${clear}" stop-color="#000"/><stop offset="1" stop-color="#fff"/></radialGradient>`);
+    defs.push(el('mask', { id: 'rm-reveal', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: W, height: H },
+      el('rect', { width: W, height: H, fill: '#fff' }) +
+      el('ellipse', { class: 'rm-rise', cx: h[0], cy: h[1], rx, ry: r1(rx * k), fill: 'url(#rm-hollow)', style: `transform-origin:${h[0]}px ${h[1]}px` })));
+  }
+  const darkness = (d) => el('path', { class: 'rm-dark', d, fill: C.roof, 'fill-opacity': DARK_OPACITY, mask: 'url(#rm-reveal)', visibility: 'hidden' });
 
   /* a roof slope, cut off level at KNEE, from the slice's side up. What shows is the top of the roof
      (its outside), dark, with a few tile courses along it; the level cut along its top is teal and
@@ -394,17 +413,39 @@ export function build({ v = 8, still = false } = {}) {
     out.push(el('g', { class: 'rm-lit' }, pth(poly([P(L.x + 0.02, L.y + L.d + 0.001, L.z + 0.012), P(L.x + L.w - 0.02, L.y + L.d + 0.001, L.z + 0.012), P(L.x + L.w - 0.02, L.y + L.d + 0.001, L.z + 0.045), P(L.x + 0.02, L.y + L.d + 0.001, L.z + 0.045)]), '#fff6e2')));
   }
 
-  /* the ceiling: batts between the joists, in the light. The lamp lights the far end; the warm pool
-     of the floor and the manhole's glow light the near end. */
+  /* the ceiling: batts (wool) laid between the joists, in the light, as the scene draws them. Each
+     batt (1160 mm long, the joints staggered bay to bay) bows up soft and pale in the middle and
+     tucks down at its ends and sides, so its joints show as soft notches; the joists' tops show
+     between the bays, pine catching the light, paler than the wool. The lamp lights the far end;
+     the warm pool of the floor and the manhole's glow light the near end. */
   const ceil = [[X0, R.y0, 0], [X1, R.y0, 0], [X1, R.y1, 0], [X0, R.y1, 0]];
-  const BATT = mul(C.insul, 0.46);
+  const BATT = mix(mul(C.insul, 0.54), '#e2c060', 0.1);
   T(ceil, BATT);
   defs.push(el('clipPath', { id: 'rm-ceil' }, el('path', { d: outline(ceil) })));
+  {
+    const edges = [R.y0, ...JOISTS, R.y1];
+    const pillows = [];
+    for (let j = 0; j < edges.length - 1; j++) {
+      const ya = edges[j] + (j ? 0.0225 : 0), yb = edges[j + 1] - (j < edges.length - 2 ? 0.0225 : 0);
+      if (yb - ya < 0.2) continue;
+      const ym = (ya + yb) / 2, cuts = [X0 - 0.6];
+      for (let x = X0 + (j % 2 ? 0.58 : 1.16) - ((j * 37) % 7) * 0.03; x < X1 + 0.6; x += 1.16) cuts.push(x);
+      for (let k = 0; k < cuts.length - 1; k++) {
+        const xa = Math.max(X0, cuts[k] + 0.05), xb = Math.min(X1, cuts[k + 1] - 0.05);
+        if (xb - xa < 0.3) continue;
+        // a soft octagon: square-ish, its corners tucked in (a cut end at the slice's sides stays square)
+        const ca = xa === X0 ? 0 : 0.1, cb = xb === X1 ? 0 : 0.1, e = 0.06;
+        pillows.push(rel([[xa, ya + e + ca, 0.002], [xa + ca, ya + e, 0.002], [xb - cb, ya + e, 0.002], [xb, ya + e + cb, 0.002],
+          [xb, yb - e - cb, 0.002], [xb - cb, yb - e, 0.002], [xa + ca, yb - e, 0.002], [xa, yb - e - ca, 0.002]]));
+      }
+    }
+    out.push(many(pillows, mix(mul(C.insul, 0.6), '#e8c86a', 0.1)));
+  }
   {
     const c = P(0, 0.5, 0);
     out.push(el('g', { 'clip-path': 'url(#rm-ceil)' }, el('ellipse', { cx: c[0], cy: c[1], rx: r1(4.4 * CAM.u), ry: r1(4.4 * CAM.u * se), fill: 'url(#rm-lamp)' })));
   }
-  out.push(many(JOISTS.map((y) => outline([[X0, y - 0.0225, 0.004], [X1, y - 0.0225, 0.004], [X1, y + 0.0225, 0.004], [X0, y + 0.0225, 0.004]])), mix(BATT, mul(C.pine, 0.5), 0.5)));
+  out.push(many(JOISTS.map((y) => outline([[X0, y - 0.0225, 0.004], [X1, y - 0.0225, 0.004], [X1, y + 0.0225, 0.004], [X0, y + 0.0225, 0.004]])), mul(C.pine, 0.8)));
   /* the light of the floor: a warm pool that grows with it (fx-room.js scales it; 8 m² in the CSS) */
   {
     const c = P(0, 3.0, 0), o = P(0, HATCH.y0, 0);
@@ -446,8 +487,9 @@ export function build({ v = 8, still = false } = {}) {
   for (const s of sheets) {
     if (still && v < s.at) continue;
     const [px, py] = P(s.x0, s.y0, 0);
-    // it slides in from the walkway's side (or, for a walkway sheet, from the manhole's)
-    const slide = s.c === 0 ? D(0, 0.45, 0) : D(-Math.sign(s.c) * 0.45, 0, 0);
+    // it slides in from the walkway's side (or, for a walkway sheet, from the manhole's: the first
+    // one starts at the hatch's far edge, never over the opening)
+    const slide = s.c === 0 ? D(0, Math.min(0.45, HATCH.y0 - s.y1), 0) : D(-Math.sign(s.c) * 0.45, 0, 0);
     out.push(el('use', still ? { href: '#rm-sheet', x: px, y: py } : { href: '#rm-sheet', x: px, y: py, class: v >= s.at ? 'rm-s on' : 'rm-s', 'data-at': s.at, style: `--dx:${slide[0]}px;--dy:${slide[1]}px` }));
   }
   /* things, far to near */
