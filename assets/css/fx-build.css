@@ -73,7 +73,7 @@
 @media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
 @supports (width: calc(pow(2, 2) * 1px)) and (width: 1cqw) {
   html.js .build { padding-bottom: 0; }
-  html.js .bs { position: relative; height: 430vh; margin-top: clamp(24px, 4vw, 48px); }
+  html.js .bs { position: relative; height: 450vh; margin-top: clamp(24px, 4vw, 48px); }
   html.js .bs-stage {
     position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0;
     display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 0; overflow: hidden;
@@ -147,14 +147,14 @@
   /* Phones: a shorter track, and a camera on the garage column that looks out to the car at the start
      and the end (--cx: the point of the drawing, as a fraction of its width, at the middle of the screen) */
   @media (max-width: 760px) {
-    html.js .bs { height: 340vh; }
+    html.js .bs { height: 360vh; }
     html.js .bs-scene { container-type: size; }
     html.js .bs-svg {
       /* sized so the screen's width shows 5.4 m of the house, or less if the screen is short */
       left: 50%; right: auto; top: auto; bottom: 0;
       height: min(100cqh, 133.3cqw); width: calc(min(100cqh, 133.3cqw) * 1300 / 720);
-      --c1: clamp(0, (var(--p) - 0.05) / 0.09, 1);
-      --c2: clamp(0, (var(--p) - 0.832) / 0.06, 1);
+      --c1: clamp(0, (var(--p) - var(--cam-a)) / var(--cam-l), 1);
+      --c2: clamp(0, (var(--p) - var(--cam-b)) / var(--cam-m), 1);
       --cx: calc(0.25 + 0.235 * var(--c1) * var(--c1) * (3 - 2 * var(--c1)) - 0.055 * var(--c2) * var(--c2) * (3 - 2 * var(--c2)));
       translate: calc(var(--cx) * -100%) calc(var(--k) * max(0px, var(--header-h) + 16px - (100cqh - 0.8125 * min(100cqh, 133.3cqw))));
     }
@@ -190,7 +190,7 @@
     --f: clamp(0, (var(--p) - var(--c)) / var(--m), 1);
     rotate: calc(var(--r) * 1deg * min(1, var(--e) + var(--f) * var(--f) * (3 - 2 * var(--f))));
   }
-  html.js .bs-s1 { opacity: calc(clamp(0, (var(--p) - var(--a) + 0.004) * 400, 1) - clamp(0, (var(--p) - 0.87) * 400, 1)); }
+  html.js .bs-s1 { opacity: calc(clamp(0, (var(--p) - var(--a) + 0.004) * 400, 1) - clamp(0, (var(--p) - var(--c) - var(--m) - 0.004) * 400, 1)); }
   /* The old step ladder under the manhole folds, and is carried to the wall (lifted a little on the way) */
   html.js .bs-step, html.js .bs-step-rear { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); }
   html.js .bs-step-rear { --e: calc(1 - pow(var(--t), 2) * (3 - 2 * var(--t))); rotate: calc(var(--r) * var(--e) * 1deg); }
@@ -239,7 +239,8 @@
   html.js .bs-nose { opacity: clamp(0, (var(--e) - var(--nv)) * 300, 1); }
   html.js .bs-wheel {
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
-    rotate: calc(var(--rot) * (1 - pow(clamp(0, (var(--p) - 0.866) / 0.08, 1), 2) * (3 - 2 * clamp(0, (var(--p) - 0.866) / 0.08, 1))) * 1deg);
+    /* (--a, --l: the drive's window, from the car's side) */
+    rotate: calc(var(--rot) * (1 - pow(clamp(0, (var(--p) - var(--a)) / var(--l), 1), 2) * (3 - 2 * clamp(0, (var(--p) - var(--a)) / var(--l), 1))) * 1deg);
   }
   /* Headlights: on as it starts to roll, off once it's in; the beam shortens towards the wall */
   html.js .bs-beam { opacity: calc(var(--t) - clamp(0, (var(--p) - var(--b)) / var(--m), 1)); }

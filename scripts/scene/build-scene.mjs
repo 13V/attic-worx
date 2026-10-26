@@ -5,9 +5,12 @@
      node scripts/scene/build-scene.mjs              write the scene into index.html, between
                                                     <!-- scene:start --> and <!-- scene:end -->
      node scripts/scene/build-scene.mjs --check      exit 1 if index.html is out of date
-     node scripts/scene/build-scene.mjs --concept <state> [--frame wide|tall] [--out file.svg]
+     node scripts/scene/build-scene.mjs --concept <state> [--frame wide|tall | --cam <x m>] [--carx <x m>]
+                                    [--out file.svg]
                                                     a standalone still of one state (dusk | light |
-                                                    floor | ladder | final), drawn exactly in 3D
+                                                    floor | ladder | final), drawn exactly in 3D; --cam
+                                                    frames it as the phone camera does (centre x, metres),
+                                                    --carx puts the car anywhere (to check its motion)
    No dependencies. See scripts/scene/README.md.
 
    The picture is a section perspective: a single-storey Adelaide house cut front to back, seen from
@@ -30,15 +33,37 @@ const ROOT = path.resolve(HERE, '../..');
 const INDEX = path.join(ROOT, 'index.html');
 
 /* ---------- Timeline (units of --p). The captions' data-at values in index.html must match. ---------- */
+/* Parts are authored on a draft timeline (DRAFT, one value per beat) and placed on the real one (BEATS)
+   by a piecewise-linear map, so a beat can be given more or less of the scroll without retiming its parts.
+   The carry gets the most: twelve trips at a walking pace. */
+const DRAFT = [0, 0.1, 0.235, 0.355, 0.52, 0.615, 0.83, 1];
 export const BEATS = [
   { id: 'dusk', at: 0 },
-  { id: 'light', at: 0.1 },
-  { id: 'frame', at: 0.235 },
-  { id: 'sheets', at: 0.355 },
-  { id: 'ladder', at: 0.52 },
-  { id: 'store', at: 0.615 },
-  { id: 'car', at: 0.83 },
+  { id: 'light', at: 0.07 },
+  { id: 'frame', at: 0.18 },
+  { id: 'sheets', at: 0.29 },
+  { id: 'ladder', at: 0.44 },
+  { id: 'store', at: 0.54 },
+  { id: 'car', at: 0.82 },
 ];
+const REAL = BEATS.map((b) => b.at).concat(1);
+function T_(p) {
+  for (let i = 0; i < DRAFT.length - 1; i++) {
+    if (p <= DRAFT[i + 1] || i === DRAFT.length - 2) return REAL[i] + ((p - DRAFT[i]) * (REAL[i + 1] - REAL[i])) / (DRAFT[i + 1] - DRAFT[i]);
+  }
+  return p;
+}
+/* a window [a, a + l] on the draft timeline, on the real one */
+const win = (a, l) => { const A = T_(a); return [A, T_(a + l) - A]; };
+/* every time-like pair in a part's custom properties: start + length */
+const TIMES = [['a', 'l'], ['b', 'k'], ['b', 'm'], ['c', 'm'], ['ra', 'rl']];
+function retime(v) {
+  const o = { ...v };
+  for (const [s0, s1] of TIMES) {
+    if (typeof v[s0] === 'number' && typeof v[s1] === 'number') { const [A, L] = win(v[s0], v[s1]); o[s0] = A; o[s1] = L; }
+  }
+  return o;
+}
 
 /* ---------- Camera ---------- */
 const CAM = { vx: 4.55, vy: 4.6, f: 4.2 };        // vanishing point (m, in the cut plane), eye distance
@@ -122,8 +147,9 @@ const pth = (d, fill, extra = {}) => el('path', { d, fill, ...extra });
 const vars = (o) => Object.entries(o).map(([k, v]) => `--${k}:${typeof v === 'number' ? r3(v) : v}`).join(';');
 /* a moving part: <g class="m ..." style="--a..."> in the finished file; a plain group in a concept still */
 let MODE = 'final';
-function part(cls, v, inner, extra = {}) {
+function part(cls, v0, inner, extra = {}) {
   if (MODE !== 'final') return inner;
+  const v = retime(v0);
   // a single shape carries the part itself (one element less to restyle)
   const one = /^<(path|ellipse|rect|circle)\b([^>]*)\/>$/.exec(inner);
   if (one && !/\b(class|style|opacity)=/.test(one[2])) return `<${one[1]} class="m ${cls}" style="${vars(v)}"${one[2]}/>`;
@@ -602,8 +628,8 @@ function scene(state) {
   /* ----- The stored things: in the garage (dim, at dusk) and on the new floor (lit) ----- */
   const garageSpots = LOADS.map((Ld, i) => ({ i, x: Ld.g[0], z: Ld.g[1] }));
   const roofSpots = LOADS.map((Ld, i) => ({ i, x: Ld.r[0], z: Ld.r[1] }));
-  const carryA = (i) => 0.62 + i * 0.0115;
-  const CARRY_L = 0.075;
+  const carryA = (i) => 0.62 + i * 0.0135;
+  const CARRY_L = 0.06;
   if (fin || state.things === 'garage') {
     for (const sp of paintOrder(garageSpots)) {
       const Ld = LOADS[sp.i];
@@ -784,7 +810,8 @@ if (args.includes('--concept')) {
 } else {
   MODE = 'final';
   const body = scene(STATES.final);
-  const svg = `<svg class="bs-svg" viewBox="0 0 ${r1(VBW)} ${r1(VBH)}" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false" data-beats="${BEATS.map((b) => b.at).join(',')}">\n${body}\n</svg>`;
+  const [ca, cl] = win(0.05, 0.09), [cb, cm] = win(0.832, 0.06);
+  const svg = `<svg class="bs-svg" viewBox="0 0 ${r1(VBW)} ${r1(VBH)}" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false" style="${vars({ 'cam-a': ca, 'cam-l': cl, 'cam-b': cb, 'cam-m': cm })}">\n${body}\n</svg>`;
   const html = readFileSync(INDEX, 'utf8');
   const re = /(<!-- scene:start -->)[\s\S]*?(<!-- scene:end -->)/;
   if (!re.test(html)) { console.error('index.html has no <!-- scene:start --> ... <!-- scene:end --> markers'); process.exit(2); }
