@@ -15,7 +15,8 @@
      catch the edge of it (a gaussian over the spacing), and over the last two photos the light moves on
      and comes to rest on the quote button. Its pool on the band (.work-light) moves with it, and the
      counter names the photo nearest it. In the strip the photo it has come to rest on (the nearest snap
-     position) is lit, its neighbours a little; at the end of the strip, the quote button.
+     position) is lit, its neighbours a little; at the end of the strip, the quote button, with any photos
+     the strip can't snap to (they sit in full view at its end).
    Without this file the strip simply swipes, every photo at rest and lit. */
 (function () {
   'use strict';
@@ -82,7 +83,7 @@
   // Who can be lit: the photos (their shades; and, in the strip, their frames for the glow), then the
   // end panel's quote button (its glow, in the strip; in the run the pool lights it).
   var shades = frames.map(function (f) { return f.querySelector('.work-shade'); });
-  var DIM = 0.36;      // a shade's opacity out of the light (fx-work.css --wl-dim, read in measure)
+  var DIM = 0.28;      // a shade's opacity out of the light (fx-work.css --wl-dim, read in measure)
   var litNow = [];     // the light as last written, per item (cleared when the layout changes)
   var setLit = function (i, v) {
     v = Math.round(v * 1000) / 1000;
@@ -114,8 +115,13 @@
   var stripMax = 0;
   var stripSnap = [];  // where the strip rests for each lit item (card i at the snap line; the end panel at the end)
   var stripLit = -2;
-  // The strip's light: the item it rests nearest (ties go to the later one, so the end of the strip lights
-  // the quote button), its neighbouring photos a little. Everything fits: everything lit.
+  var lit1 = [];       // (scratch) which items are lit
+  // The strip's light: the place it rests nearest (ties go to the later item), and every item that rests
+  // there, its neighbouring photos a little. Mostly that's one photo, the one at the snap line. At the end
+  // of the strip it's the quote button, plus any photos that can't reach the snap line (their spot is
+  // past the end of the strip, so the strip stops short of it): those all sit in full view there, so
+  // they're lit with the button rather than never. On a phone that's the button alone. Everything fits:
+  // everything lit.
   var lightStrip = function (x) {
     var a = -1;
     if (stripMax >= 2) {
@@ -127,9 +133,12 @@
     }
     if (a === stripLit) return;
     stripLit = a;
-    for (var k = 0; k < frames.length + (goBtn ? 1 : 0); k++) {
-      var near1 = Math.abs(k - a) === 1 && k < cards.length;
-      setLit(k, a < 0 || k === a ? 1 : near1 ? SPILL : 0);
+    var n = frames.length + (goBtn ? 1 : 0);
+    var k;
+    for (k = 0; k < n; k++) lit1[k] = a < 0 || Math.abs(stripSnap[k] - stripSnap[a]) < 4;
+    for (k = 0; k < n; k++) {
+      var near1 = k < cards.length && (lit1[k - 1] || lit1[k + 1]);
+      setLit(k, lit1[k] ? 1 : near1 ? SPILL : 0);
     }
   };
   var updateStrip = function () {

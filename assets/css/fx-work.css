@@ -220,26 +220,20 @@
 }
 
 /* ---------- The work light ----------
-   Each photo has a warm light from above over it (picture::after) and, over that, a .work-shade in the
-   roof's colour (aria-hidden): fx-work.js sets the shade's opacity, from 0 in the light to --wl-dim out of
-   it. In the run that's a composited opacity per photo per frame (nothing repaints), and one warm pool
-   (.work-light) moves with the light behind the track. In the strip the light is handed from photo to
-   photo with a short crossfade as the strip comes to rest: the lit photo glows a little (its frame's
-   ::before, from --work-lit), and at the end of the strip the quote button does (--work-lit on it).
-   The counter (01 / 06) names the photo in the light. */
+   Each photo has a .work-shade over it in the roof's colour (aria-hidden): fx-work.js sets its opacity,
+   from 0 in the light (the photo exactly as shot: nothing else ever sits over it) to --wl-dim out of it.
+   The warmth is all around the lit photo, never on it. In the run that's a composited opacity per photo
+   per frame (nothing repaints), and one warm pool (.work-light) moves with the light behind the track.
+   In the strip the light is handed from photo to photo with a short crossfade as the strip comes to rest:
+   the lit photo glows a little (its frame's ::before, from --work-lit), and at the end of the strip the
+   quote button does (--work-lit on it). The counter (01 / 06) names the photo in the light. */
 .work {
   --wl-warm: 255, 198, 126;  /* the work light: a warm white */
-  --wl-dim: 0.36;            /* a photo out of the light (fx-work.js reads it) */
+  --wl-dim: 0.28;            /* a photo out of the light (fx-work.js reads it) */
 }
 .work-light, .work-shade { display: none; }
 @media (prefers-reduced-motion: no-preference) {
   .work.is-live .work-card { isolation: isolate; } /* the glow sits behind its photo, over the band */
-  .work.is-live .work-frame picture { position: relative; }
-  .work.is-live .work-frame picture::after {
-    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; /* under the plate (3) */
-    background:
-      radial-gradient(110% 70% at 50% 0%, rgba(var(--wl-warm), 0.38), rgba(var(--wl-warm), 0.12) 55%, rgba(var(--wl-warm), 0) 100%);
-  }
   .work.is-live .work-shade {
     display: block; position: absolute; inset: 0; z-index: 1; pointer-events: none;
     border-radius: var(--r-img); background: var(--roof); opacity: 0;
@@ -291,6 +285,6 @@
 }
 @keyframes aw-work-glow { from { opacity: 0; } }
 @media (forced-colors: active) {
-  .work .work-shade, .work .work-frame picture::after, .work .work-frame::before, .work .work-end .btn::before,
+  .work .work-shade, .work .work-frame::before, .work .work-end .btn::before,
   .work .work-light { display: none; }
 }
