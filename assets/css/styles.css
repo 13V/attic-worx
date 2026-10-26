@@ -74,7 +74,6 @@
 *, *::before, *::after { box-sizing: border-box; }
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-h) + 16px);
 }
 body {
@@ -94,6 +93,11 @@ body::before {
   height: env(safe-area-inset-top, 0px);
   z-index: 60;
   background: var(--roof);
+}
+/* In-page links scroll smoothly, but only once the page has loaded (main.js adds .is-loaded): a shared
+   link like /#faq lands straight on its section instead of gliding past everything above it. */
+@media (prefers-reduced-motion: no-preference) {
+  html.is-loaded { scroll-behavior: smooth; }
 }
 [hidden] { display: none !important; }
 img, svg, picture { display: block; max-width: 100%; }
@@ -250,12 +254,18 @@ p { text-wrap: pretty; }
 .mobile-menu {
   /* popover */
   margin: 0; inset: 0 0 auto auto; height: 100dvh; width: min(380px, 100%);
-  border: 0; padding: calc(20px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) 24px 24px;
+  border: 0;
+  padding: env(safe-area-inset-top, 0px) max(var(--gutter), env(safe-area-inset-right, 0px)) 24px var(--gutter);
   background: var(--roof); color: var(--white);
   box-shadow: var(--shadow-lg);
 }
 .mobile-menu::backdrop { background: rgba(5, 15, 15, 0.5); }
-.mobile-menu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+.mobile-menu-top {
+  /* The same row as the header's (height, gutter, logo, button spot), so opening the menu changes
+     the menu button into a close button and leaves the logo where it is */
+  display: flex; justify-content: space-between; align-items: center; height: var(--header-h); margin-bottom: 20px;
+}
+@media (max-width: 480px) { .mobile-menu { width: 100%; } }
 .mobile-menu nav { display: grid; }
 .mobile-menu nav a {
   position: relative;
@@ -812,7 +822,7 @@ select.input {
   width: min(560px, 70vw); height: auto;
 }
 .cta-mark use { opacity: .12; }
-.cta-rungs path { opacity: .16; }
+.cta-rungs path { opacity: 0; } /* only lit while they light up (motion) */
 .cta-inner { display: grid; gap: 24px; max-width: 760px; }
 .cta-inner h2 { font-size: var(--step-3); }
 .cta-inner p { color: var(--white); font-size: 1.15rem; max-width: 34em; }
@@ -848,8 +858,9 @@ select.input {
     padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
     background: rgba(255,255,255,.96); border-top: 1px solid var(--line);
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    transform: translateY(110%); /* hidden until main.js says it's wanted (no JS: the noscript rule shows it) */
   }
-  .action-bar.is-hidden { transform: translateY(110%); }
+  .action-bar.is-visible { transform: none; }
   .action-bar .btn { min-height: 50px; }
   .site-footer { padding-bottom: calc(32px + 72px + env(safe-area-inset-bottom, 0px)); }
 }
@@ -944,21 +955,28 @@ select.input {
   /* Buttons: hover colours ease in */
   .btn { transition-duration: var(--t-hover); }
 
-  /* Mobile menu: the panel slides in from the side it lives on; links rise, rules draw; it leaves fast.
-     Only where popovers exist (elsewhere the panel isn't a popover and must stay visible). */
+  /* Mobile menu: the panel fades in place, so its top row (over the header's own) reads as the menu
+     button turning into a close button; the links and buttons slide in from the side the panel lives
+     on, links rise, rules draw; it leaves fast. Only where popovers exist (elsewhere the panel isn't a
+     popover and must stay visible). */
   @supports selector(:popover-open) {
   .mobile-menu {
-    opacity: 0; transform: translateX(24px);
-    transition: opacity var(--t-out) var(--ease-in), transform var(--t-out) var(--ease-in),
-      overlay var(--t-out) allow-discrete, display var(--t-out) allow-discrete;
+    opacity: 0;
+    transition: opacity var(--t-out) var(--ease-in), overlay var(--t-out) allow-discrete, display var(--t-out) allow-discrete;
   }
   .mobile-menu:popover-open {
-    opacity: 1; transform: none;
-    transition: opacity 320ms var(--ease-out), transform var(--t-ui) var(--ease-out),
-      overlay var(--t-ui) allow-discrete, display var(--t-ui) allow-discrete;
+    opacity: 1;
+    transition: opacity 320ms var(--ease-out), overlay var(--t-ui) allow-discrete, display var(--t-ui) allow-discrete;
   }
   @starting-style {
-    .mobile-menu:popover-open { opacity: 0; transform: translateX(24px); }
+    .mobile-menu:popover-open { opacity: 0; }
+  }
+  .mobile-menu nav, .mobile-menu-actions { translate: 24px 0; transition: translate var(--t-out) var(--ease-in); }
+  .mobile-menu:popover-open nav,
+  .mobile-menu:popover-open .mobile-menu-actions { translate: none; transition: translate var(--t-ui) var(--ease-out); }
+  @starting-style {
+    .mobile-menu:popover-open nav,
+    .mobile-menu:popover-open .mobile-menu-actions { translate: 24px 0; }
   }
   .mobile-menu::backdrop {
     opacity: 0;
@@ -984,14 +1002,14 @@ select.input {
 
   /* Phone action bar: rises, then its buttons follow; drops away quickly */
   .action-bar { transition: transform 240ms var(--ease-in); }
-  .action-bar:not(.is-hidden) { transition: transform 520ms var(--ease-out); }
+  .action-bar.is-visible { transition: transform 520ms var(--ease-out); }
   .action-bar .btn {
     transition: opacity 420ms var(--ease-out), translate 520ms var(--ease-out), transform var(--t-press),
       background-color .2s, border-color .2s, color .2s;
   }
-  .action-bar:not(.is-hidden) .btn:nth-child(1) { transition-delay: 140ms, 140ms, 0s, 0s, 0s, 0s; }
-  .action-bar:not(.is-hidden) .btn:nth-child(2) { transition-delay: 190ms, 190ms, 0s, 0s, 0s, 0s; }
-  .action-bar.is-hidden .btn {
+  .action-bar.is-visible .btn:nth-child(1) { transition-delay: 140ms, 140ms, 0s, 0s, 0s, 0s; }
+  .action-bar.is-visible .btn:nth-child(2) { transition-delay: 190ms, 190ms, 0s, 0s, 0s, 0s; }
+  html.js .action-bar:not(.is-visible) .btn {
     opacity: 0; translate: 0 8px;
     transition: opacity 120ms linear, translate 0s linear 120ms;
   }
@@ -1037,11 +1055,10 @@ select.input {
   .faq-toggle::after { transition: rotate 450ms var(--ease-io); }
 
   /* Final call to action: the ladder mark drifts up as you scroll past; its rungs light up once,
-     bottom to top, as it comes in */
+     bottom to top, as it comes in, then settle back into the mark (one silhouette at rest) */
   @supports (animation-timeline: view()) {
     .cta-mark { animation: aw-drift linear both; animation-timeline: view(); animation-range: cover; }
   }
-  html.js .cta-mark:not(.is-in) .cta-rungs path { opacity: 0; }
   html.js .cta-mark.is-in:not(.is-instant) .cta-rungs path {
     animation: aw-rung 1600ms var(--ease-out) calc(var(--d, 0ms) + 350ms + var(--k, 0) * 150ms) both;
   }
@@ -1051,7 +1068,7 @@ select.input {
   .qf-progress span::after { transition: transform 550ms var(--ease-io); }
   .tile-check { transition: stroke-dashoffset 120ms var(--ease-in); }
   .tile:has(input:checked) .tile-check { transition: stroke-dashoffset 380ms var(--ease-draw) 60ms; }
-  .tile.is-pending .tile-check { stroke-dashoffset: 1.01; transition: none; }
+  .tile.is-pending:has(input:checked) .tile-check { stroke-dashoffset: 1.01; transition: none; } /* must outrank the rule above */
   /* (it fades out fast, so the two never read as one) */
   .qf-step.qf-leaving { animation: aw-fade-out 140ms var(--ease-out) both, aw-step-out var(--t-out) var(--ease-in) both; }
   .qf-error { transition: clip-path 320ms var(--ease-out), opacity 320ms var(--ease-out); }
@@ -1077,7 +1094,6 @@ select.input {
 
 /* Reduced motion: everything at rest, nothing waits hidden, the vent and the hero light stay still */
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
   *, *::before, *::after { animation-delay: 0s !important; transition-delay: 0s !important; }
   .hero::before, .vanes { animation: none; }
 }
@@ -1089,7 +1105,7 @@ select.input {
 @keyframes aw-draw { from { stroke-dashoffset: 1.01; } to { stroke-dashoffset: 0; } }
 @keyframes aw-lit { from { color: #77817f; } }
 @keyframes aw-star { from { color: var(--star-off, var(--line)); } }
-@keyframes aw-rung { 0% { opacity: 0; } 30% { opacity: 0.5; } 100% { opacity: 0.16; } }
+@keyframes aw-rung { 0% { opacity: 0; } 30% { opacity: 0.5; } 100% { opacity: 0; } }
 @keyframes aw-drift { from { transform: translateY(9%); } to { transform: translateY(-9%); } }
 @keyframes aw-fade-out { to { opacity: 0; } }
 @keyframes aw-step-out { to { transform: translateX(calc(var(--dir, 1) * -1.5%)); } }

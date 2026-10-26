@@ -94,8 +94,10 @@
     el.classList.add('is-split');
   };
 
-  // Reveals: .is-in once, as each element scrolls into view. Elements arriving together get a short
-  // stagger (--d, 80ms apart, capped at 5); split headings also get a line number per word (--l).
+  // Reveals: .is-in once, as each element scrolls into view. Elements of one section arriving together
+  // get a short stagger (--d, 80ms apart, capped at 5), counted per section so a jump that brings two
+  // sections in at once doesn't keep the second one waiting; split headings also get a line number
+  // per word (--l).
   // While the page starts, every target holds its transitions (.aw-still, for a couple of frames), so
   // nothing animates from how it was first painted (without JS) into its "before" state, or into
   // .is-in. Anything already on screen is shown at rest: .is-in at once, and .is-instant tells
@@ -122,10 +124,15 @@
     var tops = hits.map(function (el) {
       return el.classList.contains('is-split') ? $$('.w', el).map(function (w) { return w.offsetTop; }) : null;
     });
-    // ...then write: the batch stagger, line numbers, then .is-in.
+    // ...then write: the stagger within each section, line numbers, then .is-in.
+    var groups = [];
+    var counts = [];
     hits.forEach(function (el, n) {
       revealObs.unobserve(el);
-      el.style.setProperty('--d', Math.min(n, 5) * 80 + 'ms');
+      var sec = el.closest('section') || document.body;
+      var g = groups.indexOf(sec);
+      if (g < 0) { g = groups.push(sec) - 1; counts.push(0); }
+      el.style.setProperty('--d', Math.min(counts[g]++, 5) * 80 + 'ms');
       if (tops[n]) {
         var line = 0;
         $$('.w', el).forEach(function (w, k) {
@@ -166,10 +173,14 @@
       });
     });
   };
-  if (document.readyState === 'complete') endBoot();
+  // In-page links glide (CSS, html.is-loaded) only from here on: the browser's own jump to a shared
+  // link's #section, on arrival, stays instant.
+  var loaded = function () { raf(function () { raf(function () { root.classList.add('is-loaded'); }); }); };
+  if (document.readyState === 'complete') { endBoot(); loaded(); }
   else {
     document.addEventListener('DOMContentLoaded', endBoot);
     window.addEventListener('load', endBoot);
+    window.addEventListener('load', loaded);
   }
 
   window.AW = {
@@ -204,8 +215,11 @@
       var down = y > lastY + 4;
       var up = y < lastY - 4;
       var hide = hidden;
+      // Before load, a move is the browser's own (a shared link's #section, a restored position), not
+      // the visitor reading on: the header stays.
+      var arriving = !root.classList.contains('is-loaded');
       if (y < 120 || up || menuOpen() || header.contains(document.activeElement) || !motionOK()) hide = false;
-      else if (down) hide = true;
+      else if (down && !arriving) hide = true;
       if (down || up) lastY = y;
       return function () {
         header.classList.toggle('is-scrolled', y > 24);
@@ -567,8 +581,11 @@
     });
   }
 
-  /* ---------- Mobile action bar: rises once the hero buttons are gone, steps aside for the form ---------- */
+  /* ---------- Mobile action bar: rises once the hero buttons are gone, steps aside for the form ----------
+     It's hidden by default in CSS (so it never shows at first paint, then drops away) and .is-visible
+     brings it up. Without JS a noscript rule shows it. */
   var bar = $('[data-action-bar]');
+  if (bar && !(card && 'IntersectionObserver' in window)) bar.classList.add('is-visible'); // nothing to step aside for
   if (bar && card && 'IntersectionObserver' in window) {
     var heroVisible = true;
     var formVisible = false;
@@ -577,8 +594,8 @@
       var show = !formVisible && !heroVisible;
       if (show === shown) return;
       shown = show;
-      hold(bar); // its first hide, at load, doesn't slide
-      bar.classList.toggle('is-hidden', !show);
+      hold(bar); // shown while the page starts (opened mid-page): there at once, no slide
+      bar.classList.toggle('is-visible', show);
       // Out of the way means out of the tab order too
       bar.setAttribute('aria-hidden', show ? 'false' : 'true');
       $$('a', bar).forEach(function (a) { a.tabIndex = show ? 0 : -1; });
