@@ -1,1 +1,271 @@
-/* fx-build.css: the 3D roof build (#build). Owned by the 3D BUILD agent; consolidated into styles.css later. */
+/* fx-build.css: "Boxes up. Car in." (#build), the roof-space cutaway. Consolidated into styles.css later.
+   The scene is an inline SVG made by scripts/scene/build-scene.mjs: a single-storey house cut front to back
+   at dusk, seen from inside its roof. Its geometry is the finished state (floor down, things up, ladder
+   away, car in, roller door down), which is what shows at rest: without JS, with reduced motion, or where
+   pow() is missing. Then the captions are a plain numbered list under the picture.
+
+   Pinned (html.js, motion welcome, pow() supported): a tall track with a sticky stage. fx-build.js eases
+   one number, --p (0 -> 1), on the stage, and marks the current caption (data-beat). Every pose below
+   is computed from --p, Engel Build's way: each moving part (.m) has a window [--a, --a + --l] and its
+   progress --t; its eased distance still to go is a power of (1 - t): (1-t)^3 settles (cubic out),
+   t^2 (3 - 2t) is a smoothstep for things carried or driven. Only transform, opacity and the rotation
+   of the ladder's sections change; light is shapes whose opacity changes, never filters.
+   The work light's flicker is the one timed animation: it plays when the light's beat starts. */
+
+@property --p { syntax: "<number>"; inherits: true; initial-value: 1; }
+@property --t { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --e { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --f { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --u1 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --u2 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --u3 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --k { syntax: "<number>"; inherits: false; initial-value: 0; }
+
+/* Groups of shapes that never read --p pin it, so a --p write restyles only the moving parts */
+.bs-svg > defs, .bs-still, .bs-in, .bs-caps { --p: 0; }
+
+/* ---------- At rest: the finished picture, then the steps as a list ---------- */
+.build { padding-bottom: clamp(56px, 7vw, 104px); }
+.build-head { display: grid; gap: 18px; justify-items: start; }
+.bs { margin-top: clamp(36px, 5vw, 64px); }
+.bs-stage {
+  display: grid; gap: clamp(28px, 4vw, 48px);
+  width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+.bs-scene {
+  position: relative; overflow: hidden; aspect-ratio: 1300 / 720;
+  border-radius: var(--r-img); background: var(--roof);
+}
+.bs-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; display: block; }
+/* The finished pose of things that only exist mid-story: the dark before the light, the ladder and the
+   light through its hatch, the things still in the garage, the nose on the driveway, the headlights */
+.bs-dark, .bs-spill, .bs-s1, .bs-beam { opacity: 0; }
+.bs-s1 { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); rotate: calc(var(--r) * 1deg); }
+.bs-nose, .bs-pick { opacity: 0; }
+
+.bs-rail { display: none; }
+.bs-caps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px clamp(20px, 3vw, 40px); counter-reset: bs; }
+.bs-cap { counter-increment: bs; padding-top: 16px; border-top: 1px solid var(--roof-line); }
+.bs-cap::before {
+  content: counter(bs, decimal-leading-zero); display: block; margin-bottom: 8px;
+  color: var(--mint); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; font-variant-numeric: tabular-nums;
+}
+.bs-cap h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.bs-cap p { margin-top: 6px; color: rgba(255, 255, 255, 0.78); font-size: 0.95rem; line-height: 1.5; }
+.bs-cap .btn { margin-top: 16px; }
+.bs-cap:last-child { grid-column: span 2; }
+@media (max-width: 1000px) { .bs-caps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  /* a phone sees the garage and the roof over it: the same drawing, framed on the garage */
+  .bs-scene { aspect-ratio: 4 / 5; max-height: 78svh; container-type: size; }
+  .bs-svg { left: 50%; right: auto; height: 100cqh; width: calc(100cqh * 1300 / 720); translate: -43% 0; }
+}
+@media (max-width: 560px) {
+  .bs-caps { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .bs-cap:last-child { grid-column: auto; }
+}
+
+/* ---------- Pinned: the story plays as you scroll ---------- */
+/* (screens under 500px tall, a phone on its side, keep the picture and the list: a pinned stage there would
+   leave the drawing a sliver) */
+@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+@supports (width: calc(pow(2, 2) * 1px)) and (width: 1cqw) {
+  html.js .build { padding-bottom: 0; }
+  html.js .bs { position: relative; height: 430vh; margin-top: clamp(24px, 4vw, 48px); }
+  html.js .bs-stage {
+    position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0;
+    display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 0; overflow: hidden;
+    --bar: 0px;
+  }
+  html.js .bs-scene { aspect-ratio: auto; border-radius: 0; background: none; container-type: size; }
+  html.js .bs-svg { inset: 0; }
+  /* The header: while it shows, if it would cover the roof's ridge, the picture steps down out from under
+     it, in step with it (only short screens need this; the bottom of the drawing is just earth). The ridge
+     sits 585/720 of the drawing's height above its foot; the drawing is fitted (meet) to the scene's box. */
+  html.js .bs-svg {
+    --k: 0;
+    translate: 0 calc(var(--k) * max(0px, var(--header-h) + 16px - (100cqh - 585 * min(100cqw / 1300, 100cqh / 720))));
+    transition: --k 280ms var(--ease-in);
+  }
+  html.js.hdr-on .bs-svg { --k: 1; transition: --k 450ms var(--ease-out); }
+
+  /* The rail: one segment per step, filling as the step plays */
+  html.js .bs-rail {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;
+    width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto; padding-top: 14px;
+  }
+  html.js .bs-rail i { position: relative; height: 2px; background: rgba(143, 214, 204, 0.18); overflow: hidden; }
+  html.js .bs-rail i::after {
+    content: ""; position: absolute; inset: 0; background: var(--mint); transform-origin: 0 50%;
+    transform: scaleX(clamp(0, (var(--p) - var(--at)) / (var(--to) - var(--at)), 1));
+  }
+
+  /* Wide screens: the steps in a row under the picture; the current one lit, its line underneath */
+  html.js .bs-caps {
+    position: relative; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 8px;
+    width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto;
+    padding: 12px 0 calc(78px + var(--bar)); min-height: 0;
+  }
+  html.js .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.42; transition: opacity var(--t-out) var(--ease-in); }
+  html.js .bs-cap::before { margin-bottom: 4px; }
+  html.js .bs-cap h3 { font-size: 0.98rem; }
+  html.js .bs-cap p, html.js .bs-cap .btn {
+    position: absolute; left: 0; top: 74px; margin: 0;
+    opacity: 0; translate: 0 6px; pointer-events: none;
+    transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out);
+  }
+  /* (the button stays focusable while its step is off: focusing it jumps to the end, see fx-build.js) */
+  html.js .bs-cap p { visibility: hidden; }
+  html.js .bs-cap p { width: min(58%, 40em); font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
+  html.js .bs-cap .btn { left: auto; right: 0; top: 66px; }
+  html.js .bs-cap.is-on { opacity: 1; transition: opacity var(--t-ui) var(--ease-out); }
+  html.js .bs-cap.is-on p, html.js .bs-cap.is-on .btn, html.js .bs-cap .btn:focus-visible {
+    opacity: 1; translate: none; visibility: visible; pointer-events: auto;
+    transition: opacity var(--t-text) var(--ease-out) 80ms, translate var(--t-text) var(--ease-out) 80ms, visibility 0s;
+  }
+  /* until fx-build.js marks a step (or if it never runs), the last one shows */
+  html.js .bs-stage:not([data-beat]) .bs-cap:last-child { opacity: 1; }
+  html.js .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; visibility: visible; pointer-events: auto; }
+
+  /* Narrower screens: one step at a time in a panel, above the action bar on phones */
+  @media (max-width: 1099px) {
+    html.js .bs-caps { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px 0 calc(18px + var(--bar)); }
+    html.js .bs-cap { grid-area: 1 / 1; opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out); }
+    html.js .bs-cap:not(.is-on):not(:last-child) { visibility: hidden; }
+    html.js .bs-cap.is-on, html.js .bs-stage:not([data-beat]) .bs-cap:last-child, html.js .bs-cap:focus-within { opacity: 1; translate: none; visibility: visible; pointer-events: auto; transition: opacity var(--t-ui) var(--ease-out), translate var(--t-ui) var(--ease-out), visibility 0s; }
+    html.js .bs-cap::before { display: inline; margin-right: 10px; }
+    html.js .bs-cap h3 { display: inline; font-size: 1.0625rem; }
+    html.js .bs-cap p, html.js .bs-cap .btn { position: static; translate: none; }
+    html.js .bs-cap p { width: auto; margin-top: 4px; font-size: 0.95rem; line-height: 1.45; }
+    html.js .bs-cap .btn { margin-top: 12px; min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
+  }
+  @media (max-width: 960px) {
+    html.js .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
+  }
+  /* Phones: a shorter track, and a camera on the garage column that looks out to the car at the start
+     and the end (--cx: the point of the drawing, as a fraction of its width, at the middle of the screen) */
+  @media (max-width: 760px) {
+    html.js .bs { height: 340vh; }
+    html.js .bs-scene { container-type: size; }
+    html.js .bs-svg {
+      /* sized so the screen's width shows 5.4 m of the house, or less if the screen is short */
+      left: 50%; right: auto; top: auto; bottom: 0;
+      height: min(100cqh, 133.3cqw); width: calc(min(100cqh, 133.3cqw) * 1300 / 720);
+      --c1: clamp(0, (var(--p) - 0.05) / 0.09, 1);
+      --c2: clamp(0, (var(--p) - 0.832) / 0.06, 1);
+      --cx: calc(0.25 + 0.235 * var(--c1) * var(--c1) * (3 - 2 * var(--c1)) - 0.055 * var(--c2) * var(--c2) * (3 - 2 * var(--c2)));
+      translate: calc(var(--cx) * -100%) calc(var(--k) * max(0px, var(--header-h) + 16px - (100cqh - 0.8125 * min(100cqh, 133.3cqw))));
+    }
+  }
+
+  /* ----- The poses ----- */
+  html.js .bs .m { --t: clamp(0, (var(--p) - var(--a)) / var(--l), 1); }
+
+  /* Dusk: the roof is dark, bay by bay the work light reaches in */
+  html.js .bs-dark { opacity: pow(1 - var(--t), 1.6); }
+  /* The work light: off until its beat, then a quick, soft flicker (the site's lights-on rhythm) */
+  html.js .bs-lit { opacity: 0; }
+  html.js .bs-stage:not([data-beat="0"]) .bs-lit { opacity: 1; animation: bs-flicker 1.1s steps(1, end) both; }
+
+  /* H2 battens are lowered on, from the hatch outwards */
+  html.js .bs-batten {
+    --e: pow(1 - var(--t), 3);
+    translate: 0 calc(var(--e) * -30px);
+    opacity: min(1, var(--t) * 5);
+  }
+  /* Sheets are laid from the far end back to the hatch; each lands flat */
+  html.js .bs-sheet {
+    --e: pow(1 - var(--t), 3);
+    translate: 0 calc(var(--e) * -24px);
+    opacity: min(1, var(--t) * 4);
+  }
+
+  /* The ladder: the lid swings down about its hinge, then the sections unfold in turn; at the end they
+     fold away in reverse. --r is the closed angle; the open pose is the drawing. */
+  html.js .bs-fold {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    --e: calc(1 - pow(var(--t), 2) * (3 - 2 * var(--t)));
+    --f: clamp(0, (var(--p) - var(--c)) / var(--m), 1);
+    rotate: calc(var(--r) * 1deg * min(1, var(--e) + var(--f) * var(--f) * (3 - 2 * var(--f))));
+  }
+  html.js .bs-s1 { opacity: calc(clamp(0, (var(--p) - var(--a) + 0.004) * 400, 1) - clamp(0, (var(--p) - 0.87) * 400, 1)); }
+  /* The old step ladder under the manhole folds, and is carried to the wall (lifted a little on the way) */
+  html.js .bs-step, html.js .bs-step-rear { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); }
+  html.js .bs-step-rear { --e: calc(1 - pow(var(--t), 2) * (3 - 2 * var(--t))); rotate: calc(var(--r) * var(--e) * 1deg); }
+  html.js .bs-step {
+    --e: calc(1 - pow(var(--t), 2) * (3 - 2 * var(--t)));
+    translate: calc(var(--dx) * var(--e) * 1px) calc((var(--dy) * var(--e) - 14 * sin(var(--t) * 180deg)) * 1px);
+    rotate: calc(var(--r) * var(--e) * 1deg);
+  }
+  /* Light falls through the open hatch while the lid is down */
+  html.js .bs-spill { opacity: calc(pow(var(--t), 2) - clamp(0, (var(--p) - var(--b)) / var(--k), 1)); }
+
+  /* The things: each picked up in the dim garage and walked to the foot of the ladder... */
+  html.js .bs-pick {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    --e: calc(pow(var(--t), 2) * (3 - 2 * var(--t)));
+    translate: calc(var(--dx) * var(--e) * 1px) calc(var(--dy) * var(--e) * 1px);
+    scale: calc(1 + (var(--k) - 1) * var(--e));
+    opacity: calc(1 - clamp(0, (var(--t) - 0.8) * 5, 1));
+  }
+  html.js .bs-pick .bs-shade { opacity: calc(0.32 * (1 - min(1, (var(--p) - var(--a)) / var(--l) * 8))); }
+  /* ...where the lit copy takes over: up the ladder, through the hatch, and across to its place */
+  html.js .bs-load {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    --u1: clamp(0, var(--t) / 0.5, 1);
+    --u2: clamp(0, (var(--t) - 0.5) / 0.18, 1);
+    --u3: clamp(0, (var(--t) - 0.68) / 0.32, 1);
+    --s1: calc(pow(var(--u1), 2) * (3 - 2 * var(--u1)));
+    --s2: calc(pow(var(--u2), 2) * (3 - 2 * var(--u2)));
+    --s3: calc(1 - pow(1 - var(--u3), 3));
+    translate:
+      calc((var(--x1) + (var(--x2) - var(--x1)) * var(--s1) + (var(--x3) - var(--x2)) * var(--s2) - var(--x3) * var(--s3)) * 1px)
+      calc((var(--y1) + (var(--y2) - var(--y1)) * var(--s1) + (var(--y3) - var(--y2)) * var(--s2) - var(--y3) * var(--s3)) * 1px);
+    scale: calc(var(--k1) + (var(--k2) - var(--k1)) * var(--s1) + (var(--k3) - var(--k2)) * var(--s2) + (1 - var(--k3)) * var(--s3));
+    opacity: clamp(0, var(--t) * 25, 1);
+  }
+  html.js .bs-load .bs-shade { opacity: calc(0.22 * clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1)); }
+
+  /* The car rolls in. Every plane of it moves by an exact affine map, linear in the distance still to go
+     (worked out per plane by the generator: the near side just translates; the planes on top also shear,
+     because their far edges are smaller; the nose shows only while the car is left of the eye). */
+  html.js .bs-car {
+    --e: calc(1 - pow(var(--t), 2) * (3 - 2 * var(--t)));
+    transform-box: view-box; transform-origin: 0 0;
+    transform: matrix(calc(1 + var(--mx) * var(--e)), 0, calc(var(--my) * var(--e)), 1, calc(var(--m0) * var(--e)), 0);
+  }
+  html.js .bs-nose { opacity: clamp(0, (var(--e) - var(--nv)) * 300, 1); }
+  html.js .bs-wheel {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    rotate: calc(var(--rot) * (1 - pow(clamp(0, (var(--p) - 0.866) / 0.08, 1), 2) * (3 - 2 * clamp(0, (var(--p) - 0.866) / 0.08, 1))) * 1deg);
+  }
+  /* Headlights: on as it starts to roll, off once it's in; the beam shortens towards the wall */
+  html.js .bs-beam { opacity: calc(var(--t) - clamp(0, (var(--p) - var(--b)) / var(--m), 1)); }
+  html.js .bs-beam[style*="--ra"] {
+    --f: calc(pow(clamp(0, (var(--p) - var(--ra)) / var(--rl), 1), 2) * (3 - 2 * clamp(0, (var(--p) - var(--ra)) / var(--rl), 1)));
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) 0;
+    scale: calc(1 - (1 - var(--w)) * var(--f)) 1;
+  }
+  /* The roller door comes down, then the garage light settles */
+  html.js .bs-slat {
+    --e: pow(1 - var(--t), 2);
+    translate: 0 calc(var(--e) * -10px);
+    opacity: min(1, var(--t) * 3);
+  }
+  html.js .bs-dusk { opacity: calc(1 - var(--t)); }
+  html.js .bs-tube { opacity: var(--t); }
+}
+}
+/* At rest the garage light is on and the dusk has gone from the garage */
+.bs-dusk { opacity: 0; }
+
+@keyframes bs-flicker {
+  0% { opacity: 0; }
+  8% { opacity: 0.7; }
+  14% { opacity: 0.08; }
+  22% { opacity: 0.85; }
+  30% { opacity: 0.25; }
+  40%, 100% { opacity: 1; }
+}
