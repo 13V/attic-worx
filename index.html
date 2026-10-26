@@ -156,11 +156,57 @@
       <source type="image/webp" srcset="assets/img/hero-tall-480.webp 480w, assets/img/hero-tall-800.webp 800w, assets/img/hero-tall-1200.webp 1200w" sizes="100vw">
       <img src="assets/img/hero-wide-800.jpg" width="800" height="500" alt="A long walk-on storage floor laid under the A-frame trusses of an Adelaide roof" fetchpriority="high" decoding="async">
     </picture>
+    <!-- The trace: mint lines on the photo's real edges, in master-photo coordinates (source/photos/walkway-after.jpg,
+         1800 x 2400). fx-hero.css lays the drawing over the photo exactly as object-fit: cover lays each crop. -->
+    <div class="hero-trace" aria-hidden="true">
+      <svg viewBox="0 0 1800 2400" preserveAspectRatio="none" focusable="false">
+        <!-- guides to the vanishing point -->
+        <g class="l-guide"><path d="M780.9 909 928.5 657.3"/><path d="M1075 892.9 928.5 657.3"/></g>
+        <g class="l-detail">
+          <!-- the edge battens -->
+          <path d="M767.4 909.8 0 2101.9" pathLength="1" style="--d:0.26s"/>
+          <path d="M1267.7 1158 1800 1934" pathLength="1" style="--d:0.36s"/>
+          <!-- truss top chords, from the middle out -->
+          <path d="M900.9 449.1 481.1 1232" pathLength="1" style="--d:0.30s"/>
+          <path d="M900.9 449.1 1265.3 980" pathLength="1" style="--d:0.32s"/>
+          <path d="M863 450 433.3 1265" pathLength="1" style="--d:0.35s"/>
+          <path d="M945.6 380 1381.7 1050" pathLength="1" style="--d:0.37s"/>
+          <path d="M966.5 330 1503.7 1170" pathLength="1" style="--d:0.40s"/>
+          <!-- sheet joints, far to near -->
+          <path d="M701.3 1044.9 1155.4 1022.2" pathLength="1" style="--d:0.50s"/>
+          <path d="M656.8 1120.8 1033 1103" pathLength="1" style="--d:0.55s"/>
+          <path d="M594.1 1227.8 1267.5 1202.6" pathLength="1" style="--d:0.60s"/>
+          <path d="M490.2 1405 1375.9 1376.9" pathLength="1" style="--d:0.65s"/>
+          <!-- the hatch and its grab rail -->
+          <path d="M1033 1103 1417 1097.5 1442 1138" pathLength="1" style="--d:0.62s"/>
+          <path d="M1033 1103 1050 1174 1127 1173" pathLength="1" style="--d:0.68s"/>
+          <path d="M1047 1152 1442 1139.5" pathLength="1" style="--d:0.72s"/>
+          <path d="M991 1100 991.5 1089 994 1082 1001 1079.2 1077 1079.6 1083.5 1081.5 1086 1088 1086.5 1097" pathLength="1" style="--d:0.78s"/>
+        </g>
+        <g class="l-main">
+          <!-- the far end, then the walkway edges -->
+          <path d="M780.9 909 1075 892.9" pathLength="1" style="--d:0.08s"/>
+          <path d="M780.9 909 0 2241.3" pathLength="1" style="--d:0.16s"/>
+          <path d="M1075 892.9 1204 1100.4" pathLength="1" style="--d:0.18s"/>
+          <path d="M1249.8 1174 1800 2059.1" pathLength="1" style="--d:0.30s"/>
+          <!-- truss top chords, from the middle out -->
+          <path d="M901 250 276.4 1480" pathLength="1" style="--d:0.42s"/>
+          <path d="M934.1 150 1731 1440" pathLength="1" style="--d:0.44s"/>
+          <path d="M858 150 224.7 1470" pathLength="1" style="--d:0.47s"/>
+          <path d="M1037.6 150 1800 1442.3" pathLength="1" style="--d:0.49s"/>
+          <path d="M864 0 171.4 1500" pathLength="1" style="--d:0.52s"/>
+          <path d="M1031.3 0 1800 1348.3" pathLength="1" style="--d:0.54s"/>
+          <path d="M708 0 19.1 1640" pathLength="1" style="--d:0.57s"/>
+          <path d="M1205.2 0 1800 1131" pathLength="1" style="--d:0.59s"/>
+          <path d="M355.4 0 0 1079.7" pathLength="1" style="--d:0.64s"/>
+        </g>
+      </svg>
+    </div>
 
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="stamp"><svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg>Adelaide roof-space specialists</p>
-        <h1 class="display" id="hero-title">Unlock the storage <span class="hl">hiding in your roof.</span></h1>
+        <h1 class="display" id="hero-title"><span class="w"><span style="--w:0">Unlock</span></span> <span class="w"><span style="--w:1">the</span></span> <span class="w"><span style="--w:2">storage</span></span> <span class="hl"><span class="w"><span style="--w:3">hiding</span></span> <span class="w"><span style="--w:4">in</span></span> <span class="w"><span style="--w:5">your</span></span> <span class="w"><span style="--w:6">roof.</span></span></span></h1>
         <p class="lede">We floor your roof space, fit a pull-down ladder and hand you a clean, usable storage area. A standard install takes 4–5 hours, and same-day installs are available.</p>
         <div class="hero-actions">
           <a class="btn btn-mint btn-lg" href="#quote" data-quote-link>Get my free quote <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow"></use></svg></a>

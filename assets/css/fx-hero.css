@@ -1,1 +1,120 @@
-/* fx-hero.css: hero sequence ("drawn, then lit"). Owned by the HERO agent; consolidated into styles.css later. */
+/* fx-hero.css: hero sequence ("drawn, then lit"). Owned by the HERO agent; consolidated into styles.css later.
+
+   It is dark in the roof. Mint lines draw themselves over the photo's real edges (the walkway and its far end
+   first, then the trusses from the middle outwards, then the sheet joints and the hatch), the work light
+   flickers on, the lines stay on the lit photo for a beat and fade. The headline rises word by word from the
+   first paint, the lede and buttons follow, and the quote card arrives as a sheet as the light comes on.
+   All CSS, from the first frame: it needs no script, but it only plays where scripts run (scripting: enabled)
+   and motion is welcome. Without JS or with reduced motion the photo is lit, there is no drawing and
+   everything is at rest. The photo (the LCP image) is painted from the first frame, under the darkness. */
+
+/* A clip, not a scroll container, so the photo's view timeline follows the page (the drift below) */
+.hero { overflow: clip; }
+
+/* The drawing: one SVG in master-photo coordinates (walkway-after.jpg, 1800 x 2400), laid over the photo the
+   way object-fit: cover lays each crop: the crop's rendered width is max(100cqw, 100cqh * aspect), centred
+   across, at the object-position's 42% (wide) or 58% (tall) down; the SVG is the whole master, so it sits
+   the crop's top (638 or 93 master px) above that. Strokes scale with the photo (vector-effect would break
+   pathLength dashes in Chromium), so --k converts screen px to master units, stepped by layout. */
+.hero-trace {
+  position: absolute; inset: 0; z-index: -2; /* over the darkness (::before), under the text shade (::after) */
+  display: none;
+  container-type: size;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-trace svg {
+  --ar: 1.6;   /* hero-wide: master (0, 638) to (1800, 1763) */
+  --cy: 638;
+  --py: 0.42;
+  --k: 1.25;   /* master px per screen px, ~1800 / the photo's rendered width */
+  --cw: max(100cqw, 100cqh * var(--ar));
+  position: absolute;
+  left: calc((100cqw - var(--cw)) / 2);
+  top: calc((100cqh - var(--cw) / var(--ar)) * var(--py) - var(--cw) * var(--cy) / 1800);
+  width: var(--cw);
+  height: calc(var(--cw) * 4 / 3);
+  max-width: none;
+  fill: none;
+  stroke: var(--mint);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (min-width: 1700px) { .hero-trace svg { --k: 1; } }
+@media (min-width: 2200px) { .hero-trace svg { --k: 0.8; } }
+@media (max-width: 960px) {
+  .hero-trace svg { --ar: 0.8; --cy: 93; --py: 0.58; --k: 1.85; } /* hero-tall: (0, 93) to (1800, 2343) */
+}
+.hero-trace .l-main { stroke-width: calc(var(--k) * 1.7px); }
+.hero-trace .l-detail { stroke-width: calc(var(--k) * 1.2px); stroke-opacity: 0.8; }
+.hero-trace .l-guide {
+  stroke-width: calc(var(--k) * 1px); stroke-opacity: 0.42;
+  stroke-dasharray: calc(var(--k) * 5px) calc(var(--k) * 6px);
+}
+
+/* No JS, reduced motion: the light is simply on */
+.hero::before { animation: none; }
+
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  /* Dark roof, then the work light flickers on (the darkness lifts in steps). In the dark the copy needs
+     less shade, so the drawing reads; the full shade is back the moment the light comes on. */
+  .hero::before { animation: aw-hero-lights 2.1s steps(1, end) both; }
+  .hero::after { animation: aw-hero-shade 1.2s steps(1, end); }
+
+  /* The drawing: guides fade in, every other stroke is drawn with a pen; it lingers on the lit photo, then goes */
+  .hero-trace { display: block; }
+  .hero-trace svg { animation: aw-hero-trace-out 700ms var(--ease-in) 2.45s both; }
+  .hero-trace .l-guide { animation: aw-fade 500ms ease 60ms both; }
+  .hero-trace [pathLength] {
+    stroke-dasharray: 1 2;
+    animation: aw-draw 700ms var(--ease-draw) var(--d, 0s) both;
+  }
+  .hero-trace .l-detail [pathLength] { animation-duration: 600ms; }
+
+  /* Copy: the stamp fades in, the headline rises out of its masks word by word, the buttons and the reviews
+     line follow. The lede stays put from the first frame: wherever the photo fills the whole screen (phones,
+     laptops) the browser skips it for LCP and the lede is the largest text, so it must paint at once. */
+  .hero .stamp { animation: aw-fade 800ms var(--ease-out) 50ms backwards; }
+  .hero h1 .w > span {
+    animation: aw-rise var(--t-rise) var(--ease-out) backwards;
+    animation-delay: calc(120ms + var(--w, 0) * 55ms);
+  }
+  .hero-actions { animation: aw-fade-up 900ms var(--ease-out) 560ms backwards; }
+  .hero .proof { animation: aw-fade-up 900ms var(--ease-out) 680ms backwards; }
+
+  /* The quote card arrives as a sheet as the light comes on: it wipes up from its foot while it rises,
+     then the form settles onto it */
+  .hero .quote-card {
+    animation: aw-hero-sheet 1000ms var(--ease-io) 1000ms backwards, aw-hero-sheet-rise 1150ms var(--ease-out) 1000ms backwards;
+  }
+  .hero .quote-form { animation: aw-fade-up 700ms var(--ease-out) 1500ms backwards; }
+}
+
+/* Desktop: as the hero leaves, the photo (and the drawing with it) drifts down a little behind the copy */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) and (min-width: 961px) {
+  @supports (animation-timeline: view()) {
+    .hero-media img,
+    .hero-trace {
+      animation: aw-hero-drift linear both;
+      animation-timeline: view(block 0px); /* no inset: the page's scroll-padding would start it early */
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes aw-hero-lights {
+  0%, 57% { opacity: 0.94; }
+  62% { opacity: 0.22; }
+  66% { opacity: 0.64; }
+  71% { opacity: 0.1; }
+  77% { opacity: 0.34; }
+  85%, 100% { opacity: 0; }
+}
+@keyframes aw-hero-shade { from { opacity: 0.3; } }
+@keyframes aw-hero-trace-out { to { opacity: 0; visibility: hidden; } }
+@keyframes aw-hero-sheet {
+  from { clip-path: inset(100% -120px 0 -120px); }
+  to { clip-path: inset(-120px); }
+}
+@keyframes aw-hero-sheet-rise { from { transform: translateY(36px); } }
+@keyframes aw-hero-drift { to { translate: 0 10%; scale: 1.06; } }
