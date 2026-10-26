@@ -1,10 +1,12 @@
 /* Attic Worx: site script. No dependencies.
    1. The motion engine (window.AW): scroll jobs, reveals, word splitting.
    2. The page: header, menu, FAQ, quote form, service links, whirlybird, action bar.
-   3. After that block, one block per animated section, each its own function using window.AW, in this
-      order: Roof build scene (#build), How it works (#how), Before & after (#results), Recent work
-      (#work), How much room? (#room). The hero's sequence is CSS only. They all run before the page's
-      DOMContentLoaded, so the engine's start-up hold (.aw-still, .is-instant) covers what they set up.
+   3. After that block, one block per animated section, each its own function using window.AW and queued
+      with AW.section, in this order: Roof build scene (#build), How it works (#how), Before & after
+      (#results), Recent work (#work), How much room? (#room). They run right after this file, in order, one
+      task each (as separate scripts would, so start-up is a few short tasks rather than one long one), and
+      the engine's start-up hold (.aw-still, .is-instant) lasts until they have all run. The hero's
+      sequence is CSS only.
    Everything degrades: without this file every section shows at rest and the form shows all three steps. */
 (function () {
   'use strict';
@@ -162,12 +164,28 @@
   // The page's own targets: every read first (one layout), then the writes.
   var targets = $$('[data-reveal], [data-split], [data-rule], [data-draw]');
   var seen = targets.map(onScreen);
+  var startY = window.scrollY; // (free here, while layout is clean: the header and the whirlybird start from it)
   $$('[data-words]').forEach(splitStatement);
   targets.forEach(function (el, i) { place(el, seen[i]); });
 
-  // Boot lasts until the section blocks (at the end of this file) have run and two frames are out.
+  // The section blocks at the end of this file queue themselves here and run in order, one task each,
+  // starting once this file has run. One that throws doesn't stop the rest (the error still reaches the
+  // console), as with separate scripts.
+  var sections = [];
+  var sectionsRun = false;
+  var runSections = function () {
+    var fn = sections.shift();
+    if (!fn) { sectionsRun = true; endBoot(); return; }
+    try { fn(); } catch (err) { setTimeout(function () { throw err; }, 0); }
+    setTimeout(runSections, 0);
+  };
+  setTimeout(runSections, 0);
+
+  // Boot lasts until the page has been parsed (DOMContentLoaded) and the section blocks have run, and
+  // two frames are out.
+  var domReady = false;
   var endBoot = function () {
-    if (!booting || endBoot.queued) return;
+    if (!booting || endBoot.queued || !domReady || !sectionsRun) return;
     endBoot.queued = true;
     raf(function () {
       raf(function () {
@@ -180,10 +198,11 @@
   // In-page links glide (CSS, html.is-loaded) only from here on: the browser's own jump to a shared
   // link's #section, on arrival, stays instant.
   var loaded = function () { raf(function () { raf(function () { root.classList.add('is-loaded'); }); }); };
-  if (document.readyState === 'complete') { endBoot(); loaded(); }
+  var ready = function () { domReady = true; endBoot(); };
+  if (document.readyState === 'complete') { ready(); loaded(); }
   else {
-    document.addEventListener('DOMContentLoaded', endBoot);
-    window.addEventListener('load', endBoot);
+    document.addEventListener('DOMContentLoaded', ready);
+    window.addEventListener('load', ready);
     window.addEventListener('load', loaded);
   }
 
@@ -194,7 +213,8 @@
     clamp: clamp,
     onScrollFrame: onScrollFrame,
     reveal: reveal,
-    splitWords: splitWords
+    splitWords: splitWords,
+    section: function (fn) { sections.push(fn); }
   };
 
   /* ---------- Header: solid once scrolled; hides while you read down, returns when you scroll up ----------
@@ -206,7 +226,7 @@
     try { return !!(menu && menu.matches(':popover-open')); } catch (e) { return false; }
   };
   if (header) {
-    var lastY = window.scrollY;
+    var lastY = startY;
     var hidden = false;
     // An in-page link's glide is the page moving, not the visitor reading on: the header stays while it
     // runs (the section lands under it, in the room scroll-padding-top keeps). The glide counts as over
@@ -526,7 +546,7 @@
     var spinLive = false;
     var spinRate = 1;
     var boost = 0;
-    var sy = window.scrollY;
+    var sy = startY;
     var st = performance.now();
     var spinning = false;
     var spin = function () {
@@ -615,7 +635,7 @@
    light are timed transitions from there. styles.css does the rest. It only works while the CSS pins the
    stage (JS, motion welcome, a screen at least 500px tall, pow() and container units supported; read
    live); otherwise the finished picture shows. */
-(function () {
+window.AW.section(function () {
   'use strict';
   var AW = window.AW;
   var track = document.querySelector('[data-build]');
@@ -742,7 +762,7 @@
     snap = true;
     window.scrollTo({ top: y, behavior: 'instant' });
   });
-})();
+});
 
 /* ==================== How it works (#how) ==================== */
 /* Uses window.AW (above). One scroll job: read where each step's node is, then write. A step is lit once its node is above 56% of
@@ -754,7 +774,7 @@
    where it is while another step is showing (CSS pauses it). The steps' own drawings (narrow screens) play
    as each comes into view. Whatever is on screen when the page starts is simply shown, complete. The CSS
    hangs every "before" state off .is-live, added here in the same task that sets the first state. */
-(function () {
+window.AW.section(function () {
   'use strict';
   var AW = window.AW;
   var sec = document.querySelector('[data-how]');
@@ -842,7 +862,7 @@
   if (write) write();
   AW.raf(function () { AW.raf(function () { sec.classList.remove('is-still'); }); });
   AW.onScrollFrame(job);
-})();
+});
 
 /* ==================== Before & after (#results) ==================== */
 /* Uses window.AW (above).
@@ -853,7 +873,7 @@
    3. Switching jobs: the old pair leaves fast, the new one arrives under its plates once its photos are
       decoded (or after a short wait). The light doesn't pass again. Reduced motion: an instant swap.
       The other jobs' photos load when a visitor reaches for the tabs. */
-(function () {
+window.AW.section(function () {
   'use strict';
   var sec = document.getElementById('results');
   if (!sec) return;
@@ -1041,7 +1061,7 @@
       select(next, true);
     });
   });
-})();
+});
 
 /* ==================== Recent work (#work) ==================== */
 /* Uses window.AW (above).
@@ -1064,7 +1084,7 @@
      position) is lit, its neighbours a little; at the end of the strip, the quote button, with any photos
      the strip can't snap to (they sit in full view at its end).
    Without this file the strip simply swipes, every photo at rest and lit. */
-(function () {
+window.AW.section(function () {
   'use strict';
 
   var AW = window.AW;
@@ -1508,7 +1528,7 @@
   window.addEventListener('load', remeasure);
 
   remeasure();
-})();
+});
 
 /* ==================== How much room? (#room) ==================== */
 /* Uses window.AW (above). The slider sizes a storage floor (2–20 m²). This file keeps the numbers and the text in step, and
@@ -1517,7 +1537,7 @@
    the manhole and the floor lays itself out to the slider's size. "Price a floor this size" also
    picks the matching size in the quote form (main.js's [data-service] handler ticks Attic storage
    and takes you there). Without this file the section shows 8 m², as written in index.html. */
-(function () {
+window.AW.section(function () {
   'use strict';
 
   var sec = document.getElementById('room');
@@ -1783,4 +1803,4 @@
       if (window.dataLayer) window.dataLayer.push({ event: 'room_price_floor', size_m2: said, size_option: z.label });
     });
   }
-})();
+});
