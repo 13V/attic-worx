@@ -33,20 +33,23 @@ const ROOT = path.resolve(HERE, '../..');
 const INDEX = path.join(ROOT, 'index.html');
 
 /* ---------- Timeline (units of --p). The captions' data-at values in index.html must match. ---------- */
-/* Parts are authored on a draft timeline (DRAFT, one value per beat) and placed on the real one (BEATS)
-   by a piecewise-linear map, so a beat can be given more or less of the scroll without retiming its parts.
-   The carry gets the most: twelve trips at a walking pace. */
-const DRAFT = [0, 0.1, 0.235, 0.355, 0.52, 0.615, 0.83, 1];
+/* Windows below are authored on the real timeline. DRAFT stays as a hook: set it to old beat positions to
+   map parts authored on another timeline onto BEATS (piecewise linear), so a beat can be given more or less
+   of the scroll without retiming its parts. Pacing (1440x900, 450vh: about 2960px of scroll per unit of p):
+   no scrubbed move gets less than 0.04 (about 120px, more than a wheel notch); the roller door and the
+   garage light are timed transitions that start when the story reaches them (data-shut), like the flicker. */
 export const BEATS = [
   { id: 'dusk', at: 0 },
-  { id: 'light', at: 0.07 },
-  { id: 'frame', at: 0.18 },
-  { id: 'sheets', at: 0.29 },
-  { id: 'ladder', at: 0.44 },
-  { id: 'store', at: 0.54 },
-  { id: 'car', at: 0.82 },
+  { id: 'light', at: 0.06 },
+  { id: 'frame', at: 0.16 },
+  { id: 'sheets', at: 0.26 },
+  { id: 'ladder', at: 0.4 },
+  { id: 'store', at: 0.53 },
+  { id: 'car', at: 0.77 },
 ];
 const REAL = BEATS.map((b) => b.at).concat(1);
+const DRAFT = REAL;
+const SHUT_AT = 0.935;                              // the door comes down, then the garage light settles
 function T_(p) {
   for (let i = 0; i < DRAFT.length - 1; i++) {
     if (p <= DRAFT[i + 1] || i === DRAFT.length - 2) return REAL[i] + ((p - DRAFT[i]) * (REAL[i + 1] - REAL[i])) / (DRAFT[i + 1] - DRAFT[i]);
@@ -106,7 +109,7 @@ const C = {
   cut: '#117e79',
   brick: '#5f4236', concrete: '#77827e', render: '#a9a496',
   roomWall: '#a99476', roomFloor: '#6a4a33', sofa: '#36524e',
-  pine: '#d39b5e', h2: '#a3b99b', board: '#d4cbb6', insul: '#b49f72', sheetUnder: '#596867',
+  pine: '#d39b5e', h2: '#a3b99b', board: '#d4cbb6', insul: '#dcc68c', sheetUnder: '#596867',
   kraft: '#bd915c', band2: '#5f8fb3', tub: '#d3dcd9', lid: '#117e79', tealtub: '#2b8a84',
   suitcase: '#4b7391', esky: '#e2e7e4', eskyLid: '#2f7d95', bin: '#2c5038', binLid: '#6f6532',
   car: '#c8d0ce', glass: '#1b3033', glassTop: '#2e4649', tyre: '#0b1213', rim: '#7d8c8a',
@@ -145,7 +148,9 @@ function el(tag, attrs, inner) {
 }
 const pth = (d, fill, extra = {}) => el('path', { d, fill, ...extra });
 const vars = (o) => Object.entries(o).map(([k, v]) => `--${k}:${typeof v === 'number' ? r3(v) : v}`).join(';');
-/* a moving part: <g class="m ..." style="--a..."> in the finished file; a plain group in a concept still */
+/* a moving part: <g class="m ..." style="--a..."> in the finished file; a plain group in a concept still.
+   fx-build.js gives each part its own --p, and only while the story is inside one of its windows (the
+   pairs in TIMES): a part that isn't moving isn't restyled. */
 let MODE = 'final';
 function part(cls, v0, inner, extra = {}) {
   if (MODE !== 'final') return inner;
@@ -156,7 +161,7 @@ function part(cls, v0, inner, extra = {}) {
   return el('g', { class: `m ${cls}`, style: vars(v), ...extra }, inner);
 }
 
-/* Leaves that don't read --p, grouped so a --p write doesn't restyle them (.bs-in pins --p) */
+/* Leaves that don't read --p, grouped so a part's --p write doesn't restyle them (.bs-in pins --p) */
 const leaves = (html) => (MODE === 'final' && (html.match(/<(path|circle|rect|ellipse)\b/g) || []).length > 1 ? el('g', { class: 'bs-in' }, html) : html);
 
 /* light from the work light, for surfaces in the roof (the finished, lit state) */
@@ -288,7 +293,7 @@ const CAR = {
 /* The car recedes less steeply than the rest (an illustrator's cheat: at this eye height its roof would
    fill the frame). Its near side is true to the scene; across its width it uses a longer lens (CAR_F).
    Shears derived for the drive in hold for any lens. */
-const CAR_F = 18;
+const CAR_F = 10;
 function PC(x, y, z, z0) {
   const s = sOf(z0) * (CAR_F / (CAR_F + (z - z0)));
   return [Math.round((CAM.vx + (x - CAM.vx) * s - FRAME.x0) * U), Math.round((FRAME.y1 - (CAM.vy + (y - CAM.vy) * s)) * U)];
@@ -312,18 +317,30 @@ function carParts(cx, cz) {
     const vis = (CAM.vx - a[0]) * nx + (CAM.vy - a[1]) * ny > 0;
     if (!vis && !nose) continue;
     const glass = (midx > 2.62 && midx < 3.34) || (midx > 0.1 && midx < 0.44 && ny > 0.3);
-    const fill = nose ? mul(C.car, 0.7) : glass ? C.glassTop : ny > 0.6 ? mul(C.car, 1.06) : ny > 0.2 ? mul(C.car, 0.97) : mul(C.car, 0.8);
+    const fill = nose ? mul(C.car, 0.66) : glass ? C.glassTop : ny > 0.6 ? mix(C.car, '#e9f1f0', 0.45) : ny > 0.2 ? mul(C.car, 0.95) : mul(C.car, 0.72);
     faces.push({ v: [[a[0], a[1], z0], [b[0], b[1], z0], [b[0], b[1], z1], [a[0], a[1], z1]], fill, nose, vis });
   }
   faces.sort((f, g) => (f.nose ? 0 : 1) - (g.nose ? 0 : 1));
   const shadow = { v: [[cx + 0.1, 0.004, z0 + 0.05], [cx + 4.5, 0.004, z0 + 0.05], [cx + 4.4, 0.004, z1 - 0.05], [cx + 0.2, 0.004, z1 - 0.05]], fill: '#020a0b' };
   const side = [];
-  side.push(pth(poly(pr.map(([x, y]) => P(x, y, z0))), mul(C.car, 0.9)));
-  side.push(pth(poly([[0.1, 0.99], [4.42, 0.99], [4.45, 0.95], [0.08, 0.95]].map(([x, y]) => P(x + cx, y, z0))), mul(C.car, 0.76)));
-  side.push(pth(poly([[0.3, 0.52], [4.3, 0.52], [4.3, 0.47], [0.3, 0.47]].map(([x, y]) => P(x + cx, y, z0))), mul(C.car, 0.7)));
-  for (const w of CAR.windows) side.push(pth(poly(w.map(([x, y]) => P(x + cx, y, z0))), C.glass));
-  side.push(pth(poly([[0.03, 0.98], [0.22, 1.02], [0.2, 0.86], [0.03, 0.84]].map(([x, y]) => P(x + cx, y, z0))), '#6f2a24'));
-  side.push(pth(poly([[4.36, 0.86], [4.56, 0.84], [4.58, 0.74], [4.34, 0.77]].map(([x, y]) => P(x + cx, y, z0))), '#e8e0cc'));
+  const Q = (pts) => poly(pts.map(([x, y]) => P(x + cx, y, z0)));
+  // the near side: shaded from the shoulder down (bs-carside), dark wheel arches, a crease, the sills
+  side.push(pth(poly(pr.map(([x, y]) => P(x, y, z0))), 'url(#bs-carside)'));
+  side.push(pth(CAR.wheels.map((wx) => Q(arcPts(wx, 0.36, 0.44, -14, 194, 12))).join(''), '#0c1516'));
+  side.push(pth(Q([[0.1, 0.995], [4.42, 0.995], [4.45, 0.965], [0.08, 0.965]]), mul(C.car, 1.04)));
+  side.push(pth(Q([[0.1, 0.965], [4.45, 0.965], [4.47, 0.945], [0.08, 0.945]]), mul(C.car, 0.62)));
+  side.push(pth(Q([[1.4, 0.36], [2.62, 0.36], [2.64, 0.47], [1.38, 0.47]]), mul(C.car, 0.4)));
+  // door shuts and handles
+  side.push(pth(Q([[1.43, 0.42], [1.455, 0.42], [1.455, 1.12], [1.43, 1.12]]) + Q([[2.66, 0.44], [2.685, 0.44], [2.97, 1.12], [2.945, 1.12]]), mul(C.car, 0.55)));
+  side.push(pth(Q([[1.12, 0.9], [1.3, 0.9], [1.3, 0.87], [1.12, 0.87]]) + Q([[2.3, 0.9], [2.48, 0.9], [2.48, 0.87], [2.3, 0.87]]), mul(C.car, 0.45)));
+  // glass, with the dusk sky caught in it
+  for (const w of CAR.windows) side.push(pth(Q(w), C.glass));
+  side.push(pth(Q([[0.72, 1.13], [0.95, 1.13], [1.17, 1.53], [0.94, 1.52]]) + Q([[1.86, 1.13], [2.16, 1.13], [2.4, 1.555], [2.1, 1.553]]), '#35575a'));
+  side.push(pth(Q([[1.0, 1.13], [1.07, 1.13], [1.29, 1.54], [1.22, 1.54]]) + Q([[2.22, 1.13], [2.28, 1.13], [2.48, 1.5], [2.44, 1.52]]), '#2a4649'));
+  side.push(pth(Q([[0.03, 0.98], [0.22, 1.02], [0.2, 0.86], [0.03, 0.84]]), '#7a2c24'));
+  side.push(pth(Q([[4.36, 0.86], [4.56, 0.84], [4.58, 0.74], [4.34, 0.77]]), '#e8e0cc'));
+  // the garage light, once on, catches the roof's edge
+  side.push(el('path', { class: 'bs-rim', d: Q([[0.47, 1.655], [2.58, 1.672], [2.5, 1.64], [0.52, 1.628]]), fill: '#e3f4ee', opacity: 0.8 }));
   const wheels = CAR.wheels.map((wx) => {
     const c = P(wx + cx, CAR.wheelR, z0);
     const r = CAR.wheelR * sOf(z0) * U;
@@ -447,21 +464,31 @@ function scene(state) {
   const out = [];
   const add = (s) => out.push(s);
   const fin = MODE === 'final';
+  const G0 = H.garage0, G1 = H.garage1, GD = H.garageDepth, DR = H.door;
+  const yCut = r1(Praw(0, H.ceil - 0.013, 0)[1]);   // the ceiling's cut line on screen (SVG y): garage below, roof above
+  const doorX = G0 + 0.03;                           // the roller door's plane
 
-  add('<defs>');
-  add(`<linearGradient id="bs-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c2122"/><stop offset=".55" stop-color="#11292a"/><stop offset="1" stop-color="#1c3a3a"/></linearGradient>`);
-  add(`<radialGradient id="bs-dusk"><stop offset="0" stop-color="#e3a35e" stop-opacity=".3"/><stop offset=".45" stop-color="#e3a35e" stop-opacity=".08"/><stop offset="1" stop-color="#e3a35e" stop-opacity="0"/></radialGradient>`);
-  add(`<linearGradient id="bs-ground" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#152e2e"/><stop offset=".7" stop-color="#11292a"/><stop offset="1" stop-color="#1a3838"/></linearGradient>`);
-  add(`<radialGradient id="bs-glow"><stop offset="0" stop-color="#fff3d6" stop-opacity=".9"/><stop offset=".1" stop-color="${C.amber}" stop-opacity=".5"/><stop offset=".42" stop-color="${C.warm}" stop-opacity=".14"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`);
-  add(`<linearGradient id="bs-spill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.amber}" stop-opacity=".34"/><stop offset=".6" stop-color="${C.amber}" stop-opacity=".1"/><stop offset="1" stop-color="${C.amber}" stop-opacity=".03"/></linearGradient>`);
-  add(`<radialGradient id="bs-warm"><stop offset="0" stop-color="#ffd291" stop-opacity=".55"/><stop offset="1" stop-color="#ffd291" stop-opacity="0"/></radialGradient>`);
-  add(`<linearGradient id="bs-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#051316" stop-opacity=".3"/><stop offset=".35" stop-color="#051316" stop-opacity=".62"/><stop offset="1" stop-color="#051316" stop-opacity=".7"/></linearGradient>`);
-  add(`<linearGradient id="bs-beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fdf6e3" stop-opacity=".34"/><stop offset=".55" stop-color="#fdf6e3" stop-opacity=".1"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".02"/></linearGradient>`);
-  add(`<linearGradient id="bs-wash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdf6e3" stop-opacity="0"/><stop offset=".5" stop-color="#fdf6e3" stop-opacity=".22"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".05"/></linearGradient>`);
-  add(`<linearGradient id="bs-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.mint}" stop-opacity=".2"/><stop offset="1" stop-color="${C.mint}" stop-opacity="0"/></linearGradient>`);
-  add('</defs>');
+  add('<defs>'
+    + `<linearGradient id="bs-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c2122"/><stop offset=".55" stop-color="#11292a"/><stop offset="1" stop-color="#1c3a3a"/></linearGradient>`
+    + `<radialGradient id="bs-dusk"><stop offset="0" stop-color="#e3a35e" stop-opacity=".3"/><stop offset=".45" stop-color="#e3a35e" stop-opacity=".08"/><stop offset="1" stop-color="#e3a35e" stop-opacity="0"/></radialGradient>`
+    + `<linearGradient id="bs-ground" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#152e2e"/><stop offset=".7" stop-color="#11292a"/><stop offset="1" stop-color="#1a3838"/></linearGradient>`
+    + `<radialGradient id="bs-glow"><stop offset="0" stop-color="#fff3d6" stop-opacity=".9"/><stop offset=".1" stop-color="${C.amber}" stop-opacity=".5"/><stop offset=".42" stop-color="${C.warm}" stop-opacity=".14"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`
+    + `<linearGradient id="bs-spill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.amber}" stop-opacity=".34"/><stop offset=".6" stop-color="${C.amber}" stop-opacity=".1"/><stop offset="1" stop-color="${C.amber}" stop-opacity=".03"/></linearGradient>`
+    + `<radialGradient id="bs-warm"><stop offset="0" stop-color="#ffd291" stop-opacity=".55"/><stop offset="1" stop-color="#ffd291" stop-opacity="0"/></radialGradient>`
+    + `<linearGradient id="bs-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#051316" stop-opacity=".3"/><stop offset=".35" stop-color="#051316" stop-opacity=".62"/><stop offset="1" stop-color="#051316" stop-opacity=".7"/></linearGradient>`
+    + `<linearGradient id="bs-beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fdf6e3" stop-opacity=".34"/><stop offset=".55" stop-color="#fdf6e3" stop-opacity=".1"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".02"/></linearGradient>`
+    + `<linearGradient id="bs-wash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdf6e3" stop-opacity="0"/><stop offset=".5" stop-color="#fdf6e3" stop-opacity=".22"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".05"/></linearGradient>`
+    + `<linearGradient id="bs-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.mint}" stop-opacity=".2"/><stop offset="1" stop-color="${C.mint}" stop-opacity="0"/></linearGradient>`
+    // the car's near side: lit along the shoulder by the dusk sky, darker down to the sills
+    + `<linearGradient id="bs-carside" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mul(C.car, 1.0)}"/><stop offset=".4" stop-color="${mul(C.car, 0.9)}"/><stop offset=".44" stop-color="${mul(C.car, 0.78)}"/><stop offset="1" stop-color="${mul(C.car, 0.5)}"/></linearGradient>`
+    + `<linearGradient id="bs-hole" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#170f08" stop-opacity=".25"/><stop offset="1" stop-color="#0b0806" stop-opacity=".85"/></linearGradient>`
+    // the carry: a load is the garage copy below the ceiling's cut line and the roof copy above it
+    + `<clipPath id="bs-below"><rect x="-1600" y="${yCut}" width="${r1(VBW + 3200)}" height="${r1(VBH + 400 - yCut)}"/></clipPath>`
+    + `<clipPath id="bs-above"><rect x="-1600" y="-400" width="${r1(VBW + 3200)}" height="${r1(yCut + 400)}"/></clipPath>`
+    + `<clipPath id="bs-doorway"><path d="${rectYZ(doorX, 0, DR.h, DR.z0, DR.z1)}"/></clipPath>`
+    + '</defs>');
 
-  /* ----- Outside: sky, dusk, ground, the street lights far off ----- */
+  /* ----- Outside: sky, dusk, ground, the street ----- */
   const hz = P(0, CAM.vy, 1e6)[1];
   // sky and ground run well past the frame: wide stages show more of the street (the SVG paints outside its viewBox)
   add(el('rect', { x: -1600, width: r1(VBW + 3200), height: r1(hz), fill: 'url(#bs-sky)' }));
@@ -481,71 +508,122 @@ function scene(state) {
   // the side fence (Colorbond) past the back corner
   add(pth(poly([P(11.2, 0, 0), P(11.2, 1.8, 0), P(11.2, 1.8, 200), P(11.2, 0, 200)]), '#14292a'));
   for (let z = 0; z < 60; z += 2.4) add(pth(rectYZ(11.19, 0, 1.8, z, z + 0.05), '#0f2223'));
-  // the driveway out to the street
-  add(pth(poly([P(-30, 0, H.door.z0 - 0.1), P(H.front, 0, H.door.z0 - 0.1), P(H.front, 0, H.door.z1 + 0.1), P(-30, 0, H.door.z1 + 0.1)]), '#223a3a'));
+  // the footpath and kerb along the street (they run into the picture), the driveway out to them with its
+  // control joints, and on its far side a low hedge and a brick letterbox pier
+  add(pth(poly([P(-8.25, 0, 0), P(-6.6, 0, 0), P(-6.6, 0, 80), P(-8.25, 0, 80)]), '#1d3534'));
+  add(pth(poly([P(-8.45, 0, 0), P(-8.25, 0, 0), P(-8.25, 0, 80), P(-8.45, 0, 80)]), '#2e4a49'));
+  add(pth(poly([P(-30, 0, DR.z0 - 0.1), P(H.front, 0, DR.z0 - 0.1), P(H.front, 0, DR.z1 + 0.1), P(-30, 0, DR.z1 + 0.1)]), '#223a3a'));
+  add(pth(rectXZ(-8.25, -6.6, 0.001, DR.z0 - 0.1, DR.z1 + 0.1), '#29403f'));
+  add(pth([-1.95, -3.75, -5.55].map((x) => rectXZ(x - 0.014, x + 0.014, 0.002, DR.z0 - 0.1, DR.z1 + 0.1)).join('') + rectXZ(-6.6, H.front, 0.002, 1.65, 1.674), '#192f2f'));
+  add(boxSVG(-6.1, -0.45, 0, 0.62, 3.32, 3.78, '#173029'));
+  add(boxSVG(-6.5, -6.12, 0, 1.0, 3.3, 3.62, '#4f382e'));
+  add(boxSVG(-6.54, -6.08, 1.0, 1.06, 3.26, 3.66, '#6d5f52'));
+  add(pth(rectXY(-6.4, -6.22, 0.74, 0.79, 3.299), '#1b1512'));
 
-  /* ----- The room beside the garage: a lamp on, the dusk through its window ----- */
+  /* ----- The room beside the garage: a lamp on beside the sofa, the dusk through its window ----- */
   const R0 = H.mid1, R1 = H.back0, RD = H.roomDepth, RF = H.roomFloor;
   add(pth(rectXZ(R0, R1, RF, 0, RD), C.roomFloor));
   add(pth(rectXY(R0, R1, RF, H.ceil, RD), mul(C.roomWall, 0.82)));
   add(pth(rectYZ(R1, RF, H.ceil, 0, RD), mul(C.roomWall, 0.7)));
-  // a window in the side wall: the dusk outside, a fence line
-  // a window in the side wall (the dusk and the fence outside), a picture, a rug, a low cabinet
-  add(pth(rectYZ(R1 - 0.01, 0.92, 2.02, 0.55, 1.95), '#2b4f52'));
-  add(pth(rectYZ(R1 - 0.011, 0.92, 1.3, 0.55, 1.95), '#16302f'));
-  add(pth(rectYZ(R1 - 0.012, 0.92, 2.02, 1.23, 1.27), mul(C.roomWall, 0.5)));
-  add(pth(rectYZ(R1 - 0.012, 0.9, 0.95, 0.5, 2.0), mul(C.roomWall, 0.55)));
-  add(pth(rectYZ(R1 - 0.01, 1.35, 1.9, 2.55, 3.25), '#2f3e3c'));
-  add(pth(rectYZ(R1 - 0.011, 1.42, 1.83, 2.62, 3.18), '#8f7a5a'));
-  add(pth(rectXZ(6.7, 8.3, RF + 0.003, 1.1, 3.2), '#55473a'));
-  add(pth(rectXZ(6.82, 8.18, RF + 0.004, 1.22, 3.08), '#625243'));
-  add(boxSVG(8.68, 9.08, RF, RF + 0.55, 2.3, 3.4, '#5b4130', { side: 0.72 }));
-  const lg = P(8.75, 1.55, 3.7);
-  add(el('ellipse', { cx: lg[0], cy: lg[1], rx: 165, ry: 150, fill: 'url(#bs-warm)' }));
-  add(boxSVG(8.72, 8.78, RF, 1.5, 3.67, 3.73, '#2a2522'));
-  add(boxSVG(8.58, 8.92, 1.5, 1.78, 3.53, 3.87, '#ecd3a2'));
+  // a window in the side wall (the dusk and the fence outside), a rug, the sofa, a side table and its lamp
+  add(pth(rectYZ(R1 - 0.01, 0.92, 2.02, 0.4, 1.6), '#2b4f52'));
+  add(pth(rectYZ(R1 - 0.011, 0.92, 1.3, 0.4, 1.6), '#16302f'));
+  add(pth(rectYZ(R1 - 0.012, 0.92, 2.02, 0.98, 1.02), mul(C.roomWall, 0.5)));
+  add(pth(rectYZ(R1 - 0.012, 0.9, 0.95, 0.35, 1.65), mul(C.roomWall, 0.55)));
+  add(pth(rectXZ(6.75, 8.15, RF + 0.003, 1.95, 3.75), '#55473a'));
+  add(pth(rectXZ(6.87, 8.03, RF + 0.004, 2.07, 3.63), '#625243'));
+  {
+    const sf = C.sofa, top = RF + 0.42;
+    add(boxSVG(8.82, 9.06, RF, RF + 0.86, 2.2, 3.95, mul(sf, 0.86), { side: 0.9 }));      // the back
+    add(boxSVG(8.3, 9.06, RF, RF + 0.62, 3.77, 3.95, mul(sf, 0.95)));                      // far arm
+    add(boxSVG(8.32, 8.84, RF + 0.08, top, 2.38, 3.77, sf));                               // seat base
+    add(boxSVG(8.36, 8.84, top, top + 0.09, 2.42, 3.06, mix(sf, '#d8e3df', 0.14)));       // cushions
+    add(boxSVG(8.36, 8.84, top, top + 0.09, 3.1, 3.74, mix(sf, '#d8e3df', 0.1)));
+    add(boxSVG(8.74, 8.86, top + 0.09, top + 0.42, 2.9, 3.28, '#c78e57', { side: 0.85 }));   // a throw cushion
+    add(boxSVG(8.3, 9.06, RF, RF + 0.62, 2.2, 2.38, mul(sf, 0.95)));                       // near arm
+    add(boxSVG(8.6, 9.04, RF, RF + 0.55, 1.72, 2.1, '#5b4130', { side: 0.72 }));           // side table
+    const lg = P(8.82, 1.08, 1.91);
+    add(el('ellipse', { cx: lg[0], cy: lg[1], rx: 175, ry: 160, fill: 'url(#bs-warm)' }));
+    add(boxSVG(8.79, 8.85, RF + 0.55, RF + 0.84, 1.88, 1.94, '#2a2522'));
+    add(boxSVG(8.66, 8.98, RF + 0.82, RF + 1.07, 1.76, 2.06, '#ecd3a2'));
+  }
 
   /* ----- The garage: slab, walls, the roller door, what stays ----- */
-  const G0 = H.garage0, G1 = H.garage1, GD = H.garageDepth, DR = H.door;
   add(pth(rectXZ(G0, G1, 0, 0, GD), C.concrete));
   add(pth(rectXY(G0, G1, 0, H.ceil, GD), C.brick));
-  add(pth(rectYZ(G0, 0, H.ceil, 0, DR.z0), mul(C.brick, 0.85)));
   add(pth(rectYZ(G0, 0, H.ceil, DR.z1, GD), mul(C.brick, 0.85)));
   add(pth(rectYZ(G0, DR.h, H.ceil, DR.z0, DR.z1), mul(C.brick, 0.85)));
+  // (the wall beside the door, nearest the cut, is drawn after the car: the car passes behind it)
   add(pth(rectYZ(G1, 0, H.ceil, 0, GD), mul(C.render, 0.7)));
   add(pth(rectYZ(G1, 0.15, 2.19, 2.25, 3.05), mul('#bdb5a3', 0.62)));
-  // the roller door: slats, top first (the door comes down last thing)
-  const slats = 10;
-  for (let i = 0; i < slats; i++) {
-    const y1 = DR.h - (i * DR.h) / slats, y0 = y1 - DR.h / slats + 0.012;
-    const d = rectYZ(G0 + 0.03, y0, y1, DR.z0, DR.z1);
-    const fill = mul('#8e9a97', 0.82 - i * 0.012);
-    if (fin) add(part('bs-slat', { a: 0.94 + i * 0.0024, l: 0.006 }, pth(d, fill)));
-    else if (state.door) add(pth(d, fill));
+  // the roller door: a curtain of slats in the doorway, drawn down. CSS rolls it up into the drum and lets it
+  // down: on the door's plane a rise is an exact vertical shear (matrix b0, f0, like the car's planes)
+  {
+    let slats = '';
+    for (let i = 0; i < 10; i++) {
+      const y1 = DR.h - (i * DR.h) / 10, y0 = y1 - DR.h / 10 + 0.012;
+      slats += pth(rectYZ(doorX, y0, y1, DR.z0, DR.z1), mul('#8e9a97', 0.82 - i * 0.012));
+    }
+    const up = DR.h + 0.03, kx = doorX - CAM.vx;
+    if (fin) add(el('g', { 'clip-path': 'url(#bs-doorway)' }, el('g', { class: 'bs-door', style: `--b0:${Math.round((-up / kx) * 1e5) / 1e5};--f0:${r1((-up * U * (FRAME.x0 - CAM.vx)) / kx)}` }, slats)));
+    else if (state.door) add(slats);
   }
-  add(boxSVG(0.04, 0.42, 2.16, 2.52, DR.z0 - 0.04, DR.z1 + 0.04, '#3b4847'));  // the roll
+  add(boxSVG(0.04, 0.42, 2.16, 2.52, DR.z0 - 0.04, DR.z1 + 0.04, '#3b4847'));  // the drum
   // shelving on the back wall (stays), a bike (stays), a wheelie bin (stays)
   add(pth(rectXY(4.45, 5.85, 0, 1.85, GD - 0.02), '#2b3736'));
   for (const ux of [4.45, 5.81]) add(boxSVG(ux, ux + 0.04, 0, 1.85, GD - 0.4, GD - 0.36, '#55625f'));
   for (const sy of [0.06, 0.64, 1.22, 1.8]) add(boxSVG(4.45, 5.85, sy - 0.03, sy, GD - 0.4, GD, '#55625f'));
   for (const [x0, x1, y0, h, col] of [[4.6, 5.0, 0.64, 0.28, '#8d7b5b'], [5.1, 5.7, 0.64, 0.22, '#58808b'], [4.7, 5.4, 1.22, 0.3, '#7b6a52'], [5.45, 5.75, 1.22, 0.2, '#a4a99c'], [4.6, 5.2, 0.06, 0.38, '#46524f']]) add(boxSVG(x0, x1, y0, y0 + h, GD - 0.36, GD - 0.06, col));
-  const bz = GD - 0.22, bs = sOf(bz) * U;
-  const bike = (x, y, r) => { const c = P(x, y, bz); return el('circle', { cx: c[0], cy: c[1], r: r1(r * bs), fill: 'none', stroke: '#1c2a2b', 'stroke-width': r1(0.05 * bs) }); };
-  add(bike(1.25, 0.34, 0.33) + bike(2.35, 0.34, 0.33));
-  add(pth(line([P(1.25, 0.34, bz), P(1.7, 0.36, bz), P(2.0, 0.82, bz), P(1.52, 0.84, bz), P(1.25, 0.34, bz)]), 'none', { stroke: '#2f6474', 'stroke-width': r1(0.045 * bs), 'stroke-linejoin': 'round' }));
-  add(pth(line([P(1.7, 0.36, bz), P(1.48, 0.96, bz), P(2.35, 0.34, bz), P(2.06, 0.96, bz), P(2.2, 0.98, bz)]), 'none', { stroke: '#2f6474', 'stroke-width': r1(0.045 * bs), 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  {
+    // the bike against the back wall, in flat shapes: tyres as rings, tubes as bars
+    const bz = GD - 0.22, bs = sOf(bz) * U;
+    const ring = (x, y, r, w) => {
+      const c = Praw(x, y, bz);
+      const circ = (rr) => `M${r1(c[0] - rr)} ${r1(c[1])}a${r1(rr)} ${r1(rr)} 0 1 0 ${r1(2 * rr)} 0a${r1(rr)} ${r1(rr)} 0 1 0 ${r1(-2 * rr)} 0Z`;
+      return circ(r * bs) + circ((r - w) * bs);
+    };
+    const bar = (a, b, w) => {
+      const p = Praw(a[0], a[1], bz), q = Praw(b[0], b[1], bz);
+      const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy), nx = (-dy / L) * w * bs * 0.5, ny = (dx / L) * w * bs * 0.5;
+      return `M${r1(p[0] + nx)} ${r1(p[1] + ny)}L${r1(q[0] + nx)} ${r1(q[1] + ny)}L${r1(q[0] - nx)} ${r1(q[1] - ny)}L${r1(p[0] - nx)} ${r1(p[1] - ny)}Z`;
+    };
+    const Rh = [1.25, 0.34], BB = [1.72, 0.32], S = [1.6, 0.84], Ht = [2.06, 0.86], Hb = [2.11, 0.72], Fh = [2.35, 0.34];
+    add(pth(ring(1.25, 0.34, 0.33, 0.055) + ring(2.35, 0.34, 0.33, 0.055), '#162322', { 'fill-rule': 'evenodd' }));
+    add(pth([bar(Rh, BB, 0.035), bar(Rh, S, 0.03), bar(BB, [1.57, 0.93], 0.042), bar(S, Ht, 0.04), bar(BB, Hb, 0.05), bar(Hb, Ht, 0.055), bar(Hb, Fh, 0.036), bar(Ht, [2.02, 0.97], 0.032), bar([1.97, 0.985], [2.2, 0.99], 0.032)].join(''), '#2f6474'));
+    add(pth(bar([1.45, 0.955], [1.69, 0.965], 0.05) + ring(1.72, 0.32, 0.075, 0.075) + ring(1.25, 0.34, 0.035, 0.035) + ring(2.35, 0.34, 0.035, 0.035), '#1a2827'));
+  }
   add(boxSVG(5.3, 5.85, 0, 0.95, 2.28, 2.84, C.bin));
   add(boxSVG(5.28, 5.87, 0.95, 1.02, 2.26, 2.86, C.binLid));
 
-  /* ----- The roof space: sheeting undersides, battens, insulation, trusses (far first) ----- */
-  const RZ = H.roofDepth, L = state.light;
+  /* ----- The roof space: sheeting undersides, batts, roof battens, trusses (far first) ----- */
+  const RZ = H.roofDepth, L = state.light, bays = Math.round(RZ / H.gap);
   add(pth(poly([P(H.front, H.chord, RZ), P(H.ridge, yU(H.ridge), RZ), P(H.back1, H.chord, RZ)]), '#091819'));
   for (let z = 0; z < RZ - 1e-6; z += H.gap) {
     const z1 = z + H.gap, k = lampK(H.ridge, 4.3, z + 0.3);
     add(pth(poly([P(H.front, H.chord, z), P(H.ridge, yU(H.ridge), z), P(H.ridge, yU(H.ridge), z1), P(H.front, H.chord, z1)]), mul(C.sheetUnder, k * 0.95)));
     add(pth(poly([P(H.ridge, yU(H.ridge), z), P(H.back1, H.chord, z), P(H.back1, H.chord, z1), P(H.ridge, yU(H.ridge), z1)]), mul(C.sheetUnder, k * 0.78)));
-    add(pth(rectXZ(H.front, H.back1, H.insul, z, z1), mul(C.insul, lampK(H.ridge, 3.2, z + 0.3) * 0.9)));
-    add(pth(rectXZ(H.front, H.back1, H.insul, z1 - 0.06, z1), mul(C.insul, lampK(H.ridge, 3.2, z + 0.3) * 0.72)));
+  }
+  {
+    // Batts (R4/R5 wool) laid between the ceiling joists, a row per bay, far first. Each row is a soft hump:
+    // seen this low across them, its crest bows up once per 1160 mm batt (joints staggered row to row) over
+    // the shadowed gap at the foot of the row behind, so the joints show as dark notches and the joists just
+    // show between rows. The floor's battens later lift the sheets clear of them.
+    const xa = 0.05, xb = 9.05, yB = H.insul, hsh = (i) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    for (let b = bays - 1; b >= 0; b--) {
+      const z0 = b * H.gap, z1 = z0 + H.gap, kk = lampK(H.ridge, 3.2, z0 + 0.3), zc = z1 - 0.03;
+      add(pth(rectXZ(xa, xb, yB - 0.03, z0, z1), mul(mix(C.insul, C.pine, 0.35), kk * 0.5)));
+      let d = 'M' + fmt(P(xa, yB - 0.01, z0 + 0.13)) + 'L' + fmt(P(xb, yB - 0.01, z0 + 0.13)) + 'L' + fmt(P(xb, yB - 0.02, zc));
+      if (b < 10) {
+        const js = [xb];
+        for (let x = xb - (b % 2 ? 0.58 : 1.16) + (hsh(b) - 0.5) * 0.14; x > xa + 0.3; x -= 1.16 + (hsh(b * 7 + x) - 0.5) * 0.12) js.push(x);
+        js.push(xa);
+        for (let j = 1; j < js.length; j++) {
+          const lift = 0.085 + hsh(b * 31 + j) * 0.05;
+          d += 'Q' + fmt(P((js[j - 1] + js[j]) / 2, yB + lift, zc)) + ' ' + fmt(P(js[j], yB - 0.02, zc));
+        }
+      } else d += 'L' + fmt(P(xa, yB + 0.02, zc));
+      add(pth(d + 'Z', mul(C.insul, kk * 0.95)));
+    }
   }
   for (const side of [-1, 1]) {
     for (let k = 1; k <= 4; k++) {
@@ -561,16 +639,15 @@ function scene(state) {
   }
 
   /* ----- Dark before the work light: one ring per bay, the light falls in from the front ----- */
-  const bays = Math.round(RZ / H.gap);
   for (let i = 0; i < bays; i++) {
     const z = i * H.gap;
     const ring = pth(Apath(z) + Apath(z + H.gap), '#030c0d', { 'fill-rule': 'evenodd', opacity: 0.78 });
-    if (fin) add(part('bs-dark', { a: 0.112 + i * 0.0068, l: 0.046 }, ring));
+    if (fin) add(part('bs-dark', { a: 0.066 + i * 0.0048, l: 0.034 }, ring));
     else if (!L) add(ring);
   }
   if (fin || !L) {
     const core = pth(Apath(RZ), '#030c0d', { opacity: 0.6 });
-    add(fin ? part('bs-dark', { a: 0.2, l: 0.04 }, core) : core);
+    add(fin ? part('bs-dark', { a: 0.124, l: 0.034 }, core) : core);
   }
 
   /* ----- The work light ----- */
@@ -593,22 +670,25 @@ function scene(state) {
     const k = lampK(x, 3, 2);
     const svg = boxSVG(x - 0.0175, x + 0.0175, F.battenB, F.battenT, F.z0, F.z1, mul(C.h2, k));
     const n = bOrder.findIndex((b) => b.i === i);
-    if (fin) add(part('bs-batten', { a: 0.243 + n * 0.0095, l: 0.036 }, leaves(svg)));
+    if (fin) add(part('bs-batten', { a: 0.166 + n * 0.0072, l: 0.032 }, leaves(svg)));
     else if (state.framing) add(svg);
   });
   {
     // trimmers round the hatch and the far rim
     const trims = [boxSVG(3.95, 5.15, F.battenB, F.battenT, 0.6, 0.635, mul(C.h2, 0.74)), boxSVG(3.95, 5.15, F.battenB, F.battenT, 1.165, 1.2, mul(C.h2, 0.7)), boxSVG(F.x0, F.x1, F.battenB, F.battenT, F.z1 - 0.035, F.z1, mul(C.h2, 0.62))];
-    if (fin) add(part('bs-batten', { a: 0.33, l: 0.03 }, leaves(trims.join(''))));
+    if (fin) add(part('bs-batten', { a: 0.228, l: 0.028 }, leaves(trims.join(''))));
     else if (state.framing) add(trims.join(''));
   }
+  // 2400 x 600 sheets, joints staggered: even rows a full sheet between two halves, odd rows two full sheets
+  // (the hatch row is cut round the manhole). Every end joint lands on a batten; none sits in front of the hatch.
   const rows = Math.round((F.z1 - F.z0) / F.row);
   const sheets = [];
   for (let r = rows - 1; r >= 0; r--) {
     const z0 = F.z0 + r * F.row, z1 = z0 + F.row;
-    const pieces = z0 < HATCH.z1 && z1 > HATCH.z0 ? [[F.x0, HATCH.x0], [HATCH.x1, F.x1]] : [[F.x0, 4.55], [4.55, F.x1]];
+    const pieces = z0 < HATCH.z1 && z1 > HATCH.z0 ? [[F.x0, HATCH.x0], [HATCH.x1, F.x1]] : r % 2 ? [[F.x0, 4.55], [4.55, F.x1]] : [[F.x0, 3.35], [3.35, 5.75], [5.75, F.x1]];
     for (const [x0, x1] of pieces) sheets.push({ r, x0, x1, z0, z1 });
   }
+  const sheetA = (j) => 0.265 + j * 0.0056;
   const frontRow = [];
   sheets.forEach((sh, j) => {
     const k = lampK((sh.x0 + sh.x1) / 2, 3, (sh.z0 + sh.z1) / 2);
@@ -620,33 +700,41 @@ function scene(state) {
       svg += pth(rectYZ(HATCH.x0, H.ceil, F.top, HATCH.z0, HATCH.z1), mul(C.pine, 0.75));
       svg += pth(rectYZ(HATCH.x1, H.ceil, F.top, HATCH.z0, HATCH.z1), mul(C.pine, 0.66));
     }
-    const v = { a: 0.362 + j * 0.0094, l: 0.03 };
-    const s = fin ? part('bs-sheet', v, leaves(svg)) : j < state.sheets ? svg : '';
+    const s = fin ? part('bs-sheet', { a: sheetA(j), l: 0.028 }, leaves(svg)) : j < state.sheets ? svg : '';
     if (sh.r === 0) frontRow.push(s); else add(s);
   });
-
-  /* ----- The stored things: in the garage (dim, at dusk) and on the new floor (lit) ----- */
-  const garageSpots = LOADS.map((Ld, i) => ({ i, x: Ld.g[0], z: Ld.g[1] }));
-  const roofSpots = LOADS.map((Ld, i) => ({ i, x: Ld.r[0], z: Ld.r[1] }));
-  const carryA = (i) => 0.62 + i * 0.0135;
-  const CARRY_L = 0.06;
-  if (fin || state.things === 'garage') {
-    for (const sp of paintOrder(garageSpots)) {
-      const Ld = LOADS[sp.i];
-      const svg = shade(sp.x, 0, sp.z, loadW(Ld), loadD(Ld), 0.32) + leaves(loadSVG(Ld, sp.x, 0, sp.z, 0.92));
-      if (!fin) { add(svg); continue; }
-      // to the foot of the ladder, then hand over to the lit copy
-      const p0 = Praw(sp.x, 0, sp.z), p1 = Praw(ROUTE.foot[0], ROUTE.foot[1], ROUTE.foot[2]);
-      add(part('bs-pick', { a: carryA(sp.i), l: CARRY_L * 0.3, dx: r1(p1[0] - p0[0]), dy: r1(p1[1] - p0[1]), k: r3(sOf(ROUTE.foot[2]) / sOf(sp.z)), ox: r1(p0[0]), oy: r1(p0[1]) }, svg));
-    }
+  {
+    // while the lid is down the hatch reads as an opening: the lining falls into shadow, a hinge arm shows
+    const hole = pth(rectXY(HATCH.x0 + 0.012, HATCH.x1 - 0.012, H.ceil, F.top - 0.035, HATCH.z1 - 0.003), 'url(#bs-hole)')
+      + pth(poly([P(4.9, H.ceil + 0.04, 1.12), P(4.94, H.ceil + 0.04, 1.12), P(4.8, F.top - 0.04, 1.12), P(4.76, F.top - 0.04, 1.12)]), '#9aa4a2');
+    if (fin) add(part('bs-spill', { a: 0.452, l: 0.03, b: 0.808, k: 0.022 }, leaves(hole)));
+    else if (state.ladder) add(hole);
   }
 
+  /* ----- The stored things: in the garage (dim, at dusk) and on the new floor (lit) ----- */
+  /* Each load is drawn twice: in the garage where it starts and on the floor where it ends, each copy
+     exact in perspective where it's seen longest. A trip: walked to the ladder's foot, carried up the ladder
+     (its lower right corner riding just above the treads), pushed up through the hatch, set down in its row.
+     Both copies follow the same path on screen for the climb, but the garage copy only shows below the
+     ceiling's cut line and the roof copy only above it, and between them the cut ceiling and the floor's
+     front row hide the load as it passes through: no cross-fade, no double image, no swap to see. */
+  const ZR = 0.9;
+  const ladderX = (y) => { const a = (LADDER.angle * Math.PI) / 180; return LADDER.hx + (-0.06 + (y - LADDER.hy) * Math.cos(a)) / Math.sin(a); };
+  const route = (Ld) => { const w = loadW(Ld), ct = ladderX(2.56) - w / 2; return [[ladderX(0.42) - w / 2, 0.42, ZR], [ct, 2.56, ZR], [ct, 3.06, ZR]]; };
+  const SEG = [0, 0.26, 0.62, 0.74, 1];               // walk | climb | rise | set, fractions of a trip
+  const tripA = (i) => 0.532 + i * 0.0143, TRIP = 0.08;
+  const origin = (x, y, z) => { const p = Praw(x, y, z); return [r1(p[0]), r1(p[1])]; };
+  const rel = (W, o, s0) => { const p = Praw(W[0], W[1], W[2]); return [r1(p[0] - o[0]), r1(p[1] - o[1]), r3(sOf(W[2]) / s0)]; };
+  const way = (prefix, W) => Object.fromEntries(W.flatMap((w, i) => [[`x${prefix[i]}`, w[0]], [`y${prefix[i]}`, w[1]], [`k${prefix[i]}`, w[2]]]));
+  const garageSpots = LOADS.map((Ld, i) => ({ i, x: Ld.g[0], z: Ld.g[1] }));
+  const roofSpots = LOADS.map((Ld, i) => ({ i, x: Ld.r[0], z: Ld.r[1] }));
+  const check = {};
   /* ----- The car: on the driveway at dusk, in the garage at the end ----- */
   if (!fin) add(state.car === 'in' ? carStill(CAR.inX, CAR.inZ) : state.car === 'out' ? carStill(CAR.outX, CAR.inZ) : carStill(+state.car, CAR.inZ));
   else {
     const c = carParts(CAR.inX, CAR.inZ);
     const dX = CAR.outX - CAR.inX;                           // the drive in, backwards (m)
-    const roll = { a: 0.866, l: 0.08 };
+    const roll = { a: 0.835, l: 0.085 };
     const r5 = (v) => Math.round(v * 1e5) / 1e5;
     const mv = (v) => { const m = carMotion(v, CAR.inZ); return { mx: r5(m.mx * dX), my: r5(m.my * dX), m0: r1(m.m0 * dX) }; };
     add(part('bs-car', { ...roll, ...mv(c.shadow.v) }, pth(c.faceD(c.shadow), c.shadow.fill, { opacity: 0.38 })));
@@ -667,12 +755,10 @@ function scene(state) {
     const nrm = [-dirF[1], dirF[0]];
     const rail = (o, z, len, d) => poly([0, len].flatMap((t) => [[top[0] + d[0] * t - nrm[0] * o, top[1] + d[1] * t - nrm[1] * o]]).concat([0, len].reverse().map((t) => [top[0] + d[0] * t - nrm[0] * (o + w), top[1] + d[1] * t - nrm[1] * (o + w)])).map(([x, y]) => P(x, y, z)));
     const metal = '#b7c2c0';
-    // rear leg (folded: lying along the front leg, on the wall side)
     const rear = pth(rail(-0.06, zF, L * 0.98, dirF), mul(metal, 0.6)) + pth(rail(-0.06, zN, L * 0.98, dirF), mul(metal, 0.8));
-    // front leg: far rail, treads, near rail, the top cap
     let front = pth(rail(0, zF, L, dirF), mul(metal, 0.62));
     for (let k = 1; k <= 5; k++) {
-      const t = L - k * 0.29;                                // from the hinge down to tread k
+      const t = L - k * 0.29;
       const x = top[0] + dirF[0] * t, y = top[1] + dirF[1] * t;
       front += pth(poly([P(x - 0.06, y, zN), P(x + 0.04, y, zN), P(x + 0.04, y, zF), P(x - 0.06, y, zF)]), mul(metal, 1.12));
     }
@@ -682,23 +768,17 @@ function scene(state) {
     if (fin) {
       const startTop = [4.05 + L * Math.sin(tiltStart), L * Math.cos(tiltStart)];
       const sp = Praw(startTop[0], startTop[1], (zN + zF) / 2), ep = Praw(top[0], top[1], (zN + zF) / 2);
-      const rearPart = part('bs-step-rear', { a: 0.52, l: 0.008, ox: hp[0], oy: hp[1], r: -(12.5 + 12.5 + 1.6) }, leaves(rear));
-      add(part('bs-step', { a: 0.526, l: 0.013, ox: hp[0], oy: hp[1], dx: r1(sp[0] - ep[0]), dy: r1(sp[1] - ep[1]), r: 1.6 }, rearPart + leaves(front)));
+      const rearPart = part('bs-step-rear', { a: 0.402, l: 0.016, ox: hp[0], oy: hp[1], r: -(12.5 + 12.5 + 1.6) }, leaves(rear));
+      add(part('bs-step', { a: 0.41, l: 0.04, ox: hp[0], oy: hp[1], dx: r1(sp[0] - ep[0]), dy: r1(sp[1] - ep[1]), r: 1.6 }, rearPart + leaves(front)));
     } else if (state.ladder || state.things === 'roof') add(rear + front);
-    else {
-      // still under the manhole: the same drawing, stood open where it started
-      add(stepOpen());
-    }
+    else add(stepOpen());
   }
 
-  /* ----- Dusk in the garage; at the end its light comes on ----- */
+  /* ----- Dusk in the garage; at the end its light comes on (timed, after the door: see fx-build.css) ----- */
   {
-    const dark = pth(rectXY(H.garage0, H.garage1, 0, H.ceil, 0), 'url(#bs-dark)');
-    const tube = pth(rectXY(H.garage0, H.garage1, 0, H.ceil, 0), 'url(#bs-tube)');
-    if (fin) {
-      add(part('bs-dusk', { a: 0.962, l: 0.024 }, dark));
-      add(part('bs-tube', { a: 0.962, l: 0.024 }, tube));
-    } else add(state.garageLight ? tube : dark);
+    const gar = rectXY(H.garage0, H.garage1, 0, H.ceil, 0);
+    if (fin) add(el('path', { class: 'bs-dusk', d: gar, fill: 'url(#bs-dark)' }) + el('path', { class: 'bs-tube', d: gar, fill: 'url(#bs-tube)' }));
+    else add(pth(gar, state.garageLight ? 'url(#bs-tube)' : 'url(#bs-dark)'));
   }
 
   /* ----- Light through the open hatch (it follows the lid) ----- */
@@ -709,9 +789,28 @@ function scene(state) {
     const clampX = (p) => [Math.min(p[0], H.garage1), p[1], p[2]];
     const shaft = pth(poly([P(HATCH.x0, H.ceil, HATCH.z0), P(HATCH.x1, H.ceil, HATCH.z0), P(...clampX(b)), P(...a)]), 'url(#bs-spill)');
     const patch = pth(poly([P(...a), P(...clampX(b)), P(...clampX(c)), P(...d)]), C.amber, { opacity: 0.12 });
-    if (fin) add(part('bs-spill', { a: 0.543, l: 0.032, b: 0.852, k: 0.014 }, leaves(patch + shaft)));
+    if (fin) add(part('bs-spill', { a: 0.452, l: 0.03, b: 0.808, k: 0.022 }, leaves(patch + shaft)));
     else if (state.ladder) add(patch + shaft);
   }
+
+  /* ----- The stored things in the garage (dim, at dusk): walked to the ladder and carried up it ----- */
+  if (fin || state.things === 'garage') {
+    const picks = [];
+    for (const sp of paintOrder(garageSpots)) {
+      const Ld = LOADS[sp.i];
+      // drawn over the garage's dusk and the light from the hatch (so a load on the ladder stays solid), with
+      // the dusk's darkness at its spot (bs-dark, left to right across the garage) baked into its colours
+      const f = (Praw(sp.x, 0.3, sp.z)[0] / U + FRAME.x0) / (H.garage1 - H.garage0);
+      const dusk = f < 0.35 ? 0.3 + (0.32 * f) / 0.35 : 0.62 + (0.08 * (f - 0.35)) / 0.65;
+      const svg = shade(sp.x, 0, sp.z, loadW(Ld), loadD(Ld), 0.32) + leaves(loadSVG(Ld, sp.x, 0, sp.z, 0.95 * (1 - dusk)));
+      if (!fin) { add(svg); continue; }
+      const o = origin(sp.x, 0, sp.z), W = route(Ld).map((w) => rel(w, o, sOf(sp.z)));
+      check[sp.i] = { g: W.slice(0, 2).map((w) => [w[0] + o[0], w[1] + o[1], w[2] * sOf(sp.z)]) };
+      picks.push(part('bs-pick', { a: tripA(sp.i), l: TRIP, s1: SEG[1], s2: SEG[2], s3: SEG[3], ...way('123', W), ox: o[0], oy: o[1] }, svg));
+    }
+    if (fin) add(el('g', { class: 'bs-clip', 'clip-path': 'url(#bs-below)' }, picks.join('')));
+  }
+
 
   /* ----- The pull-down ladder (drawn open; CSS folds it away) ----- */
   {
@@ -720,9 +819,9 @@ function scene(state) {
     if (fin) {
       // nested: the lid and section 1 swing about the hatch hinge, 2 about the end of 1, 3 about the end of 2
       const h0 = hinge(0), h1 = hinge(1), h2 = hinge(2);
-      const s3 = part('bs-fold bs-s3', { a: 0.592, l: 0.022, c: 0.833, m: 0.012, ox: h2[0], oy: h2[1], r: -178 }, leaves(secs[2].svg));
-      const s2 = part('bs-fold bs-s2', { a: 0.571, l: 0.022, c: 0.843, m: 0.012, ox: h1[0], oy: h1[1], r: 178 }, leaves(secs[1].svg) + s3);
-      add(part('bs-fold bs-s1', { a: 0.54, l: 0.033, c: 0.852, m: 0.014, ox: h0[0], oy: h0[1], r: LADDER.angle }, leaves(secs[0].svg) + s2));
+      const s3 = part('bs-fold bs-s3', { a: 0.5, l: 0.025, c: 0.772, m: 0.02, ox: h2[0], oy: h2[1], r: -178 }, leaves(secs[2].svg));
+      const s2 = part('bs-fold bs-s2', { a: 0.48, l: 0.025, c: 0.79, m: 0.02, ox: h1[0], oy: h1[1], r: 178 }, leaves(secs[1].svg) + s3);
+      add(part('bs-fold bs-s1', { a: 0.452, l: 0.034, c: 0.808, m: 0.024, ox: h0[0], oy: h0[1], r: LADDER.angle }, leaves(secs[0].svg) + s2));
     } else if (state.ladder) add(secs.map((s) => s.svg).join(''));
   }
 
@@ -734,23 +833,37 @@ function scene(state) {
     const wall = pth(rectYZ(H.garage1 - 0.005, 0.15, 1.25, hz + 0.15, hz + 1.5), 'url(#bs-wash)', { opacity: 0.5 });
     const wx = Praw(H.garage1, 0.6, hz + 0.5)[0];
     if (fin) {
-      add(part('bs-beam', { a: 0.86, l: 0.008, b: 0.948, m: 0.012, ...{ ra: 0.866, rl: 0.08 }, ox: r1(wx), w: r3((H.garage1 - (CAR.inX + CAR.len)) / (H.garage1 - hx)) }, beam));
-      add(part('bs-beam', { a: 0.86, l: 0.008, b: 0.948, m: 0.012 }, wall));
+      add(part('bs-beam', { a: 0.828, l: 0.008, b: 0.921, m: 0.012, ra: 0.835, rl: 0.085, ox: r1(wx), w: r3((H.garage1 - (CAR.inX + CAR.len)) / (H.garage1 - hx)) }, beam));
+      add(part('bs-beam', { a: 0.828, l: 0.008, b: 0.921, m: 0.012 }, wall));
     }
   }
 
-  /* ----- The stored things on the new floor (lit), carried up in front of the ladder ----- */
-  const front = [];
+  /* ----- The wall beside the door, nearest the cut: in front of anything outside (the car on the
+     driveway, the headlights' first stretch), so it's drawn after them, with the garage's dusk and light ----- */
+  {
+    const jamb = rectYZ(G0, 0, H.ceil, 0, DR.z0);
+    add(pth(jamb, mul(C.brick, 0.85)));
+    if (fin) add(el('path', { class: 'bs-dusk', d: jamb, fill: '#051316', 'fill-opacity': 0.33 }) + el('path', { class: 'bs-tube', d: jamb, fill: 'url(#bs-tube)' }));
+    else add(state.garageLight ? pth(jamb, 'url(#bs-tube)') : pth(jamb, '#051316', { opacity: 0.33 }));
+  }
+
+  /* ----- The stored things on the new floor (lit): up through the hatch, set down in their rows ----- */
   if (fin || state.things === 'roof') {
+    const lits = [];
     for (const sp of paintOrder(roofSpots)) {
       const Ld = LOADS[sp.i];
       const k = lampK(sp.x, 3.4, sp.z);
       const svg = shade(sp.x, F.top, sp.z, loadW(Ld), loadD(Ld), 0.22) + leaves(loadSVG(Ld, sp.x, F.top, sp.z, k));
       if (!fin) { add(svg); continue; }
-      const pE = Praw(sp.x, F.top, sp.z), sE = sOf(sp.z);
-      const way = [ROUTE.foot, ROUTE.top, ROUTE.out].map((w) => { const p = Praw(w[0], w[1], w[2]); return [r1(p[0] - pE[0]), r1(p[1] - pE[1]), r3(sOf(w[2]) / sE)]; });
-      add(part('bs-load', { a: carryA(sp.i) + CARRY_L * 0.28, l: CARRY_L * 0.72, x1: way[0][0], y1: way[0][1], k1: way[0][2], x2: way[1][0], y2: way[1][1], k2: way[1][2], x3: way[2][0], y3: way[2][1], k3: way[2][2], ox: r1(pE[0]), oy: r1(pE[1]) }, svg));
+      const o = origin(sp.x, F.top, sp.z), W = route(Ld).map((w) => rel(w, o, sOf(sp.z)));
+      // the climb must line up with the garage copy's: same screen points, same size
+      W.slice(0, 2).forEach((w, n) => {
+        const g = check[sp.i].g[n], dx = w[0] + o[0] - g[0], dy = w[1] + o[1] - g[1], ks = w[2] * sOf(sp.z) / g[2] - 1;
+        if (Math.abs(dx) > 0.15 || Math.abs(dy) > 0.15 || Math.abs(ks) > 0.004) throw new Error(`load ${sp.i}: the two copies part on the ladder (${dx}, ${dy}, ${ks})`);
+      });
+      lits.push(part('bs-load', { a: tripA(sp.i), l: TRIP, s0: SEG[1], s1: SEG[2], s2: SEG[3], ...way('012', W), ox: o[0], oy: o[1] }, svg));
     }
+    if (fin) add(el('g', { class: 'bs-clip', 'clip-path': 'url(#bs-above)' }, lits.join('')));
   }
 
   frontRow.forEach(add);
@@ -770,20 +883,25 @@ function scene(state) {
   cut.push(poly([P(H.eaveL + 0.03, yO(H.eaveL), 0), P(H.eaveL - 0.15, yO(H.eaveL) - 0.02, 0), P(H.eaveL - 0.13, yU(H.eaveL) - 0.16, 0), P(H.eaveL + 0.03, yU(H.eaveL) - 0.16, 0)]));
   cut.push(poly([P(H.eaveR - 0.03, yO(H.eaveR), 0), P(H.eaveR + 0.15, yO(H.eaveR) - 0.02, 0), P(H.eaveR + 0.13, yU(H.eaveR) - 0.16, 0), P(H.eaveR - 0.03, yU(H.eaveR) - 0.16, 0)]));
   cut.push(rectXY(H.eaveL, H.front, yU(H.eaveL) - 0.16, yU(H.eaveL) - 0.13, 0), rectXY(H.back1, H.eaveR, yU(H.eaveR) - 0.16, yU(H.eaveR) - 0.13, 0));
-  add(pth(rectXY(H.front, H.back1, H.chord, H.insul + 0.02, 0), mul(C.insul, 0.62)));
+  {
+    // the batts, cut: soft wool on the ceiling, one bow per batt
+    let d = 'M' + fmt(P(H.front, H.chord, 0)) + 'L' + fmt(P(H.front, H.insul - 0.03, 0));
+    for (let x = H.front; x < H.back1 - 1e-6;) { const nx = Math.min(H.back1, x + 1.16); d += 'Q' + fmt(P((x + nx) / 2, H.insul + 0.075, 0)) + ' ' + fmt(P(nx, H.insul - 0.03, 0)); x = nx; }
+    add(pth(d + 'L' + fmt(P(H.back1, H.chord, 0)) + 'Z', mul(C.insul, 0.72)));
+  }
   add(pth(cut.join(''), C.cut, { class: 'bs-cut' }));
   // the floor's own cut edge: sheet on battens (comes with the front row)
   const edge = pth(rectXY(F.x0, F.x1, F.top - 0.022, F.top, 0), '#d9cfb9') + pth(rectXY(F.x0, F.x1, F.battenB, F.top - 0.022, 0), mix(C.h2, C.cut, 0.35));
-  if (fin) add(part('bs-sheet', { a: 0.362 + (sheets.length - 1) * 0.0094, l: 0.03 }, edge));
+  if (fin) add(part('bs-sheet', { a: sheetA(sheets.length - 1), l: 0.028 }, edge));
   else if (state.sheets >= sheets.length) add(edge);
 
   if (!fin) return out.join('\n');
-  // Runs of still parts go in groups that pin --p (.bs-still): a --p write then restyles only what moves
+  // Runs of still parts go in groups (.bs-still): fewer children for the svg, and they pin --p
   const grouped = [];
   let run = [];
   const flush = () => { if (run.length) grouped.push(run.length > 1 ? el('g', { class: 'bs-still' }, run.join('')) : run[0]); run = []; };
   for (const s of out) {
-    const moving = /^<\w+ class="m /.test(s) || s.startsWith('<g class="bs-lamp') || s.startsWith('<defs') || s === '</defs>' || s.startsWith('<linearGradient') || s.startsWith('<radialGradient');
+    const moving = /^<\w+ class="m /.test(s) || s.startsWith('<g class="bs-lamp') || s.startsWith('<g class="bs-clip') || s.startsWith('<defs');
     if (moving) { flush(); grouped.push(s); } else run.push(s);
   }
   flush();
@@ -810,8 +928,10 @@ if (args.includes('--concept')) {
 } else {
   MODE = 'final';
   const body = scene(STATES.final);
-  const [ca, cl] = win(0.05, 0.09), [cb, cm] = win(0.832, 0.06);
-  const svg = `<svg class="bs-svg" viewBox="0 0 ${r1(VBW)} ${r1(VBH)}" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false" style="${vars({ 'cam-a': ca, 'cam-l': cl, 'cam-b': cb, 'cam-m': cm })}">\n${body}\n</svg>`;
+  // the portrait camera: from the car and the door to the garage column as the light comes on, and back a
+  // little as the ladder folds away, ready for the car
+  const [ca, cl] = win(0.025, 0.07), [cb, cm] = win(0.8, 0.06);
+  const svg = `<svg class="bs-svg" viewBox="0 0 ${r1(VBW)} ${r1(VBH)}" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false" data-shut="${SHUT_AT}" style="${vars({ 'cam-a': ca, 'cam-l': cl, 'cam-b': cb, 'cam-m': cm })}">\n${body}\n</svg>`;
   const html = readFileSync(INDEX, 'utf8');
   const re = /(<!-- scene:start -->)[\s\S]*?(<!-- scene:end -->)/;
   if (!re.test(html)) { console.error('index.html has no <!-- scene:start --> ... <!-- scene:end --> markers'); process.exit(2); }

@@ -5,12 +5,13 @@
    pow() is missing. Then the captions are a plain numbered list under the picture.
 
    Pinned (html.js, motion welcome, pow() supported): a tall track with a sticky stage. fx-build.js eases
-   one number, --p (0 -> 1), on the stage, and marks the current caption (data-beat). Every pose below
-   is computed from --p, Engel Build's way: each moving part (.m) has a window [--a, --a + --l] and its
+   one number, --p (0 -> 1), and marks the current caption (data-beat); it writes --p on each moving part
+   only while that part moves (see below). Every pose below is computed from --p, Engel Build's way: each moving part (.m) has a window [--a, --a + --l] and its
    progress --bs-t; its eased distance still to go is a power of (1 - t): (1-t)^3 settles (cubic out),
    t^2 (3 - 2t) is a smoothstep for things carried or driven. Only transform, opacity and the rotation
    of the ladder's sections change; light is shapes whose opacity changes, never filters.
-   The work light's flicker is the one timed animation: it plays when the light's beat starts. */
+   Three things are timed rather than scrubbed, keyed on where the story is: the work light's flicker (its
+   beat starts), and at the end the roller door coming down and the garage light settling (data-shut). */
 
 @property --p { syntax: "<number>"; inherits: true; initial-value: 1; }
 @property --bs-t { syntax: "<number>"; inherits: false; initial-value: 1; }
@@ -19,10 +20,19 @@
 @property --bs-u1 { syntax: "<number>"; inherits: false; initial-value: 1; }
 @property --bs-u2 { syntax: "<number>"; inherits: false; initial-value: 1; }
 @property --bs-u3 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e1 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e2 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e3 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-dn { syntax: "<number>"; inherits: false; initial-value: 1; }
 @property --bs-hk { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --bs-cam { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-c1 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-c2 { syntax: "<number>"; inherits: false; initial-value: 1; }
 
-/* Groups of shapes that never read --p pin it, so a --p write restyles only the moving parts */
-.bs-svg > defs, .bs-still, .bs-in, .bs-caps { --p: 0; }
+/* --p on the stage drives the rail; the drawing doesn't inherit it (the svg pins it). fx-build.js writes --p
+   on each moving part (.m) while it moves, and --bs-cam (not inherited) on the svg for the phone camera, so
+   a frame restyles only what moves. Groups inside parts that never read --p pin it too. */
+.bs-svg, .bs-still, .bs-in, .bs-caps { --p: 1; }
 
 /* ---------- At rest: the finished picture, then the steps as a list ---------- */
 .build { padding-bottom: clamp(56px, 7vw, 104px); }
@@ -108,7 +118,7 @@
     width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto;
     padding: 12px 0 calc(78px + var(--bar)); min-height: 0;
   }
-  html.js .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.42; transition: opacity var(--t-out) var(--ease-in); }
+  html.js .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.62; transition: opacity var(--t-out) var(--ease-in); }
   html.js .bs-cap::before { margin-bottom: 4px; }
   html.js .bs-cap h3 { font-size: 0.98rem; }
   html.js .bs-cap p, html.js .bs-cap .btn {
@@ -144,19 +154,22 @@
   @media (max-width: 960px) {
     html.js .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
   }
-  /* Phones: a shorter track, and a camera on the garage column that looks out to the car at the start
-     and the end (--cx: the point of the drawing, as a fraction of its width, at the middle of the screen) */
-  @media (max-width: 760px) {
+  /* Phones and any portrait stage (tablets held upright, tall windows): a shorter track, and a camera on
+     the garage column that looks out to the car at the start and the end (--cx: the point of the drawing,
+     as a fraction of its width, at the middle of the screen). The drawing fills the stage's height. */
+  @media (max-width: 760px), (max-aspect-ratio: 1/1) {
     html.js .bs { height: 360vh; }
     html.js .bs-scene { container-type: size; }
     html.js .bs-svg {
-      /* sized so the screen's width shows 5.4 m of the house, or less if the screen is short */
+      /* sized so a phone's width shows 5.4 m of the house; on a taller stage it fills the height */
       left: 50%; right: auto; top: auto; bottom: 0;
       height: min(100cqh, 133.3cqw); width: calc(min(100cqh, 133.3cqw) * 1300 / 720);
-      --c1: clamp(0, (var(--p) - var(--cam-a)) / var(--cam-l), 1);
-      --c2: clamp(0, (var(--p) - var(--cam-b)) / var(--cam-m), 1);
-      --cx: calc(0.25 + 0.235 * var(--c1) * var(--c1) * (3 - 2 * var(--c1)) - 0.055 * var(--c2) * var(--c2) * (3 - 2 * var(--c2)));
-      translate: calc(var(--cx) * -100%) calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 0.8125 * min(100cqh, 133.3cqw))));
+      /* (registered, not inherited: a camera move restyles the svg alone) */
+      --bs-c1: clamp(0, (var(--bs-cam) - var(--cam-a)) / var(--cam-l), 1);
+      --bs-c2: clamp(0, (var(--bs-cam) - var(--cam-b)) / var(--cam-m), 1);
+      translate:
+        calc((0.25 + 0.235 * var(--bs-c1) * var(--bs-c1) * (3 - 2 * var(--bs-c1)) - 0.055 * var(--bs-c2) * var(--bs-c2) * (3 - 2 * var(--bs-c2))) * -100%)
+        calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 0.8125 * min(100cqh, 133.3cqw))));
     }
   }
 
@@ -202,30 +215,29 @@
   /* Light falls through the open hatch while the lid is down */
   html.js .bs-spill { opacity: calc(pow(var(--bs-t), 2) - clamp(0, (var(--p) - var(--b)) / var(--k), 1)); }
 
-  /* The things: each picked up in the dim garage and walked to the foot of the ladder... */
-  html.js .bs-pick {
+  /* The things: each trip is the same path for both copies of a load (walk | climb | rise | set, the
+     window's fractions --s0..--s3, waypoints --x/--y/--k relative to the copy's own spot). The garage copy
+     walks to the ladder's foot and climbs; the roof copy climbs with it, then rises out of the hatch and is
+     set down in its row. Each is clipped to its own side of the ceiling's cut line (bs-below / bs-above), so
+     the hand-over hides inside the cut ceiling: no fade. Segments one and two are smoothsteps, the set-down
+     settles (cubic out). */
+  html.js :is(.bs-pick, .bs-load) {
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
-    --bs-e: calc(pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
-    translate: calc(var(--dx) * var(--bs-e) * 1px) calc(var(--dy) * var(--bs-e) * 1px);
-    scale: calc(1 + (var(--k) - 1) * var(--bs-e));
-    opacity: calc(1 - clamp(0, (var(--bs-t) - 0.8) * 5, 1));
-  }
-  html.js .bs-pick .bs-shade { opacity: calc(0.32 * (1 - min(1, (var(--p) - var(--a)) / var(--l) * 8))); }
-  /* ...where the lit copy takes over: up the ladder, through the hatch, and across to its place */
-  html.js .bs-load {
-    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
-    --bs-u1: clamp(0, var(--bs-t) / 0.5, 1);
-    --bs-u2: clamp(0, (var(--bs-t) - 0.5) / 0.18, 1);
-    --bs-u3: clamp(0, (var(--bs-t) - 0.68) / 0.32, 1);
-    --bs-s1: calc(pow(var(--bs-u1), 2) * (3 - 2 * var(--bs-u1)));
-    --bs-s2: calc(pow(var(--bs-u2), 2) * (3 - 2 * var(--bs-u2)));
-    --bs-s3: calc(1 - pow(1 - var(--bs-u3), 3));
+    --bs-u1: clamp(0, (var(--bs-t) - var(--s0, 0)) / (var(--s1) - var(--s0, 0)), 1);
+    --bs-u2: clamp(0, (var(--bs-t) - var(--s1)) / (var(--s2) - var(--s1)), 1);
+    --bs-u3: clamp(0, (var(--bs-t) - var(--s2)) / (var(--s3, 1) - var(--s2)), 1);
+    --bs-e1: calc(var(--bs-u1) * var(--bs-u1) * (3 - 2 * var(--bs-u1)));
+    --bs-e2: calc(var(--bs-u2) * var(--bs-u2) * (3 - 2 * var(--bs-u2)));
+    --bs-e3: calc(1 - pow(1 - var(--bs-u3), 3));
     translate:
-      calc((var(--x1) + (var(--x2) - var(--x1)) * var(--bs-s1) + (var(--x3) - var(--x2)) * var(--bs-s2) - var(--x3) * var(--bs-s3)) * 1px)
-      calc((var(--y1) + (var(--y2) - var(--y1)) * var(--bs-s1) + (var(--y3) - var(--y2)) * var(--bs-s2) - var(--y3) * var(--bs-s3)) * 1px);
-    scale: calc(var(--k1) + (var(--k2) - var(--k1)) * var(--bs-s1) + (var(--k3) - var(--k2)) * var(--bs-s2) + (1 - var(--k3)) * var(--bs-s3));
-    opacity: clamp(0, var(--bs-t) * 25, 1);
+      calc((var(--x0, 0) + (var(--x1) - var(--x0, 0)) * var(--bs-e1) + (var(--x2) - var(--x1)) * var(--bs-e2) + (var(--x3, 0) - var(--x2)) * var(--bs-e3)) * 1px)
+      calc((var(--y0, 0) + (var(--y1) - var(--y0, 0)) * var(--bs-e1) + (var(--y2) - var(--y1)) * var(--bs-e2) + (var(--y3, 0) - var(--y2)) * var(--bs-e3)) * 1px);
+    scale: calc(var(--k0, 1) + (var(--k1) - var(--k0, 1)) * var(--bs-e1) + (var(--k2) - var(--k1)) * var(--bs-e2) + (var(--k3, 1) - var(--k2)) * var(--bs-e3));
   }
+  /* the garage copy is gone once it's through the ceiling; the roof copy is there from the climb on */
+  html.js .bs-pick { opacity: clamp(0, (var(--s3) - var(--bs-t)) * 10000, 1); }
+  html.js .bs-load { opacity: clamp(0, (var(--bs-t) - var(--s0)) * 10000 + 1, 1); }
+  html.js .bs-pick .bs-shade { opacity: calc(0.32 * (1 - min(1, (var(--p) - var(--a)) / var(--l) * 8))); }
   html.js .bs-load .bs-shade { opacity: calc(0.22 * clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1)); }
 
   /* The car rolls in. Every plane of it moves by an exact affine map, linear in the distance still to go
@@ -249,14 +261,21 @@
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) 0;
     scale: calc(1 - (1 - var(--w)) * var(--bs-f)) 1;
   }
-  /* The roller door comes down, then the garage light settles */
-  html.js .bs-slat {
-    --bs-e: pow(1 - var(--bs-t), 2);
-    translate: 0 calc(var(--bs-e) * -10px);
-    opacity: min(1, var(--bs-t) * 3);
+  /* The roller door comes down, then the garage light settles: timed, from when the story reaches them
+     (data-shut on the stage), and back the other way when scrolling up. The door is a curtain rolled up
+     into its drum: on its plane a rise is a vertical shear (--b0, --f0), so --bs-dn eases one number. */
+  html.js .bs-door {
+    --bs-dn: 0;
+    transform-box: view-box; transform-origin: 0 0;
+    transform: matrix(1, calc(var(--b0) * (1 - var(--bs-dn))), 0, 1, 0, calc(var(--f0) * (1 - var(--bs-dn))));
+    transition: --bs-dn 1100ms var(--ease-io);
   }
-  html.js .bs-dusk { opacity: calc(1 - var(--bs-t)); }
-  html.js .bs-tube { opacity: var(--bs-t); }
+  html.js .bs-stage[data-shut] .bs-door { --bs-dn: 1; transition: --bs-dn 1700ms cubic-bezier(0.35, 0, 0.15, 1); }
+  html.js .bs-dusk { opacity: 1; transition: opacity var(--t-ui) var(--ease-in); }
+  html.js :is(.bs-tube, .bs-rim) { opacity: 0; transition: opacity var(--t-ui) var(--ease-in); }
+  html.js .bs-stage[data-shut] .bs-dusk { opacity: 0; transition: opacity 1200ms var(--ease-out) 1400ms; }
+  html.js .bs-stage[data-shut] .bs-tube { opacity: 1; transition: opacity 1200ms var(--ease-out) 1400ms; }
+  html.js .bs-stage[data-shut] .bs-rim { opacity: 0.8; transition: opacity 1200ms var(--ease-out) 1500ms; }
 }
 }
 /* At rest the garage light is on and the dusk has gone from the garage */
