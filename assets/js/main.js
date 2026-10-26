@@ -1,6 +1,10 @@
 /* Attic Worx: site script. No dependencies.
-   1. The motion engine (window.AW): scroll jobs, reveals, word splitting. The fx-*.js files use it.
-   2. The page: header, menu, quote form, service links, recent work, action bar.
+   1. The motion engine (window.AW): scroll jobs, reveals, word splitting.
+   2. The page: header, menu, FAQ, quote form, service links, whirlybird, action bar.
+   3. After that block, one block per animated section, each its own function using window.AW, in this
+      order: Roof build scene (#build), How it works (#how), Before & after (#results), Recent work
+      (#work), How much room? (#room). The hero's sequence is CSS only. They all run before the page's
+      DOMContentLoaded, so the engine's start-up hold (.aw-still, .is-instant) covers what they set up.
    Everything degrades: without this file every section shows at rest and the form shows all three steps. */
 (function () {
   'use strict';
@@ -161,7 +165,7 @@
   $$('[data-words]').forEach(splitStatement);
   targets.forEach(function (el, i) { place(el, seen[i]); });
 
-  // Boot lasts until the fx-*.js files (deferred, after this one) have run and two frames are out.
+  // Boot lasts until the section blocks (at the end of this file) have run and two frames are out.
   var endBoot = function () {
     if (!booting || endBoot.queued) return;
     endBoot.queued = true;
@@ -539,10 +543,6 @@
     });
   }
 
-  /* (Before & after: fx-results.js) */
-
-  /* (Recent work: fx-work.js) */
-
   /* ---------- Mobile action bar: rises once the hero buttons are gone, steps aside for the form ----------
      It's hidden by default in CSS (so it never shows at first paint, then drops away) and .is-visible
      brings it up. Without JS a noscript rule shows it. */
@@ -584,4 +584,1185 @@
   /* ---------- Footer year ---------- */
   var year = $('[data-year]');
   if (year) year.textContent = String(new Date().getFullYear());
+})();
+
+/* ==================== Roof build scene: "Boxes up. Car in." (#build) ==================== */
+/* Uses window.AW (above). It eases one number, --p (0 -> 1), towards the scroll position so a wheel's notches don't jump the
+   story, and marks the current step (data-beat on the stage, .is-on on its caption). --p goes on the stage
+   (the rail), on each moving part while it moves, and on portrait stages on the svg as --bs-cam (the
+   phone camera) while that moves.
+   It also marks the end (data-shut, once --p passes the svg's data-shut): the roller door and the garage
+   light are timed transitions from there. styles.css does the rest. It only works while the CSS pins the
+   stage (JS, motion welcome, a screen at least 500px tall, pow() and container units supported; read
+   live); otherwise the finished picture shows. ?bs-p=0.42 in the address holds the story at that point
+   (for reviews and screenshots; drop it at consolidation if you like). */
+(function () {
+  'use strict';
+  var AW = window.AW;
+  var track = document.querySelector('[data-build]');
+  if (!AW || !track) return;
+  var stage = track.querySelector('.bs-stage');
+  var svgs = Array.prototype.slice.call(track.querySelectorAll('.bs-svg'));
+  var svg = track.querySelector('.bs-svg[data-shut]') || svgs[0];
+  var shutAt = svg ? parseFloat(svg.getAttribute('data-shut')) || 2 : 2;
+  var caps = Array.prototype.slice.call(track.querySelectorAll('.bs-cap'));
+  var at = caps.map(function (c) { return parseFloat(c.getAttribute('data-at')) || 0; });
+  var supported = !!(window.CSS && CSS.supports && CSS.supports('width', 'calc(pow(2, 2) * 1px)') && CSS.supports('width', '1cqw'));
+  var tall = window.matchMedia('(min-height: 500px)');
+  var held = /[?&]bs-p=([\d.]+)/.exec(location.search);
+  var fixed = held ? AW.clamp(parseFloat(held[1]), 0, 1) : null;
+  var pinned = function () { return supported && tall.matches && AW.motionOK(); };
+
+  // The current step: the last one whose start --p has reached; and whether the door is down yet
+  var beat = -1;
+  var shut = null;
+  var mark = function (p) {
+    var s = p >= shutAt;
+    if (s !== shut) { shut = s; stage.toggleAttribute('data-shut', s); }
+    var b = 0;
+    for (var i = 1; i < at.length; i++) if (p >= at[i] - 0.002) b = i;
+    if (b === beat) return;
+    beat = b;
+    stage.setAttribute('data-beat', b);
+    caps.forEach(function (c, i) { c.classList.toggle('is-on', i === b); });
+  };
+
+  // --p follows the target softly (about a fifth of the way each frame). It's written to 3 decimals (2-3px
+  // of scroll) and only when that changes: every write restyles the moving parts, so frames that wouldn't
+  // move anything visibly skip it.
+  var cur = null;
+  var target = null;
+  var easing = false;
+  var written = '';
+  // The moving parts and their windows (from the generator's inline --a/--l, --b/--k, ...; padded a little
+  // for the edges that run past them). A part gets --p while the story is inside a window, and once more
+  // as it leaves; the rest of the frame it isn't touched, so it isn't restyled.
+  var num = function (st, k) { var m = new RegExp('--' + k + ':(-?[\\d.]+)').exec(st); return m ? parseFloat(m[1]) : null; };
+  var windows = function (st, keys) {
+    var w = [];
+    keys.forEach(function (k) {
+      var s = num(st, k[0]), d = num(st, k[1]);
+      if (s !== null && d !== null) w.push([s - 0.012, s + d + 0.012]);
+    });
+    return w;
+  };
+  var parts = Array.prototype.map.call(track.querySelectorAll('.bs-svg .m'), function (el) {
+    return { els: [el], prop: '--p', w: windows(el.getAttribute('style') || '', [['a', 'l'], ['b', 'k'], ['b', 'm'], ['c', 'm'], ['ra', 'rl']]), at: null };
+  });
+  // The portrait camera (phones, upright tablets) moves the drawing, in its own two windows; elsewhere it
+  // isn't written at all (a write restyles the svg).
+  var camQ = window.matchMedia('(max-width: 760px), (max-aspect-ratio: 1/1)');
+  var cam = svg ? { els: svgs, prop: '--bs-cam', w: windows(svg.getAttribute('style') || '', [['cam-a', 'cam-l'], ['cam-b', 'cam-m']]), at: null } : null;
+  var onCam = function () { if (cam) cam.at = null; written = ''; };
+  if (camQ.addEventListener) camQ.addEventListener('change', onCam); else if (camQ.addListener) camQ.addListener(onCam);
+  var where = function (p, w) {
+    var k = '';
+    for (var i = 0; i < w.length; i++) k += p <= w[i][0] ? '0' : p >= w[i][1] ? '1' : 'x';
+    return k;
+  };
+  var touch = function (o, p, v) {
+    var k = where(p, o.w);
+    if (k !== o.at || k.indexOf('x') >= 0) {
+      o.at = k;
+      for (var j = 0; j < o.els.length; j++) o.els[j].style.setProperty(o.prop, v);
+    }
+  };
+  var write = function (v) {
+    var p = +v;
+    stage.style.setProperty('--p', v); // the rail
+    if (cam && camQ.matches) touch(cam, p, v);
+    for (var i = 0; i < parts.length; i++) touch(parts[i], p, v);
+  };
+  var step = function () {
+    var d = target - cur;
+    cur = Math.abs(d) < 0.0005 ? target : cur + d * 0.18;
+    var v = cur.toFixed(3);
+    if (v !== written) { written = v; write(v); }
+    mark(cur);
+    return cur !== target;
+  };
+  var loop = function () {
+    easing = false;
+    if (target !== null && step()) { easing = true; AW.raf(loop); }
+  };
+
+  // Only while the track is near the screen
+  var live = true;
+  var snap = true; // arriving (load, a jump, coming back on screen): no catching up
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      live = entries[0].isIntersecting;
+      if (live) { snap = true; window.dispatchEvent(new Event('scroll')); }
+    }, { rootMargin: '25% 0px' }).observe(track);
+  }
+
+  AW.onScrollFrame(function () {
+    if (!live || !pinned()) return;
+    // read: where the track is, how long the stage stays pinned
+    var top = track.getBoundingClientRect().top;
+    var travel = track.offsetHeight - stage.offsetHeight;
+    var p = fixed !== null ? fixed : AW.clamp(-top / Math.max(1, travel) / 0.88, 0, 1); // the last 12% holds the end
+    return function () {
+      // write
+      target = p;
+      if (cur === null || snap || fixed !== null) {
+        snap = false;
+        cur = target;
+        step();
+        return;
+      }
+      if (!easing && step()) { easing = true; AW.raf(loop); }
+    };
+  });
+
+  // Keyboard: the last step's button lives in the pinned stage. Tabbing to it while another step shows
+  // jumps to the end of the story, where it's on screen and lit.
+  stage.addEventListener('focusin', function () {
+    if (!pinned() || beat === caps.length - 1) return;
+    var travel = track.offsetHeight - stage.offsetHeight;
+    var y = window.scrollY + track.getBoundingClientRect().top + travel * 0.97;
+    snap = true;
+    window.scrollTo({ top: y, behavior: 'instant' });
+  });
+})();
+
+/* ==================== How it works (#how) ==================== */
+/* Uses window.AW (above). One scroll job: read where each step's node is, then write. A step is lit once its node is above 56% of
+   the screen (CSS swings its section of the ladder down from the node), and that section's rungs light
+   (--pl, 0 to 1, set on the section) as the reading line travels from its hinge to its end: the next node,
+   or for the last section its feet (each section's untransformed box, .hstep-lad, says where it ends). On
+   wide screens the stage shows the drawing of the last lit step (step 1 before any) and its number rolls to
+   it. A stage drawing plays the first time it shows while the stage is on screen (.is-armed), and holds
+   where it is while another step is showing (CSS pauses it). The steps' own drawings (narrow screens) play
+   as each comes into view. Whatever is on screen when the page starts is simply shown, complete. The CSS
+   hangs every "before" state off .is-live, added here in the same task that sets the first state. */
+(function () {
+  'use strict';
+  var AW = window.AW;
+  var sec = document.querySelector('[data-how]');
+  if (!AW || !sec) return;
+  var all = function (sel) { return Array.prototype.slice.call(sec.querySelectorAll(sel)); };
+  var steps = all('[data-how-step]');
+  var nodes = steps.map(function (s) { return s.querySelector('.hstep-node'); });
+  var lads = steps.map(function (s) { return s.querySelector('.hstep-lad'); }); // the ladder's sections (untransformed boxes)
+  var stage = sec.querySelector('[data-how-stage]');
+  var panels = all('[data-ps]');
+  var roll = sec.querySelector('[data-how-roll]');
+  if (!steps.length || nodes.indexOf(null) > -1) return;
+
+  var lit = -1;   // steps lit, as last written
+  var shown = 0;  // the stage's step, as last written
+  var fills = []; // each line's fill, as last written
+  var first = true;
+
+  var job = function () {
+    var vh = window.innerHeight;
+    var box = sec.getBoundingClientRect();
+    if (!first && (box.bottom < -vh || box.top > vh * 2)) return; // far off screen: nothing changes
+    var mark = vh * 0.56;
+    var centres = nodes.map(function (n) {
+      var r = n.getBoundingClientRect();
+      return r.top + r.height / 2;
+    });
+    var st = stage ? stage.getBoundingClientRect() : null;
+    var shownAt = !!(st && st.height);
+    // A drawing plays once the stage is well in view; as the page starts, any of it on screen counts (shown complete)
+    var stageIn = shownAt && (first ? st.top < vh && st.bottom > 0 : st.top < vh * 0.6 && st.bottom > vh * 0.25);
+    var on = 0;
+    centres.forEach(function (c, i) { if (c < mark) on = i + 1; });
+    // each section lights from its hinge (this node) to its own end (the next node; the last one, its foot)
+    var ends = lads.map(function (l, i) { return l ? l.getBoundingClientRect().bottom : centres[i + 1]; });
+    var pl = centres.map(function (c, i) {
+      var end = ends[i];
+      return end === undefined || end - c < 1 ? 0 : Math.round(AW.clamp((mark - c) / (end - c), 0, 1) * 1000) / 1000;
+    });
+    var boot = first;
+    first = false;
+
+    return function () {
+      steps.forEach(function (s, i) {
+        if (on !== lit) s.classList.toggle('is-on', i < on);
+        // on the ladder section, its only reader: written on the step, it restyled the step's drawing every frame
+        if (pl[i] !== fills[i]) { (lads[i] || s).style.setProperty('--pl', pl[i]); fills[i] = pl[i]; }
+      });
+      lit = on;
+      var show = Math.max(1, on);
+      if (show !== shown) {
+        shown = show;
+        if (roll) roll.style.setProperty('--step', show);
+        panels.forEach(function (p, i) { p.classList.toggle('is-on', i + 1 === show); });
+      }
+      var p = panels[show - 1];
+      if (p && stageIn && !p.classList.contains('is-armed')) {
+        p.classList.add('is-armed');
+        if (boot || !AW.motionOK()) p.classList.add('is-instant'); // on screen as the page starts (or seen still): complete
+      }
+    };
+  };
+
+  // The steps' own drawings (narrow screens) play once nearly half of one is on screen (a drawing builds
+  // from the floor up, so it waits to be seen whole rather than starting at its first sliver, as a plain
+  // reveal would). On screen as the page starts: shown complete. Hidden ones (wide screens) never intersect.
+  var figs = all('.how-fig');
+  var figIO = 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      en.target.classList.add('is-in');
+      if (!AW.motionOK()) en.target.classList.add('is-instant');
+      figIO.unobserve(en.target);
+    });
+  }, { threshold: 0.45 }) : null;
+  figs.forEach(function (f) {
+    var r = f.getBoundingClientRect();
+    if (!figIO || (r.height && r.bottom > 0 && r.top < window.innerHeight)) f.classList.add('is-in', 'is-instant');
+    else figIO.observe(f);
+  });
+  // First state now, with transitions held for two frames, so nothing hides and re-animates in place.
+  sec.classList.add('is-still');
+  var write = job();
+  sec.classList.add('is-live');
+  if (write) write();
+  AW.raf(function () { AW.raf(function () { sec.classList.remove('is-still'); }); });
+  AW.onScrollFrame(job);
+})();
+
+/* ==================== Before & after (#results) ==================== */
+/* Uses window.AW (above).
+   1. The tabs (one per job): an accessible tablist with a roving tabindex. Arrow keys, Home and End
+      move between jobs and show them at once (automatic activation).
+   2. The light pass: once, as the pair is well into view, or once the scroll stops with a good part
+      of it in view (the CSS does the rest). A pair already on screen while the page starts is shown at rest.
+   3. Switching jobs: the old pair leaves fast, the new one arrives under its plates once its photos are
+      decoded (or after a short wait). The light doesn't pass again. Reduced motion: an instant swap.
+      The other jobs' photos load when a visitor reaches for the tabs. */
+(function () {
+  'use strict';
+  var sec = document.getElementById('results');
+  if (!sec) return;
+  var AW = window.AW || {};
+  var reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var motionOK = AW.motionOK || function () { return !reduceMQ.matches; };
+  var raf = AW.raf || function (f) { return setTimeout(f, 16); };
+  var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
+
+  var stage = sec.querySelector('.rx-stage');
+  var tabs = $$('[role="tab"]', sec);
+  var panels = tabs.map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); });
+  if (!stage || !tabs.length || panels.indexOf(null) > -1) return;
+
+  // While the page arrives (until two frames after load, when main.js marks html.is-loaded), a pair
+  // that comes on screen is shown at rest: no light pass on a reload or a shared link to #results.
+  // (A phone can make the jump to #results after DOMContentLoaded, so that was too early.)
+  var booting = true;
+  var endBoot = function () { raf(function () { raf(function () { booting = false; }); }); };
+  if (document.readyState === 'complete') endBoot();
+  else window.addEventListener('load', endBoot, { once: true });
+
+  var current = Math.max(0, tabs.findIndex(function (t) { return t.getAttribute('aria-selected') === 'true'; }));
+
+  // Resolves once every photo in the panel can paint (or after `wait` ms, whichever is first)
+  var ready = function (panel, wait) {
+    var imgs = $$('img', panel);
+    var jobs = imgs.map(function (img) {
+      if (img.complete && img.naturalWidth) return Promise.resolve();
+      if (img.loading === 'lazy') img.loading = 'eager';
+      return img.decode ? img.decode().catch(function () {}) : new Promise(function (res) {
+        img.addEventListener('load', res, { once: true });
+        img.addEventListener('error', res, { once: true });
+      });
+    });
+    return Promise.race([
+      Promise.all(jobs),
+      new Promise(function (res) { setTimeout(res, wait); })
+    ]);
+  };
+
+  /* ---------- The light pass ---------- */
+  var light = function (instant) {
+    if (instant) { stage.classList.add('is-in', 'is-instant'); return; }
+    // The photos first (briefly): a light passing over empty frames is wasted. Meanwhile the pair
+    // waits as it is, the before muted and the after in the dark.
+    ready(panels[current], 1200).then(function () { raf(function () { stage.classList.add('is-in'); }); });
+  };
+  var r = stage.getBoundingClientRect();
+  var onScreen = r.bottom > 0 && r.top < window.innerHeight;
+  if (onScreen || !motionOK() || !('IntersectionObserver' in window)) {
+    light(true);
+  } else {
+    stage.classList.add('is-armed'); // the after waits in the dark (CSS), off screen
+    // How much of the pair is in view, measured against the screen as well as the pair, so a short
+    // laptop screen (where a nav link lands with only the top half of the pair showing) still counts.
+    // While scrolling: half the pair, or 36% of the screen's height. Once the scroll has stopped
+    // (a nav link's glide has landed, or the reader has paused): a third of it, or a quarter.
+    // On phones the screen ends at the action bar while it shows.
+    var bar = document.querySelector('.action-bar');
+    var seen = function (part, ofScreen) {
+      var b = stage.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      if (bar) {
+        var a = bar.getBoundingClientRect();
+        if (a.height && a.top < vh) vh = Math.max(vh * 0.6, a.top);
+      }
+      var vis = Math.min(b.bottom, vh) - Math.max(b.top, 0);
+      return vis > 0 && vis >= Math.min(b.height * part, vh * ofScreen);
+    };
+    var settle = 0;
+    var listening = false;
+    var done = false;
+    var fire = function () {
+      if (done) return;
+      done = true;
+      io.disconnect();
+      clearTimeout(settle);
+      if (listening) window.removeEventListener('scroll', onScroll);
+      listening = false;
+      light(booting || !motionOK());
+    };
+    var onSettle = function () { if (!done && seen(1 / 3, 0.25)) fire(); };
+    var onScroll = function () { clearTimeout(settle); settle = setTimeout(onSettle, 160); };
+    var thresholds = [];
+    for (var t = 0; t <= 20; t++) thresholds.push(t / 20);
+    var io = new IntersectionObserver(function (entries) {
+      var e = entries[entries.length - 1];
+      if (!e.isIntersecting) {
+        // Out of view again: stop waiting for the scroll to settle
+        clearTimeout(settle);
+        if (listening) window.removeEventListener('scroll', onScroll);
+        listening = false;
+        return;
+      }
+      // Anything of it while the page starts (a link to #results): shown at rest
+      if (booting || seen(0.5, 0.36)) { fire(); return; }
+      if (!listening) { window.addEventListener('scroll', onScroll, { passive: true }); listening = true; }
+      onScroll(); // also counts a stop right here
+    }, { threshold: thresholds });
+    io.observe(stage);
+  }
+
+  /* ---------- Tabs ---------- */
+  var timers = panels.map(function () { return 0; });
+  var tokens = panels.map(function () { return 0; });
+
+  var clear = function (p, k) {
+    clearTimeout(timers[k]);
+    tokens[k]++;
+    p.classList.remove('is-leaving', 'is-arriving', 'is-pending');
+    p.inert = false;
+    p.removeAttribute('aria-hidden');
+  };
+
+  // The other jobs' photos load only when a visitor reaches for the tabs (hidden pairs aren't rendered,
+  // so the browser's lazy loading leaves them alone): most visitors never open them.
+  var tablist = sec.querySelector('[role="tablist"]');
+  var warm = function () {
+    tablist.removeEventListener('pointerover', warm);
+    tablist.removeEventListener('focusin', warm);
+    tablist.removeEventListener('touchstart', warm);
+    panels.forEach(function (p) {
+      $$('img', p).forEach(function (img) { if (img.loading === 'lazy') img.loading = 'eager'; });
+    });
+  };
+  if (tablist) {
+    tablist.addEventListener('pointerover', warm);
+    tablist.addEventListener('focusin', warm);
+    tablist.addEventListener('touchstart', warm, { passive: true });
+  }
+
+  var select = function (i, focus) {
+    if (i === current) { if (focus) tabs[i].focus(); return; }
+    var prev = current;
+    current = i;
+    tabs.forEach(function (t, k) {
+      t.setAttribute('aria-selected', k === i ? 'true' : 'false');
+      t.tabIndex = k === i ? 0 : -1;
+    });
+    if (focus) tabs[i].focus();
+
+    var animate = motionOK();
+    // From the first switch on, the scroll-in light pass is done with (a switch before it plays skips it)
+    stage.classList.add('is-in', 'is-switched');
+
+    panels.forEach(function (p, k) {
+      if (k === i) return;
+      var wasShowing = !p.hidden;
+      clear(p, k);
+      if (animate && k === prev && wasShowing) {
+        p.classList.add('is-leaving');
+        p.inert = true;
+        p.setAttribute('aria-hidden', 'true');
+        timers[k] = setTimeout(function () { clear(p, k); p.hidden = true; }, 220);
+      } else {
+        p.hidden = true;
+      }
+    });
+
+    var np = panels[i];
+    clear(np, i);
+    np.hidden = false;
+    if (!animate) return;
+    void np.offsetWidth; // restart the arrival from its first frame
+    np.classList.add('is-arriving', 'is-pending');
+    var token = ++tokens[i];
+    ready(np, 650).then(function () {
+      if (tokens[i] !== token) return; // switched again meanwhile
+      raf(function () { if (tokens[i] === token) np.classList.remove('is-pending'); });
+    });
+  };
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener('click', function () { select(i, false); });
+    tab.addEventListener('keydown', function (e) {
+      var n = tabs.length;
+      var next = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % n;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + n) % n;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = n - 1;
+      if (next < 0) return;
+      e.preventDefault();
+      select(next, true);
+    });
+  });
+})();
+
+/* ==================== Recent work (#work) ==================== */
+/* Uses window.AW (above).
+   - The run (wide screens, motion allowed): CSS lays it out and gives the section its length (so nothing
+     moves when this file starts); this file moves the track sideways as the page scrolls past the pinned
+     stage. Geometry is measured once (on start, resize, load) in track coordinates, so a scroll frame only
+     does arithmetic: one read (the section's top), then direct transform writes (the track, each nearby
+     photo's drift, the progress line, the heading's step under the header) and the counter. Idle while
+     the section is far off screen. A keyboard focus inside the track scrolls the page to bring its card in.
+     A resize that changes the run's length keeps a visitor reading below the section where they were.
+   - The strip (everything else): previous/next buttons for a mouse, a progress line, and the photos lift
+     in together as the strip comes into view (so a swipe never lands on a blank frame).
+   - The work light (both): each photo gets a light value (0 to 1), written as its shade's opacity (and,
+     in the strip, as --work-lit for its glow; the quote button's too). In the run it's worked out in the
+     same scroll frame as the track, from where each photo is: the light hangs where the first photo
+     starts (near the middle of the rail), every photo is lit as it passes under it and its neighbours
+     catch the edge of it (a gaussian over the spacing), and over the last two photos the light moves on
+     and comes to rest on the quote button. Its pool on the band (.work-light) moves with it, and the
+     counter names the photo nearest it. In the strip the photo it has come to rest on (the nearest snap
+     position) is lit, its neighbours a little; at the end of the strip, the quote button, with any photos
+     the strip can't snap to (they sit in full view at its end).
+   Without this file the strip simply swipes, every photo at rest and lit. */
+(function () {
+  'use strict';
+
+  var AW = window.AW;
+  var work = document.querySelector('[data-work]');
+  if (!AW || !work) return;
+
+  var root = document.documentElement;
+  var one = function (sel) { return work.querySelector(sel); };
+  var all = function (sel) { return Array.prototype.slice.call(work.querySelectorAll(sel)); };
+  var pin = one('[data-work-pin]');
+  var head = one('.work-head');
+  var rail = one('[data-work-rail]');
+  var track = one('[data-work-track]');
+  var strip = one('[data-work-strip]');
+  var bar = one('[data-work-bar]');
+  var nEl = one('[data-work-n]');
+  var totalEl = one('[data-work-total]');
+  var cards = all('.work-card');
+  var frames = all('.work-frame');
+  var imgs = frames.map(function (f) { return f.querySelector('img'); });
+  var steps = all('[data-work-step]');
+  var light = one('[data-work-light]');
+  var endEl = one('.work-end');
+  var goBtn = endEl && endEl.querySelector('.btn');
+  if (!pin || !head || !rail || !track || !strip || !cards.length) return;
+
+  // The run's query: the same as the media block in styles.css (scripting on, wide, motion allowed)
+  var RUN = '(scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference)';
+  var runMQ = window.matchMedia(RUN);
+  var LAND = 0.2; // a card brought into view by keyboard lands this far across the rail
+  var DRIFT = 6;  // % of a photo's width it drifts across a screen's width of travel (it rests at scale 1.16)
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  if (totalEl) totalEl.textContent = pad2(cards.length);
+  work.classList.add('is-live'); // the buttons and the progress line work from here
+
+  // Scroll to y without the page's smooth scrolling (html.is-loaded), for corrections nobody should see.
+  var jump = function (y) {
+    var s = root.style;
+    var was = s.scrollBehavior;
+    s.scrollBehavior = 'auto';
+    window.scrollTo(0, y);
+    s.scrollBehavior = was;
+  };
+
+  var on = false;      // the run is live (.is-h)
+  var near = true;     // the section is within reach of the screen (IntersectionObserver below)
+  var span = 0;        // how far the page scrolls while the stage is pinned (CSS sets the section's length)
+  var travel = 0;      // how far the track moves over that span
+  var railW = 0;
+  var railX = 0;
+  var frameGeo = [];   // each frame's centre along the track
+  var pinH = 0;
+  var hdrStep = 0;     // the heading's full step under the header (the rail's top padding, --hdr-step)
+  var lastP = -1;
+  var lastStep = -1;
+  var active = -1;
+  var workH = 0;       // the section's height as last seen
+  var lastY = window.scrollY; // the page's scroll position and the screen's height as of the last frame
+  var lastVh = window.innerHeight;
+
+  /* ---------- The work light ---------- */
+  // Who can be lit: the photos (their shades; and, in the strip, their frames for the glow), then the
+  // end panel's quote button (its glow, in the strip; in the run the pool lights it).
+  var shades = frames.map(function (f) { return f.querySelector('.work-shade'); });
+  var DIM = 0.28;      // a shade's opacity out of the light (styles.css --wl-dim, read in measure)
+  var litNow = [];     // the light as last written, per item (cleared when the layout changes)
+  var setLit = function (i, v) {
+    v = Math.round(v * 1000) / 1000;
+    if (litNow[i] === v) return;
+    litNow[i] = v;
+    if (i < frames.length) {
+      if (shades[i]) shades[i].style.opacity = (DIM * (1 - v)).toFixed(3);
+      if (!on) frames[i].style.setProperty('--work-lit', v);
+    } else if (goBtn && !on) {
+      goBtn.style.setProperty('--work-lit', v);
+    }
+  };
+  var SPILL = 0.3;     // the strip: what the lit photo's neighbours catch
+  var FALL = 0.72;     // the run: the light's falloff (its gaussian width) as a share of the photos' spacing
+  var station = 0;     // the run, in rail coordinates: where the light hangs (where the first photo starts)
+  var midY = 0;        // ...the photos' middle line
+  var goX = 0;         // the quote button's centre (track coordinates, across; rail coordinates, down)
+  var goY = 0;
+  var handOff = 1;     // the run's progress at which the light leaves its station for the button
+  var sigma = 1;
+  // An element's centre on screen, less its own translate (a reveal may be holding it a few px down).
+  var centreOf = function (el) {
+    var r = el.getBoundingClientRect();
+    var t = (getComputedStyle(el).translate || '').split(' ');
+    return { x: r.left + r.width / 2 - (parseFloat(t[0]) || 0), y: r.top + r.height / 2 - (parseFloat(t[1]) || 0) };
+  };
+
+  /* ---------- The strip ---------- */
+  var stripMax = 0;
+  var stripSnap = [];  // where the strip rests for each lit item (card i at the snap line; the end panel at the end)
+  var stripLit = -2;
+  var lit1 = [];       // (scratch) which items are lit
+  // The strip's light: the place it rests nearest (ties go to the later item), and every item that rests
+  // there, its neighbouring photos a little. Mostly that's one photo, the one at the snap line. At the end
+  // of the strip it's the quote button, plus any photos that can't reach the snap line (their spot is
+  // past the end of the strip, so the strip stops short of it): those all sit in full view there, so
+  // they're lit with the button rather than never. On a phone that's the button alone. Everything fits:
+  // everything lit.
+  var lightStrip = function (x) {
+    var a = -1;
+    if (stripMax >= 2) {
+      var best = Infinity;
+      for (var i = 0; i < stripSnap.length; i++) {
+        var d = Math.abs(x - stripSnap[i]);
+        if (d <= best) { best = d; a = i; }
+      }
+    }
+    if (a === stripLit) return;
+    stripLit = a;
+    var n = frames.length + (goBtn ? 1 : 0);
+    var k;
+    for (k = 0; k < n; k++) lit1[k] = a < 0 || Math.abs(stripSnap[k] - stripSnap[a]) < 4;
+    for (k = 0; k < n; k++) {
+      var near1 = k < cards.length && (lit1[k - 1] || lit1[k + 1]);
+      setLit(k, lit1[k] ? 1 : near1 ? SPILL : 0);
+    }
+  };
+  var updateStrip = function () {
+    if (on) return;
+    var x = strip.scrollLeft;
+    var p = stripMax ? AW.clamp(x / stripMax, 0, 1) : 0;
+    if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    steps.forEach(function (btn) {
+      var dir = Number(btn.getAttribute('data-work-step'));
+      var end = dir < 0 ? x <= 2 : x >= stripMax - 2;
+      btn.setAttribute('aria-disabled', end ? 'true' : 'false');
+    });
+    lightStrip(x);
+  };
+  var stripTick = false;
+  strip.addEventListener('scroll', function () {
+    if (on || stripTick) return;
+    stripTick = true;
+    AW.raf(function () { stripTick = false; updateStrip(); });
+  }, { passive: true });
+  steps.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (btn.getAttribute('aria-disabled') === 'true') return;
+      var gap = parseFloat(getComputedStyle(strip).columnGap) || 16;
+      var stepW = cards[0].getBoundingClientRect().width + gap;
+      strip.scrollBy({ left: Number(btn.getAttribute('data-work-step')) * stepW, behavior: AW.motionOK() ? 'smooth' : 'auto' });
+    });
+  });
+
+  // In the strip, every photo lifts in as the strip arrives: the ones off to the side too (unseen), so a
+  // swipe shows photos, not plates. (In the run, each lifts as it slides on: main.js's reveal does that.)
+  var revealAll = function () {
+    cards.forEach(function (c, i) {
+      if (c.classList.contains('is-in')) return;
+      c.style.setProperty('--d', Math.min(i, 5) * 80 + 'ms');
+      c.classList.add('is-in');
+    });
+  };
+  var stripObs = 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    if (on) return;
+    for (var i = 0; i < entries.length; i++) if (entries[i].isIntersecting) return revealAll();
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 }) : null;
+  if (stripObs) stripObs.observe(strip);
+
+  /* ---------- The run ---------- */
+  var setCount = function (a) {
+    var dir = a > active ? 1 : -1;
+    var first = active < 0;
+    active = a;
+    if (!nEl) return;
+    nEl.textContent = pad2(a + 1);
+    // The new number rolls in from the side of travel
+    if (!first && nEl.animate && AW.motionOK()) {
+      nEl.animate([{ transform: 'translateY(' + dir * 100 + '%)' }, { transform: 'none' }],
+        { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+    }
+  };
+
+  // Writes only.
+  var place = function (p) {
+    var x = -p * travel;
+    var vw = window.innerWidth;
+    track.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)';
+    if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    // The light: at its station until the hand-off, then on (smoothly) to the button, a little smaller.
+    // As it settles at the end it opens up a little, so the last photo keeps some of it.
+    var lx = station;
+    var ly = midY;
+    var ls = 1;
+    var sg = sigma;
+    if (p > handOff) {
+      var t = (p - handOff) / (1 - handOff);
+      t = t * t * (3 - 2 * t);
+      lx += (goX - travel - station) * t;
+      ly += (goY - midY) * t;
+      ls -= 0.22 * t;
+      sg *= 1 + 0.3 * t;
+    }
+    if (light) light.style.transform = 'translate3d(' + lx.toFixed(1) + 'px,' + ly.toFixed(1) + 'px,0) scale(' + ls.toFixed(3) + ')';
+    // The counter names the photo nearest the light (at the very end, the last).
+    var a = 0;
+    var best = Infinity;
+    for (var i = 0; i < frames.length; i++) {
+      var dx = x + frameGeo[i] - lx;
+      var g = dx / sg;
+      setLit(i, Math.exp(-g * g));
+      if (Math.abs(dx) < best) { best = Math.abs(dx); a = i; }
+      var c = railX + x + frameGeo[i];
+      if (c < -vw * 0.5 || c > vw * 1.5) continue; // well off screen: leave it where it was
+      if (imgs[i]) imgs[i].style.translate = (((c - vw / 2) / vw) * -DRIFT).toFixed(2) + '% 0';
+    }
+    if (goBtn) {
+      var ge = (x + goX - lx) / sg;
+      setLit(frames.length, Math.exp(-ge * ge));
+    }
+    if (p > 0.999) a = frames.length - 1;
+    if (a !== active) setCount(a);
+  };
+  // The heading steps down only as far as the header would cover it (CSS applies it while the header
+  // shows): nothing while the heading sits lower on the screen, the full step once the stage is pinned.
+  var setStep = function (s) {
+    lastStep = s;
+    head.style.setProperty('--work-step', s.toFixed(1) + 'px');
+  };
+  // Reads where the section is (one read) into view; returns the run's progress.
+  var view = { inside: false, below: false, run: false, p: 0, step: 0 };
+  var look = function () {
+    var r = work.getBoundingClientRect();
+    var vh = window.innerHeight;
+    var p = on && span ? AW.clamp(-r.top / span, 0, 1) : 0;
+    view.inside = r.top <= vh / 2 && r.bottom >= vh / 2;
+    view.below = r.bottom < vh / 2; // the visitor is reading what follows the section
+    view.run = on;
+    view.p = p;
+    // where the sticky stage sits: with the section, held at the top, then leaving with the section's end
+    var pinTop = Math.min(Math.max(r.top, 0), r.bottom - pinH);
+    view.step = Math.round(AW.clamp(hdrStep - pinTop, 0, hdrStep) * 2) / 2;
+    return p;
+  };
+  var update = function () {
+    var p = look();
+    if (!on) return;
+    lastP = p;
+    place(p);
+    setStep(view.step);
+  };
+
+  // Decides the layout and caches the geometry (reads and writes freely: it runs on start, resize, load).
+  var measure = function () {
+    var want = runMQ.matches;
+    if (want !== on) {
+      on = want;
+      work.classList.toggle('is-h', on);
+      if (on) {
+        strip.removeAttribute('tabindex'); // in the run it doesn't scroll, so it isn't a stop
+        work.classList.remove('is-fit');
+        rail.scrollLeft = 0; // (it scrolls natively until this file takes over)
+      } else {
+        strip.setAttribute('tabindex', '0');
+        track.style.transform = '';
+        imgs.forEach(function (im) { if (im) im.style.translate = ''; });
+        head.style.removeProperty('--work-step');
+        if (light) light.style.transform = '';
+        active = -1;
+      }
+      lastP = -1;
+      lastStep = -1;
+      stripLit = -2;
+      litNow = [];
+    }
+    DIM = parseFloat(getComputedStyle(work).getPropertyValue('--wl-dim')) || DIM;
+    workH = work.offsetHeight;
+    if (!on) {
+      stripMax = Math.max(0, strip.scrollWidth - strip.clientWidth);
+      work.classList.toggle('is-fit', stripMax < 2);
+      var first = cards[0].getBoundingClientRect().left;
+      stripSnap = cards.map(function (c) { return AW.clamp(c.getBoundingClientRect().left - first, 0, stripMax); });
+      if (goBtn) stripSnap.push(stripMax);
+      stripLit = -2;
+      updateStrip();
+      var r = strip.getBoundingClientRect();
+      if (r.bottom > 0 && r.top < window.innerHeight) revealAll();
+      return;
+    }
+    railW = rail.clientWidth;
+    travel = Math.max(0, track.scrollWidth - railW);
+    pinH = pin.offsetHeight;
+    span = Math.max(0, workH - pinH);
+    hdrStep = parseFloat(getComputedStyle(rail).paddingTop) || 0;
+    // In track coordinates: the track's own transform cancels out.
+    var t0 = track.getBoundingClientRect().left;
+    railX = rail.getBoundingClientRect().left;
+    frameGeo = frames.map(function (f) {
+      var fr = f.getBoundingClientRect();
+      return fr.left - t0 + fr.width / 2;
+    });
+    // The light (rail coordinates: the track starts at the rail's left edge). It hangs where the first
+    // photo's middle is when the run starts, kept near the middle of the rail; it hands off to the button
+    // as the second-last photo passes under it, so the last one is lit on the way.
+    var rr = rail.getBoundingClientRect();
+    var f0 = frames[0].getBoundingClientRect();
+    var n = frameGeo.length;
+    midY = f0.top - rr.top + f0.height / 2;
+    station = AW.clamp(frameGeo[0], railW * 0.4, railW * 0.6);
+    sigma = Math.max(1, FALL * (n > 1 ? (frameGeo[n - 1] - frameGeo[0]) / (n - 1) : f0.width));
+    if (goBtn) {
+      var gc = centreOf(goBtn);
+      goX = gc.x - t0;
+      goY = gc.y - rr.top;
+    } else {
+      goX = frameGeo[n - 1];
+      goY = midY;
+    }
+    handOff = travel ? AW.clamp((frameGeo[Math.max(0, n - 2)] - station) / travel, 0, 0.95) : 0.95;
+  };
+
+  // view says where the visitor is as of the last frame ("inside": the section covers the middle of the
+  // screen). A resize or a preference change takes a copy first (keep), before the page reflows under it.
+  var keep = null;
+
+  // Re-measures and keeps the visitor's place inside the section: the same point along the run, or the
+  // section's start when the layout changes between the run and the strip.
+  var remeasure = function () {
+    var was = keep;
+    keep = null;
+    measure();
+    if (was && was.inside && (on || was.run)) {
+      jump(work.getBoundingClientRect().top + window.scrollY + (on && was.run ? was.p * span : 0));
+    }
+    update();
+  };
+
+  AW.onScrollFrame(function () {
+    lastY = window.scrollY; // (free: layout is clean when the frame's jobs read)
+    lastVh = window.innerHeight;
+    if (!near) return;
+    var p = look(); // the one read
+    if (!on) return;
+    var s = view.step;
+    var moved = p !== lastP;
+    var stepped = s !== lastStep;
+    if (!moved && !stepped) return;
+    lastP = p;
+    lastStep = s;
+    return function () {
+      if (moved) place(p);
+      if (stepped) setStep(s);
+    };
+  });
+
+  if ('IntersectionObserver' in window) {
+    near = false;
+    new IntersectionObserver(function (entries) {
+      near = entries[entries.length - 1].isIntersecting;
+      if (near) update();
+    }, { rootMargin: '50% 0px' }).observe(work);
+  }
+
+  // Keyboard: bring a focused card into view by scrolling the page to its spot. Focus from a click or
+  // tap (Chrome focuses a link on mousedown) is left alone, so a click never slides the track away.
+  var fromPointer = false;
+  work.addEventListener('pointerdown', function () {
+    fromPointer = true;
+    setTimeout(function () { fromPointer = false; }, 0);
+  }, true);
+  work.addEventListener('focusin', function (e) {
+    if (!on || fromPointer) return;
+    try { if (!e.target.matches(':focus-visible')) return; } catch (err) {}
+    var item = e.target.closest('.work-card, .work-intro, .work-end');
+    if (!item) return;
+    var x = item.getBoundingClientRect().left - track.getBoundingClientRect().left;
+    var p = travel ? AW.clamp((x - railW * LAND) / travel, 0, 1) : 0;
+    window.scrollTo(0, work.getBoundingClientRect().top + window.scrollY + p * span);
+    rail.scrollLeft = 0;
+    pin.scrollLeft = 0;
+  });
+
+  // Holding a reader's place below the section through a resize (see queue): where each of the page's
+  // blocks (main's sections) began as of the last layout. A ResizeObserver keeps the table current; it
+  // runs after layout, so at a resize event the table still describes the page the visitor was reading.
+  var blocks = Array.prototype.slice.call(work.parentNode.children);
+  var tops = null;
+  var mapBlocks = function () {
+    var y = window.scrollY;
+    tops = blocks.map(function (b) { return b.offsetHeight ? b.getBoundingClientRect().top + y : NaN; });
+  };
+  if ('ResizeObserver' in window) {
+    var ro = new ResizeObserver(mapBlocks);
+    blocks.forEach(function (b) { ro.observe(b); });
+  }
+
+  // Resizes settle first (a dragged window sends a stream of them); the place is copied at the first one.
+  // A visitor reading below the section is held at once, at every step: the run's length follows the
+  // screen's size (about 2,000px between 1440 and 900 wide), so without this what they were reading would
+  // move by that much. The block that was at the middle of the screen goes back to where it was (this runs
+  // before the frame paints, so nothing visibly jumps). It only corrects a page the browser left where it
+  // was (desktop browsers keep the scroll position across a width change) or merely stopped at its new
+  // end; when the browser has kept its own anchor (a phone or tablet turning), that stands.
+  var resizeT = 0;
+  var queue = function () {
+    if (!keep) {
+      keep = {
+        inside: near && view.inside,
+        // far off: which side of it the visitor is on (the section's top only moves a little in a resize)
+        below: near ? view.below : work.getBoundingClientRect().top < 0,
+        run: view.run,
+        p: view.p
+      };
+    }
+    var h = work.offsetHeight; // the new layout (and any clamp of the scroll position at the page's end)
+    if (keep.below) {
+      var y = window.scrollY;
+      if (Math.abs(y - lastY) < 1 || y >= root.scrollHeight - window.innerHeight - 1) {
+        var shift = workH ? h - workH : 0; // (no table: the section's own change)
+        if (tops) {
+          var line = lastY + lastVh / 2;
+          for (var k = blocks.length - 1; k >= 0; k--) {
+            if (tops[k] <= line) { shift = blocks[k].getBoundingClientRect().top + y - tops[k]; break; }
+          }
+        }
+        if (Math.abs(shift) >= 0.5) {
+          lastY = Math.max(0, lastY + shift);
+          jump(lastY);
+        }
+      }
+    }
+    // The page as it is now (a media query change can follow the resize event in the same frame, before
+    // the observer reports)
+    if (tops) mapBlocks();
+    lastVh = window.innerHeight;
+    workH = h;
+    clearTimeout(resizeT);
+    resizeT = setTimeout(remeasure, 120);
+  };
+  var onChange = function (mq, fn) {
+    if (mq.addEventListener) mq.addEventListener('change', fn);
+    else if (mq.addListener) mq.addListener(fn);
+  };
+  window.addEventListener('resize', queue);
+  onChange(runMQ, queue);
+  window.addEventListener('load', remeasure);
+
+  remeasure();
+})();
+
+/* ==================== How much room? (#room) ==================== */
+/* Uses window.AW (above). The slider sizes a storage floor (2–20 m²). This file keeps the numbers and the text in step, and
+   tells the picture which size to show by toggling .on on just the sheets and things that change
+   (styles.css moves them). The first time the picture comes into view, the light comes up through
+   the manhole and the floor lays itself out to the slider's size. "Price a floor this size" also
+   picks the matching size in the quote form (main.js's [data-service] handler ticks Attic storage
+   and takes you there). Without this file the section shows 8 m², as written in index.html. */
+(function () {
+  'use strict';
+
+  var sec = document.getElementById('room');
+  var input = sec && sec.querySelector('#room-size');
+  var svg = sec && sec.querySelector('.room-svg');
+  if (!input || !svg) return;
+
+  var AW = window.AW || {};
+  var motionOK = AW.motionOK || function () {
+    return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  };
+  var raf = AW.raf || (window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : function (f) { return setTimeout(f, 16); });
+  var $ = function (sel) { return sec.querySelector(sel); };
+
+  /* ---------- The numbers ----------
+     A rough guide, and it says so (the footnote in index.html states the same assumptions):
+     - an archive box takes about 420 × 320 mm of floor and stands 260 mm tall; boxes go two high;
+     - about half the floor holds boxes. The rest is the 600 mm walkway from the manhole (about a
+       quarter of a typical floor), the edges where the roof comes down, and the gaps between boxes
+       and around the roof framing.
+     So boxes ≈ 2 × (m² × 0.5) / (0.42 × 0.32), about 7.4 per m², rounded to the nearest 5, so every
+     whole m² changes the figure (by 5 or 10):
+     2 m² → 15, 8 m² → 60, 9 m² → 65, 10 m² → 75, 12 m² → 90, 20 m² → 150.
+     The picture shows a mix (tubs, cases, camping and sports gear stand in for some of the boxes), so
+     it holds fewer boxes than the figure; the footnote says so. */
+  var BOX_FLOOR = 0.42 * 0.32;
+  var SHARE = 0.5;
+  var HIGH = 2;
+  var boxes = function (m2) {
+    var raw = (HIGH * m2 * SHARE) / BOX_FLOOR;
+    return Math.round(raw / 5) * 5;
+  };
+  // The quote form's storage sizes (radios name="size") and the slider values that fall in each.
+  // 12 m² goes with "12 m² or more", the option that names it outright.
+  var ZONES = [
+    { id: 'size-s', max: 5, label: 'A small area for boxes' },
+    { id: 'size-m', max: 11, label: 'About 6–12 m²' },
+    { id: 'size-l', max: Infinity, label: '12 m² or more' }
+  ];
+  var zoneOf = function (v) {
+    for (var i = 0; i < ZONES.length; i++) if (v <= ZONES[i].max) return ZONES[i];
+    return ZONES[ZONES.length - 1];
+  };
+  var KYLE = 12; // Kyle M's review: "The guys came out and put in 12sqm of space above my garage"
+  var MIN = Number(input.min) || 2;
+  var MAX = Number(input.max) || 20;
+
+  /* ---------- The text ---------- */
+  var valueEl = $('[data-room-value]');
+  var boxesEl = $('[data-room-boxes]');
+  var handoff = $('[data-room-handoff]');
+  var range = $('[data-room-range]');
+  var zones = Array.prototype.slice.call(sec.querySelectorAll('[data-zone]'));
+
+  // The quote form's thank-you: once it shows, the request is sent and the form isn't changed any more
+  var done = document.querySelector('#quote-form [data-done]');
+  var sent = function () { return !!done && !done.hidden; };
+  var said = 8; // the size the text shows (8 in the HTML); the button prices this size
+  var digits = 0;
+  var text = function (v) {
+    var n = boxes(v);
+    var z = zoneOf(v);
+    var kyle = v === KYLE;
+    said = v;
+    if (valueEl) {
+      // The unit follows the digits by transform: their count and the letter-spacing in use (a
+      // reader's own text spacing included) place it. The spacing is read only when the count
+      // changes (9 to 10), before anything is written, so it costs nothing while dragging.
+      var p = valueEl.parentNode;
+      var count = String(v).length;
+      if (count !== digits) {
+        var ls = parseFloat(getComputedStyle(p).letterSpacing);
+        digits = count;
+        p.style.setProperty('--n', count);
+        p.style.setProperty('--ls', (isNaN(ls) ? 0 : ls) + 'px');
+      }
+      valueEl.textContent = v;
+    }
+    if (boxesEl) boxesEl.textContent = n;
+    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'Ticks Attic storage and “' + z.label + '” in the quote form.';
+    sec.classList.toggle('is-kyle', kyle); // shows "The size of the floor Kyle M had put in above his garage." 
+    input.setAttribute('aria-valuetext', v + ' square metres, room for about ' + n + ' archive boxes' + (kyle ? ', the size of Kyle M’s floor' : ''));
+    if (range) range.style.setProperty('--f', ((v - MIN) / (MAX - MIN)).toFixed(4));
+    zones.forEach(function (s) { s.classList.toggle('is-on', s.getAttribute('data-zone') === z.id); });
+  };
+
+  /* ---------- The picture ----------
+     Every sheet and stored thing is drawn once (scripts/room/build-room.mjs), with the floor size it
+     appears at (data-at). It shows while it has .on. A change only touches the parts that cross
+     between the old size and the new one: each gets its delay (in floor order: growing, nearest the
+     manhole first; shrinking, the newest first) and .on toggled. One loop, no layout reads. */
+  var parts = Array.prototype.slice.call(svg.querySelectorAll('.rm-s, .rm-i')).map(function (el) {
+    return { el: el, at: parseFloat(el.getAttribute('data-at')), thing: el.classList.contains('rm-i') };
+  });
+  var pool = svg.querySelector('.rm-pool');
+  var shown = Number(svg.getAttribute('data-v')) || 8; // the size the picture shows (8 in the HTML)
+  // spread: over how many ms the arrivals (or departures) of this change are spread
+  var paint = function (to, spread) {
+    var from = shown;
+    if (to === from) return;
+    shown = to;
+    var up = to > from;
+    var lo = Math.min(from, to);
+    var hi = Math.max(from, to);
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      if (p.at <= lo || p.at > hi) continue; // the same at both sizes
+      var t = (p.at - from) / (to - from); // 0..1 through this change, in arrival order
+      // growing, things land just after the sheet under them; shrinking, they go first: lifted
+      // away whole and only fading at the end (the delays follow styles.css's order: opacity,
+      // transform), and the sheet under them after
+      var d = Math.round(t * spread + (up ? (p.thing ? 140 : 0) : (p.thing ? 0 : 140)));
+      p.el.style.transitionDelay = !up && p.thing ? (d + 100) + 'ms, ' + d + 'ms' : d + 'ms';
+      p.el.classList.toggle('on', up);
+    }
+    // the warm light on the floor grows with it (from a glow round the hatch, with no floor)
+    if (pool) pool.style.transform = 'scale(' + (to ? 0.4 + to * 0.03 : 0.2).toFixed(3) + ')';
+  };
+  var step = function (to) { return Math.min(Math.abs(to - shown) * 80, 420); };
+
+  var onScreen = function (el) {
+    var r = el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
+  };
+
+  // A value the browser restored wins over the 8 m² written into the HTML. Chrome can restore it after
+  // this file runs (by pageshow), so it's read again then: see sync() below.
+  var start = Number(input.value) || 8;
+  if (start !== said) text(start);
+
+  var waiting = null; // the first build, while it waits for the picture to come into view
+  var touched = false; // the visitor has moved the slider
+  var lightsOn = function () {
+    if (waiting) { waiting.disconnect(); waiting = null; }
+    if (!sec.classList.contains('is-dark')) return;
+    sec.classList.remove('is-dark');
+    if (!motionOK()) return;
+    // the light comes up through the manhole (styles.css): the dark draws back from the hatch and
+    // fades, then the lamp comes on. Once it's over, the dark is hidden again, so it costs nothing
+    // at rest
+    var over = function (e) {
+      if (e && e.animationName !== 'aw-room-fade') return;
+      sec.removeEventListener('animationend', over);
+      clearTimeout(timer);
+      sec.classList.remove('is-lighting');
+    };
+    var timer = setTimeout(over, 4000); // in case the end never comes
+    sec.addEventListener('animationend', over);
+    sec.classList.add('is-lighting');
+  };
+  // Transitions are held while the picture is set up (and for two frames after)
+  svg.classList.add('is-still');
+  if (start !== shown) paint(start, 0);
+  sec.classList.add('is-live');
+  // Whether the picture is already on screen needs layout: it's read in the first frame, with the
+  // layout the browser does for that frame anyway (before it paints), not here, mid-start-up.
+  raf(function () {
+    if (!touched && motionOK() && 'IntersectionObserver' in window && !onScreen(svg)) {
+      // The empty roof (only the manhole lit) until the picture is in view; then the work light comes
+      // on and the floor lays itself out to the slider's size
+      sec.classList.add('is-dark');
+      paint(0, 0);
+      waiting = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        lightsOn();
+        setTimeout(function () { if (!touched) paint(Number(input.value), 1400); }, motionOK() ? 520 : 0);
+      }, { threshold: 0.4 });
+      waiting.observe(svg);
+    }
+    raf(function () { raf(function () { svg.classList.remove('is-still'); }); });
+  });
+
+  /* ---------- The slider: the text at once (so what a screen reader speaks is never a step behind),
+     the picture once a frame ---------- */
+  var queued = false;
+  var changed = function () {
+    touched = true;
+    lightsOn();
+    text(Number(input.value));
+    if (queued) return;
+    queued = true;
+    raf(function () {
+      queued = false;
+      var v = Number(input.value);
+      paint(v, step(v));
+    });
+  };
+
+  /* A touch that's really a scroll. On touch screens Chrome (any Blink browser) moves the thumb to
+     where a finger lands on the track at once, and only then decides whether the finger is
+     scrolling the page (pointercancel). So scrolling past with a finger that lands on the slider
+     would change the size. While a touch on the slider is undecided, its value is held back: it
+     shows once the finger lifts (a tap), moves sideways (a drag) or rests a moment, and the size is
+     put back if the browser takes the touch for a scroll. (styles.css also gives the input
+     touch-action: pan-y, so only vertical moves can scroll.) Mouse, keyboard and assistive tech
+     change it at once. */
+  var held = null;     // the size when the touch began, while it could still turn out to be a scroll
+  var pending = false; // its value is held back
+  var first = null;    // the value the touch first gave (where the finger landed)
+  var origin = null, rest = 0;
+  var settle = function () { pending = false; held = null; first = null; clearTimeout(rest); };
+  var commit = function () { pending = false; clearTimeout(rest); if (Number(input.value) !== said) changed(); };
+  input.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    settle();
+    held = said; pending = true; origin = [e.clientX, e.clientY];
+  });
+  input.addEventListener('pointermove', function (e) {
+    if (held === null) return;
+    var dx = Math.abs(e.clientX - origin[0]), dy = Math.abs(e.clientY - origin[1]);
+    if (dx >= 6 && dx > dy) { held = null; if (pending) commit(); } // a drag along the slider: it's the visitor's
+  });
+  input.addEventListener('pointerup', function () { held = null; if (pending) commit(); });
+  input.addEventListener('pointercancel', function () {
+    var v = held;
+    settle();
+    if (v === null) return;
+    if (Number(input.value) !== v) input.value = v; // the browser took it for a scroll: put it back
+    if (said !== v) changed(); // (only if it had already shown)
+  });
+  input.addEventListener('lostpointercapture', function () { if (pending) commit(); settle(); }); // in case
+  input.addEventListener('keydown', function () { if (pending) commit(); settle(); });
+  input.addEventListener('input', function () {
+    if (!pending) { changed(); return; }
+    if (first === null) {
+      // where the finger landed: held back. A finger that rests there is pressing, not scrolling, so
+      // it shows after a moment
+      first = input.value;
+      rest = setTimeout(commit, 450);
+    } else if (input.value !== first) commit(); // the thumb is following the finger: a drag
+  });
+
+  // Back to the page (back/forward, or a restored tab): the browser may have put back the slider's
+  // last value after start-up. Bring the text and the picture to it. While the picture waits for its
+  // first showing, the entrance lays out whatever the slider says by then.
+  var sync = function () {
+    var v = Number(input.value);
+    if (!v) return;
+    if (v !== said) text(v);
+    if (!waiting && !sec.classList.contains('is-dark') && v !== shown) paint(v, 0);
+  };
+  window.addEventListener('pageshow', sync);
+
+  // Once the quote is sent, the line under the button says so
+  if (done && 'MutationObserver' in window) {
+    new MutationObserver(function () { text(said); }).observe(done, { attributes: true, attributeFilter: ['hidden'] });
+  }
+
+  /* ---------- "Price a floor this size": pick the matching size in the quote form ----------
+     The size the text shows (and the line under the button names), not a value read afresh. Once the
+     quote is sent, the button only takes you back to the thank-you; the form isn't changed. */
+  var cta = $('[data-room-cta]');
+  if (cta) {
+    cta.addEventListener('click', function () {
+      if (sent()) return;
+      var z = zoneOf(said);
+      var radio = document.getElementById(z.id);
+      if (radio && !radio.checked) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      // so leads that started here can be counted (the form's payload is unchanged)
+      if (window.dataLayer) window.dataLayer.push({ event: 'room_price_floor', size_m2: said, size_option: z.label });
+    });
+  }
 })();

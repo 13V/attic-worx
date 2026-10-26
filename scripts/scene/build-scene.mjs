@@ -20,7 +20,7 @@
    metres at real sizes and projected here; the SVG's units are centimetres of the cut plane.
 
    Motion: every moving part carries its window of the scroll (--a start, --l length, both in units of
-   --p) and the travel it needs (SVG units, degrees, factors). fx-build.css computes every pose from
+   --p) and the travel it needs (SVG units, degrees, factors). styles.css computes every pose from
    --p. The geometry in the file is the finished state (floor down, things up, ladder away, car in,
    roller door down), which is what shows without JS or with reduced motion. */
 
@@ -151,7 +151,7 @@ function el(tag, attrs, inner) {
 const pth = (d, fill, extra = {}) => el('path', { d, fill, ...extra });
 const vars = (o) => Object.entries(o).map(([k, v]) => `--${k}:${typeof v === 'number' ? r3(v) : v}`).join(';');
 /* a moving part: <g class="m ..." style="--a..."> in the finished file; a plain group in a concept still.
-   fx-build.js gives each part its own --p, and only while the story is inside one of its windows (the
+   main.js gives each part its own --p, and only while the story is inside one of its windows (the
    pairs in TIMES): a part that isn't moving isn't restyled. */
 let MODE = 'final';
 function part(cls, v0, inner, extra = {}) {
@@ -909,7 +909,7 @@ function scene(state) {
     else add(stepOpen());
   }
 
-  /* ----- Dusk in the garage; at the end its light comes on (timed, after the door: see fx-build.css) ----- */
+  /* ----- Dusk in the garage; at the end its light comes on (timed, after the door: see styles.css) ----- */
   {
     const gar = rectXY(H.garage0, H.garage1, 0, H.ceil, 0);
     if (fin) add(el('path', { class: 'bs-dusk', d: gar, fill: 'url(#bs-dark)' }) + el('path', { class: 'bs-tube', d: gar, fill: 'url(#bs-tube)' }));

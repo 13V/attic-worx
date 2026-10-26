@@ -15,12 +15,6 @@
 <link rel="preload" as="image" type="image/avif" media="(max-width: 960px)" fetchpriority="high"
       imagesrcset="assets/img/hero-tall-480.avif 480w, assets/img/hero-tall-800.avif 800w, assets/img/hero-tall-1200.avif 1200w" imagesizes="100vw">
 <link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="assets/css/fx-hero.css">
-<link rel="stylesheet" href="assets/css/fx-build.css">
-<link rel="stylesheet" href="assets/css/fx-process.css">
-<link rel="stylesheet" href="assets/css/fx-results.css">
-<link rel="stylesheet" href="assets/css/fx-work.css">
-<link rel="stylesheet" href="assets/css/fx-room.css">
 <noscript><style>.qf-step[hidden] { display: grid !important; } .action-bar { transform: none; }</style></noscript>
 <noscript><style>.results-body { display: block; } .rx-tabs { display: none; } .rx-stage { gap: 48px; } .rx-panel, .rx-panel[hidden] { display: flex !important; flex-direction: column; } .rx-cap { display: block; order: -1; margin: 0 0 14px; color: rgba(255,255,255,.66); } .rx-cap strong { display: block; color: #fff; font-size: 1.05rem; } @media (min-width: 1000px) { .rx-stage { gap: 64px; } .rx-panel, .rx-panel[hidden] { display: grid !important; grid-template-columns: minmax(220px, .3fr) minmax(0, 1fr); column-gap: clamp(36px, 4.5vw, 72px); align-items: start; } .rx-cap { margin: 0; padding-top: 4px; line-height: 1.45; } .rx-cap strong { margin-bottom: 4px; } }</style></noscript>
 
@@ -159,7 +153,7 @@
       <img src="assets/img/hero-wide-800.jpg" width="800" height="500" alt="A long walk-on storage floor laid under the A-frame trusses of an Adelaide roof" fetchpriority="high" decoding="async">
     </picture>
     <!-- The trace: mint lines on the photo's real edges, in master-photo coordinates (source/photos/walkway-after.jpg,
-         1800 x 2400). fx-hero.css lays the drawing over the photo exactly as object-fit: cover lays each crop. -->
+         1800 x 2400). styles.css (Hero sequence) lays the drawing over the photo exactly as object-fit: cover lays each crop. -->
     <div class="hero-trace" aria-hidden="true">
       <svg viewBox="0 0 1800 2400" preserveAspectRatio="none" focusable="false">
         <defs>
@@ -957,7 +951,7 @@
 
   <!-- Before & after -->
   <!-- A still pair per job (never a drag slider): the before sits muted, the after lit. As the pair
-       scrolls in, a work light passes once from the before to the after (fx-results.css/.js). -->
+       scrolls in, a work light passes once from the before to the after (styles.css and main.js, Before & after). -->
   <section class="band band-dark results" id="results" aria-labelledby="results-title">
     <div class="wrap">
       <div class="section-head section-head-split results-head">
@@ -1019,8 +1013,8 @@
 
   <!-- Recent work -->
   <!-- Wide screens with motion: the section pins (CSS) and the page's scroll moves the track sideways
-       (fx-work.js). Narrow screens, reduced motion and no JS: the strip swipes, with scroll snap.
-       With motion, a warm work light travels along the photos (fx-work.js); .work-light is its pool. -->
+       (main.js). Narrow screens, reduced motion and no JS: the strip swipes, with scroll snap.
+       With motion, a warm work light travels along the photos (main.js); .work-light is its pool. -->
   <section class="band band-paper work" id="work" aria-labelledby="work-title" data-work>
     <div class="work-pin" data-work-pin>
       <div class="wrap work-head">
@@ -1255,11 +1249,5 @@
 </div>
 
 <script src="assets/js/main.js" defer></script>
-<script src="assets/js/fx-hero.js" defer></script>
-<script src="assets/js/fx-build.js" defer></script>
-<script src="assets/js/fx-process.js" defer></script>
-<script src="assets/js/fx-results.js" defer></script>
-<script src="assets/js/fx-work.js" defer></script>
-<script src="assets/js/fx-room.js" defer></script>
 </body>
 </html>

@@ -61,7 +61,7 @@ Everything is in metres at real sizes and projected in one-point perspective (a 
   by bay), the lamp's glow, the light through the open hatch, the headlights, the garage's dusk and its
   light. No filters.
 
-## The contract with fx-build.css
+## The contract with the CSS (styles.css, "Roof build scene")
 
 Every moving part is `class="m bs-…"` with its window and travel in inline custom properties:
 `--a` (start) and `--l` (length) in units of `--p`, and per kind: `--s0..s3` (the trip's segments) with
@@ -70,7 +70,7 @@ Every moving part is `class="m bs-…"` with its window and travel in inline cus
 `--mx --my --m0` (car planes), `--b --k / --b --m` (lights that go off again). The geometry in the file is
 the finished state; CSS computes every other pose from `--p`.
 
-`fx-build.js` writes `--p` on a part only while the story is inside one of its windows (the time pairs
+The script (`main.js`, "Roof build scene") writes `--p` on a part only while the story is inside one of its windows (the time pairs
 listed in `TIMES`, padded by 0.012) and once as it leaves; the svg pins `--p`, so the rest of the drawing
 is never restyled (about 36 elements a frame, against about 260 when the svg carried `--p`). The phone
 camera reads `--bs-cam`, which isn't inherited; it's written only on portrait stages and only inside the

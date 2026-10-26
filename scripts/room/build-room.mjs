@@ -18,18 +18,18 @@
    comes on: a work light hung at the far gable, the ceiling's batts and joists warm, and the manhole
    glowing with the light of the room below. Before the picture first shows, an overlay in roof colour
    (.rm-dark) holds it dark but for the manhole, and the light comes up through the manhole: the dark
-   draws back from the hatch (fx-room.css). The new
+   draws back from the hatch (styles.css). The new
    floor is H2 battens and 2400 × 600 × 19 mm particleboard, laid from the manhole along the ridge
    (see ORDER). Stored things stand in lanes either side of the 600 mm walkway. Everything is
    modelled in metres at real sizes, in the garage scene's palette.
 
    The file holds the largest floor (20 m²). Each sheet and each thing is one <use> of a shared shape
    and carries the floor size at which it appears (data-at, m²). It shows while it has the class "on":
-   the file is written at 8 m² (data-v="8"), which is what shows without JS, and fx-room.js only
+   the file is written at 8 m² (data-v="8"), which is what shows without JS, and main.js only
    toggles "on" on the parts whose state changes as the slider moves (and sets their delays). Nothing
    is built or removed while the slider moves.
 
-   Keep in step with fx-room.js: the floor sizes (2..20 m²). */
+   Keep in step with main.js: the floor sizes (2..20 m²). */
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -321,12 +321,12 @@ export function build({ v = 8, still = false } = {}) {
      the room below the manhole, as the garage scene's roof is once its light is on: warm batts and
      pine, brightest by the lamp and the manhole. Before the picture first shows, one overlay in roof
      colour (.rm-dark, in two pieces: behind the floor, and over the near slope) holds it dark, with
-     only the manhole lit; the light coming on runs on that overlay and its mask (fx-room.css). The cut edges
+     only the manhole lit; the light coming on runs on that overlay and its mask (styles.css). The cut edges
      stay teal throughout, as the scene's do. */
   const DARK_OPACITY = 0.8;
   /* When the light comes on, it comes up through the manhole: the dark draws back from the hatch.
      Its mask holds a soft hole (.rm-rise, black in the middle, white at its rim) centred on the
-     hatch, small while the roof is dark (fx-room.css); fx-room.css scales it up until the whole
+     hatch, small while the roof is dark; the CSS (styles.css, "How much room?") scales it up until the whole
      picture is clear, while the dark fades. Big enough at full size to clear every corner. */
   {
     const h = P(0, (HATCH.y0 + HATCH.y1) / 2, 0), k = 0.75, clear = 0.6;
@@ -446,7 +446,7 @@ export function build({ v = 8, still = false } = {}) {
     out.push(el('g', { 'clip-path': 'url(#rm-ceil)' }, el('ellipse', { cx: c[0], cy: c[1], rx: r1(4.4 * CAM.u), ry: r1(4.4 * CAM.u * se), fill: 'url(#rm-lamp)' })));
   }
   out.push(many(JOISTS.map((y) => outline([[X0, y - 0.0225, 0.004], [X1, y - 0.0225, 0.004], [X1, y + 0.0225, 0.004], [X0, y + 0.0225, 0.004]])), mul(C.pine, 0.8)));
-  /* the light of the floor: a warm pool that grows with it (fx-room.js scales it; 8 m² in the CSS) */
+  /* the light of the floor: a warm pool that grows with it (main.js scales it; 8 m² in the CSS) */
   {
     const c = P(0, 3.0, 0), o = P(0, HATCH.y0, 0);
     out.push(el('ellipse', { class: 'rm-pool', cx: c[0], cy: c[1], rx: r1(3.3 * CAM.u), ry: r1(3.3 * CAM.u * se), fill: 'url(#rm-pool)', style: `transform-origin:${o[0]}px ${o[1]}px` }));

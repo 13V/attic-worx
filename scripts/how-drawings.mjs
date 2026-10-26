@@ -6,7 +6,7 @@
 // shows its point first (what's ticked, circled or new) and is done within ~1.3s; secondary text bars trail.
 // Fills (.f) and labels fade in on the same clock. Classes: k1/k2/k3 line weights, ac teal (the new work),
 // dm notes (teal-deep), tx* text bars, ic icons, wh white, fw/fm/ft fills (white, mint, teal), lb labels.
-// Styles: assets/css/fx-process.css.
+// Styles: assets/css/styles.css ("How it works (#how)").
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

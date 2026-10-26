@@ -1,7 +1,11 @@
 /* Attic Worx — site styles
    Layout idea: the page moves between "in the roof" (deep teal-black bands lit by timber photos)
    and "in the home" (clean, cool-white bands). One font family, Archivo: condensed and heavy for
-   headlines, normal width for reading. Brand teal stays the action colour throughout. */
+   headlines, normal width for reading. Brand teal stays the action colour throughout.
+   In this file: tokens, base, layout and the page's sections in order; then Motion (the shared
+   primitives, hover, reduced motion); then one part per animated section, in page order, each scoped
+   to its own section: Hero sequence, How much room?, Roof build scene, How it works, Before & after,
+   Recent work. Those parts come last on purpose: they build on (and override) the rules above. */
 
 @font-face {
   font-family: "Archivo";
@@ -603,10 +607,10 @@ select.input {
   .svc-vent { min-height: 0; }
 }
 
-/* ---------- Roof build (3D section skeleton; fx-build.css takes it from here) ---------- */
+/* ---------- Roof build: see "Roof build scene" at the end ---------- */
 .build-head { display: grid; gap: 18px; justify-items: start; }
 
-/* ---------- Before & after: fx-results.css ---------- */
+/* ---------- Before & after: see its part at the end ---------- */
 
 /* ---------- How it works ---------- */
 .how-grid {
@@ -645,7 +649,7 @@ select.input {
 }
 
 /* ---------- Recent work ---------- */
-/* (the section's layout and motion: fx-work.css) */
+/* (the section's layout and motion: its part at the end) */
 .round-btn {
   width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--white);
   display: grid; place-items: center; cursor: pointer; color: var(--ink);
@@ -1042,4 +1046,1438 @@ select.input {
   42% { transform: translate(100%, -100%); animation-timing-function: steps(1, end); }
   43% { transform: translate(-100%, 100%); animation-timing-function: var(--ease-out); }
   100% { transform: none; }
+}
+
+/* ==================== Hero sequence: "drawn, then lit" (.hero) ==================== */
+/* It is dark in the roof. Mint lines draw themselves over the photo's real edges (the walkway and its far end
+   first, then the trusses from the middle outwards, then the sheet joints and the hatch), the work light
+   flickers on, the lines stay on the lit photo for a beat and fade. The headline rises word by word from the
+   first paint, the buttons follow, and the quote card rises in, form and all, alongside the copy, so the
+   drawing plays around a settled card and an early tap on "Get my free quote" lands on a usable form.
+   All CSS, from the first frame: it needs no script, but it only plays where scripts run (scripting: enabled)
+   and motion is welcome. Without JS or with reduced motion the photo is lit, there is no drawing and
+   everything is at rest. The photo (the LCP image) is painted from the first frame, under the darkness. */
+
+/* A clip, not a scroll container, so the photo's view timeline follows the page (the drift below) */
+.hero { overflow: clip; --t-light: 2.1s; /* the work light's flicker; the text shade steps with it */ }
+
+/* The drawing: one SVG in master-photo coordinates (walkway-after.jpg, 1800 x 2400), laid over the photo the
+   way object-fit: cover lays each crop: the crop's rendered width is max(100cqw, 100cqh * aspect), centred
+   across, at the object-position's 42% (wide) or 58% (tall) down; the SVG is the whole master, so it sits
+   the crop's top (638 or 93 master px) above that. Strokes scale with the photo (vector-effect would break
+   pathLength dashes in Chromium), so --k converts screen px to master units, stepped by layout. */
+.hero-trace {
+  position: absolute; inset: 0; z-index: -2; /* over the darkness (::before), under the text shade (::after) */
+  display: none;
+  container-type: size;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-trace svg {
+  --ar: 1.6;   /* hero-wide: master (0, 638) to (1800, 1763) */
+  --cy: 638;
+  --py: 0.42;
+  --k: 1.25;   /* master px per screen px, ~1800 / the photo's rendered width */
+  --cw: max(100cqw, 100cqh * var(--ar));
+  position: absolute;
+  left: calc((100cqw - var(--cw)) / 2);
+  top: calc((100cqh - var(--cw) / var(--ar)) * var(--py) - var(--cw) * var(--cy) / 1800);
+  width: var(--cw);
+  height: calc(var(--cw) * 4 / 3);
+  max-width: none;
+  fill: none;
+  stroke: var(--mint);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (min-width: 1700px) { .hero-trace svg { --k: 1; } }
+@media (min-width: 2200px) { .hero-trace svg { --k: 0.8; } }
+@media (max-width: 960px) {
+  .hero-trace svg { --ar: 0.8; --cy: 93; --py: 0.58; --k: 1.85; } /* hero-tall: (0, 93) to (1800, 2343) */
+}
+.hero-trace .l-main { stroke-width: calc(var(--k) * 1.7px); }
+.hero-trace .l-detail { stroke-width: calc(var(--k) * 1.2px); stroke-opacity: 0.8; }
+.hero-trace stop { stop-color: var(--mint); }
+.hero-trace .l-guide {
+  stroke: url(#aw-trace-guide); /* fades out short of the vanishing point, clear of the header */
+  stroke-width: calc(var(--k) * 1px); stroke-opacity: 0.42;
+  stroke-dasharray: calc(var(--k) * 5px) calc(var(--k) * 6px);
+}
+/* Phones and tablets: the copy sits over the top of the photo and the truss chords run behind the headline and
+   lede, so they stay faint and the floor (walkway, battens, joints, hatch) is drawn bright: its far end meets
+   the lede's foot at every width from 320 to 960px. The guides would sit wholly behind the lede, so they go.
+   (Plain opacity, not a gradient paint: a url() stroke on every path cost ~0.2 s of simulated LCP.) */
+@media (max-width: 960px) {
+  .hero-trace .ch { stroke-opacity: 0.24; }
+  .hero-trace .l-guide { display: none; }
+}
+
+/* No JS, reduced motion: the light is simply on */
+.hero::before { animation: none; }
+
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  /* Dark roof, then the work light flickers on (the darkness lifts in steps). In the dark the copy needs
+     less shade, so the drawing reads; the shade steps with the flicker (same duration, same keyframe stops),
+     so the lines behind the copy dim with the light, never before it. */
+  .hero::before { animation: aw-hero-lights var(--t-light) steps(1, end) both; }
+  .hero::after { animation: aw-hero-shade var(--t-light) steps(1, end); }
+
+  /* The drawing: guides fade in, every other stroke is drawn with a pen; it lingers on the lit photo, then goes */
+  .hero-trace { display: block; }
+  .hero-trace svg { animation: aw-hero-trace-out 700ms var(--ease-in) 2.45s both; }
+  .hero-trace .l-guide { animation: aw-fade 500ms ease 60ms both; }
+  .hero-trace [pathLength] {
+    stroke-dasharray: 1 2;
+    animation: aw-draw 700ms var(--ease-draw) var(--d, 0s) both;
+  }
+  .hero-trace .l-detail [pathLength] { animation-duration: 600ms; }
+
+  /* Copy: the stamp fades in and the headline rises out of its masks word by word, both from the first frame,
+     the buttons and the reviews line follow. The lede is painted from the first frame (wherever the photo
+     fills the whole screen, phones and laptops, the browser skips it for LCP and the lede is the largest
+     text, so it must not fade); it only settles a few pixels with the headline, transform only. */
+  .hero .stamp { animation: aw-fade 800ms var(--ease-out) backwards; }
+  .hero h1 .w > span {
+    animation: aw-rise var(--t-rise) var(--ease-out) backwards;
+    animation-delay: calc(var(--w, 0) * 55ms);
+  }
+  .hero .lede { animation: aw-hero-settle 1100ms var(--ease-out) backwards; }
+  .hero-actions { animation: aw-fade-up 900ms var(--ease-out) 560ms backwards; }
+  .hero .proof { animation: aw-fade-up 900ms var(--ease-out) 680ms backwards; }
+
+  /* The quote card rises in with the copy, its form inside it, and is settled before the drawing reaches
+     the floor */
+  .hero .quote-card { animation: aw-hero-card 900ms var(--ease-out) 240ms backwards; }
+}
+
+/* Desktop: as the hero leaves, the photo (and the drawing with it) drifts down a little behind the copy */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) and (min-width: 961px) {
+  @supports (animation-timeline: view()) {
+    .hero-media img,
+    .hero-trace {
+      animation: aw-hero-drift linear both;
+      animation-timeline: view(block 0px); /* no inset: the page's scroll-padding would start it early */
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes aw-hero-lights {
+  0%, 57% { opacity: 0.94; }
+  62% { opacity: 0.22; }
+  66% { opacity: 0.64; }
+  71% { opacity: 0.1; }
+  77% { opacity: 0.34; }
+  85%, 100% { opacity: 0; }
+}
+/* The shade follows the darkness: light in the dark, full when lit (the stops match aw-hero-lights) */
+@keyframes aw-hero-shade {
+  0%, 57% { opacity: 0.3; }
+  62% { opacity: 0.9; }
+  66% { opacity: 0.55; }
+  71% { opacity: 1; }
+  77% { opacity: 0.8; }
+  85%, 100% { opacity: 1; }
+}
+@keyframes aw-hero-trace-out { to { opacity: 0; visibility: hidden; } }
+@keyframes aw-hero-card { from { opacity: 0; transform: translateY(32px); } }
+@keyframes aw-hero-settle { from { transform: translateY(14px); } }
+@keyframes aw-hero-drift { to { translate: 0 10%; scale: 1.06; } }
+
+/* ==================== How much room? (#room) ==================== */
+/* The picture (generated by scripts/room/build-room.mjs) holds the largest floor. Each sheet (.rm-s)
+   and each stored thing (.rm-i) shows while it has .on. Only opacity and transform change. Without JS
+   the picture keeps the 8 m² written into the HTML and the slider's thumb is hidden, so the picture,
+   the gauge and the text all show 8 m². */
+
+/* ---------- Layout ---------- */
+.room-grid {
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: clamp(20px, 3vw, 40px); row-gap: clamp(28px, 4vw, 52px); align-items: center;
+}
+.room-head {
+  grid-column: 1 / -1; display: grid; row-gap: 18px; column-gap: clamp(24px, 5vw, 80px);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: end;
+}
+.room-head .eyebrow { grid-column: 1 / -1; }
+.room-pic { grid-column: 1 / 9; margin: 0; }
+.room-panel { grid-column: 9 / -1; }
+.room-svg { display: block; width: 100%; height: auto; }
+@media (max-width: 1000px) {
+  .room-head { grid-template-columns: minmax(0, 1fr); }
+  .room-pic { grid-column: 1 / -1; width: 100%; max-width: 700px; justify-self: center; }
+  .room-panel { grid-column: 1 / -1; }
+}
+@media (min-width: 641px) and (max-width: 1000px) {
+  /* tablet: the figures on the left; the slider, then its button and hand-off line, on the right;
+     the footnote under both */
+  .room-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; row-gap: 16px;
+    grid-template-areas: "read ctrl" "read cta" "read hand" "note note";
+  }
+  .room-readout { grid-area: read; align-self: center; }
+  .room-control { grid-area: ctrl; }
+  .room-cta { grid-area: cta; }
+  .room-handoff { grid-area: hand; margin-top: -4px; }
+  .room-note { grid-area: note; }
+}
+@media (min-width: 1001px) and (max-height: 820px) {
+  /* laptop heights: a little less air (above the heading too), so the slider and its button come
+     into view together */
+  .room.band { padding-top: 64px; }
+  .room-grid { row-gap: 28px; }
+  .room-head { row-gap: 12px; }
+  .room-panel { gap: 16px; }
+}
+@media (max-width: 640px) {
+  /* phone: the picture runs edge to edge; the figures, then the slider under the thumb */
+  .room-pic { max-width: none; width: auto; justify-self: stretch; margin-inline: calc(-1 * var(--gutter)); }
+  .room-grid { row-gap: 24px; }
+}
+@media (min-width: 600px) and (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  /* phones on their side: the picture beside the panel, as on a desk, and held in view (sticky)
+     while the panel goes by, so the slider never moves a picture that's off the screen */
+  .room-grid { align-items: start; }
+  .room-pic {
+    grid-column: 1 / 7; width: 100%; margin-inline: 0; justify-self: center;
+    /* as tall as fits between the header and the action bar (the picture is 571 × 405) */
+    max-width: calc((100svh - var(--header-h) - 96px) * 1.41);
+    position: sticky; top: calc(var(--header-h) + 8px);
+  }
+  .room-panel { grid-column: 7 / -1; grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
+  .room-readout, .room-control, .room-cta, .room-handoff, .room-note { grid-area: auto; }
+  .room-handoff { margin-top: -8px; }
+}
+
+/* ---------- The panel: the figures, the slider, the button ---------- */
+.room-panel {
+  display: grid; gap: 20px;
+  padding: clamp(22px, 2.6vw, 32px);
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--r-card);
+}
+/* Two figures side by side, 1 : 1.2, in boxes sized from the figures' type, never from their digits,
+   so a changing digit moves nothing (no layout shift). Each box holds its widest figure ("20 m²",
+   "150"); when two don't fit on a line (large text), the second goes under the first. */
+.room-readout {
+  --fig: clamp(3.4rem, 2.8rem + 2vw, 4.6rem);
+  display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 14px;
+}
+.room-stat { display: grid; align-content: start; gap: 6px; flex: 1 1 calc(var(--fig) * 1.45); min-width: 0; }
+.room-stat + .room-stat { flex: 1.2 1 calc(var(--fig) * 1.74); }
+.room-stat-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.2; color: var(--ink-3); }
+.room-size {
+  position: relative;
+  font-stretch: 68%; font-weight: 800; line-height: 0.86; letter-spacing: -0.01em;
+  font-size: var(--fig); font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.room-boxes { color: var(--teal-deep); }
+/* the unit sits after the number by transform (--n digits, from main.js): 9 to 10 moves nothing */
+.room-unit { position: absolute; left: 0; bottom: 0; transform: translateX(calc(var(--n, 1) * (1ch + var(--ls, -0.01em)) + 0.06em)); }
+.room-unit > span { font-size: 0.5em; letter-spacing: 0; color: var(--teal-deep); }
+/* the second line: the mix, or, at 12 m², Kyle M's floor (both always there, one shown) */
+.room-also { flex: 1 1 100%; font-size: 0.94rem; line-height: 1.45; color: var(--ink-2); }
+.room-swap { display: grid; }
+.room-swap > span { grid-area: 1 / 1; }
+.room-also-kyle { visibility: hidden; color: var(--teal-deep); font-weight: 600; }
+.room.is-kyle .room-also-kyle { visibility: visible; }
+.room.is-kyle .room-also-mix { visibility: hidden; }
+/* the button may wrap on the narrowest screens (or with large text) rather than widen the panel */
+.room-cta { width: 100%; white-space: normal; text-align: center; }
+.room-handoff { display: grid; margin-top: -8px; font-size: 0.82rem; line-height: 1.45; color: var(--ink-2); }
+.room-handoff > span { grid-area: 1 / 1; }
+/* its longest wording, unseen, holds the line's height, so it never changes as the size does */
+.room-handoff-size { visibility: hidden; }
+.room-note { font-size: 0.8rem; line-height: 1.45; color: var(--ink-3); }
+
+/* The slider: a real range input over a drawn track. The track runs between the thumb's centres at 2
+   and at 20 m², so the fill, the marks and the zones line up with the thumb at every width. */
+.room-control { display: grid; gap: 10px; padding-top: 26px; }
+.room-range { position: relative; height: 44px; --thumb: 34px; --f: 0.3333; --k12: 0.5556; container: room-range / inline-size; }
+.room-track {
+  position: absolute; left: calc(var(--thumb) / 2); right: calc(var(--thumb) / 2); top: 50%;
+  height: 8px; margin-top: -4px; border-radius: 99px; background: var(--line); overflow: hidden;
+}
+.room-fill {
+  position: absolute; inset: 0; border-radius: inherit; background: var(--teal);
+  transform-origin: 0 50%; transform: scaleX(var(--f));
+}
+/* Kyle M's 12 m², marked above the track */
+.room-kyle {
+  position: absolute; bottom: calc(100% - 4px); left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--k12));
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; color: var(--ink-3);
+  pointer-events: none;
+}
+.room-kyle::after { content: ""; width: 0; height: 9px; margin-top: 3px; border-left: 2px solid currentColor; border-radius: 2px; }
+/* the slider's ends, on the same line */
+.room-end {
+  position: absolute; bottom: calc(100% + 8px);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; color: var(--ink-3);
+  pointer-events: none;
+}
+.room-end-min { left: 0; }
+.room-end-max { right: 0; }
+/* with large text the ends would run into Kyle's label: it stays, they go (the zones still show the
+   range) */
+@container room-range (max-width: 11.5em) {
+  .room-end { visibility: hidden; }
+}
+.room.is-kyle .room-kyle { color: var(--teal-deep); }
+.room-range input {
+  position: relative; z-index: 1; display: block; width: 100%; height: 44px; margin: 0;
+  -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
+  /* only a vertical move can scroll the page from here (main.js puts the size back if it does) */
+  touch-action: pan-y pinch-zoom;
+}
+/* The visible ring is on the thumb (below). This outline is transparent, so it only shows where colours
+   are forced (Windows High Contrast), where the thumb's ring is dropped. */
+.room-range input:focus-visible { outline: 3px solid transparent; outline-offset: 2px; }
+.room-range input::-webkit-slider-runnable-track { height: 44px; background: transparent; border: 0; }
+.room-range input::-moz-range-track { height: 44px; background: transparent; border: 0; }
+/* the thumb carries a grip (three short bars): something to take hold of, not the old drag handle's
+   chevrons */
+.room-range input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: var(--thumb); height: var(--thumb); margin-top: 5px;
+  border-radius: 50%; background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8.5 9v6M12 9v6M15.5 9v6' fill='none' stroke='%23117E79' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / 18px no-repeat; border: 3px solid var(--teal);
+  box-shadow: 0 6px 16px -6px rgba(5, 20, 20, 0.45);
+}
+.room-range input::-moz-range-thumb {
+  width: var(--thumb); height: var(--thumb); box-sizing: border-box;
+  border-radius: 50%; background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8.5 9v6M12 9v6M15.5 9v6' fill='none' stroke='%23117E79' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / 18px no-repeat; border: 3px solid var(--teal);
+  box-shadow: 0 6px 16px -6px rgba(5, 20, 20, 0.45);
+}
+.room-range input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--white), 0 0 0 6px var(--teal); }
+.room-range input:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--white), 0 0 0 6px var(--teal); }
+.room-range input:active::-webkit-slider-thumb { background-color: var(--mint-soft); }
+/* The quote form's three sizes, as zones under the track */
+.room-scale {
+  display: grid; grid-template-columns: 3.5fr 6fr 8.5fr; gap: 4px;
+  margin-inline: calc(34px / 2 - 2px);
+  font-size: 0.74rem; font-weight: 700; line-height: 1.25; color: var(--ink-3);
+}
+.room-scale span { padding-top: 8px; border-top: 3px solid var(--line); }
+.room-scale span:nth-child(2) { text-align: center; }
+.room-scale span:last-child { text-align: right; }
+.room-scale .is-on { color: var(--teal-deep); border-top-color: var(--teal); }
+
+/* Forced colours (Windows High Contrast): keep the track, the fill, Kyle's mark and the current zone
+   in system colours, so the slider still reads as a slider */
+@media (forced-colors: active) {
+  .room-track { forced-color-adjust: none; background: GrayText; }
+  .room-fill { forced-color-adjust: none; background: Highlight; }
+  .room-scale span { forced-color-adjust: none; color: CanvasText; border-top-color: GrayText; }
+  .room-scale .is-on { color: Highlight; border-top-color: Highlight; }
+}
+
+/* No JS: nothing to drag, so no thumb; the gauge, the picture and the text all rest at 8 m² */
+html:not(.js) .room-range input { visibility: hidden; }
+html:not(.js) .room-range label,
+html:not(.js) .room-handoff-size { display: none; }
+html:not(.js) .room-handoff-js,
+html.js .room-handoff-nojs { visibility: hidden; }
+
+/* ---------- The picture ---------- */
+/* A part shows while it has .on (the HTML holds 8 m²; main.js toggles .on only on the parts that
+   change, and writes each one's transition-delay so they arrive in floor order) */
+.room-svg .rm-s:not(.on),
+.room-svg .rm-i:not(.on) { opacity: 0; }
+/* the warm light of the floor grows with it (main.js sets the scale; this is 8 m²) */
+.room-svg .rm-pool { transform: scale(0.64); }
+/* The light: off until the picture first shows (main.js). While the roof is dark, one overlay in
+   roof colour (.rm-dark, two pieces: behind the floor and over the near slope) holds everything but
+   the manhole and the cut edges in the dark, and the lamp is off. Then the light comes up through
+   the manhole: a soft hole in the dark's mask (.rm-rise), small round the hatch while it's dark,
+   opens out across the roof as the dark fades, and the lamp at the far gable comes on as it ends.
+   At rest the dark is hidden (its visibility attribute), so it costs nothing. */
+.room-svg .rm-rise { transform: scale(0.05); }
+.room.is-dark .rm-lit { opacity: 0; }
+.room.is-dark .rm-dark,
+.room.is-lighting .rm-dark { visibility: visible; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Sheets slide out from the walkway (or the manhole) and settle; things are set down from just
+     above. Arrivals settle (ease-out); departures are quicker (ease-in) and go newest first. */
+  .room.is-live .rm-s:not(.on) { transform: translate(var(--dx), var(--dy)); }
+  .room.is-live .rm-i:not(.on) { transform: translateY(-26px); }
+  .room.is-live .rm-s.on { transition: opacity 360ms var(--ease-out), transform 620ms var(--ease-out); }
+  .room.is-live .rm-i.on { transition: opacity 280ms var(--ease-out), transform 520ms var(--ease-out); }
+  /* (main.js gives departing things an opacity delay 100 ms past their lift's: they're lifted
+     away whole, and only fade at the end) */
+  .room.is-live .rm-s:not(.on) { transition: opacity 200ms var(--ease-in), transform 240ms var(--ease-in); }
+  .room.is-live .rm-i:not(.on) { transition: opacity 120ms var(--ease-in), transform 220ms var(--ease-in); }
+  .room.is-live .rm-pool { transition: transform 800ms var(--ease-out); }
+  .room.is-lighting .rm-rise { animation: aw-room-rise 1000ms var(--ease-draw) both; }
+  .room.is-lighting .rm-dark { animation: aw-room-fade 1000ms var(--ease-io) both; }
+  .room.is-lighting .rm-lit { animation: aw-room-lamp 1000ms linear both; }
+  /* while the page starts (and before the first build): hold every transition */
+  .room .room-svg.is-still .rm-s,
+  .room .room-svg.is-still .rm-i,
+  .room .room-svg.is-still .rm-pool { transition: none !important; }
+}
+
+/* the light coming up through the manhole: the hole in the dark opens from the hatch; the dark
+   fades behind it; the lamp comes on as it ends (switched on: no flicker, the hero and the garage
+   scene have theirs) */
+@keyframes aw-room-rise { to { transform: none; } }
+@keyframes aw-room-fade { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes aw-room-lamp { 0%, 76% { opacity: 0; } 85%, 100% { opacity: 1; } }
+
+/* ==================== Roof build scene: "Boxes up. Car in." (#build) ==================== */
+/* The roof-space cutaway. The scene is an inline SVG made by scripts/scene/build-scene.mjs: a single-storey house cut front to back
+   at dusk, seen from inside its roof. Its geometry is the finished state (floor down, things up, ladder
+   away, car in, roller door down), which is what shows at rest: without JS, with reduced motion, or where
+   pow() is missing. Then the captions are a plain numbered list under the picture.
+
+   Pinned (html.js, motion welcome, pow() supported): a tall track with a sticky stage. main.js eases
+   one number, --p (0 -> 1), and marks the current caption (data-beat); it writes --p on each moving part
+   only while that part moves (see below). Every pose below is computed from --p, Engel Build's way: each moving part (.m) has a window [--a, --a + --l] and its
+   progress --bs-t; its eased distance still to go is a power of (1 - t): (1-t)^3 settles (cubic out),
+   t^2 (3 - 2t) is a smoothstep for things carried or driven. Only transform, opacity and the rotation
+   of the ladder's sections change; light is shapes whose opacity changes, never filters.
+   Three things are timed rather than scrubbed, keyed on where the story is: the work light's flicker (its
+   beat starts), and at the end the roller door coming down and the garage light settling (data-shut). */
+
+@property --p { syntax: "<number>"; inherits: true; initial-value: 1; }
+@property --bs-t { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --bs-f { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-u1 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-u2 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-u3 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e1 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e2 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-e3 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-dn { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-hk { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --bs-cam { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-c1 { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --bs-c2 { syntax: "<number>"; inherits: false; initial-value: 1; }
+
+/* --p on the stage drives the rail; the drawing doesn't inherit it (the svg pins it). main.js writes --p
+   on each moving part (.m) while it moves, and --bs-cam (not inherited) on the svg for the phone camera, so
+   a frame restyles only what moves. Groups inside parts that never read --p pin it too. */
+.bs-svg, .bs-still, .bs-in, .bs-caps { --p: 1; }
+
+/* ---------- At rest: the finished picture, then the steps as a list ---------- */
+.build { padding-bottom: clamp(56px, 7vw, 104px); }
+.build-head { display: grid; gap: 18px; justify-items: start; }
+.bs { margin-top: clamp(36px, 5vw, 64px); }
+.bs-stage {
+  display: grid; gap: clamp(28px, 4vw, 48px);
+  width: 100%; max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+.bs-scene {
+  position: relative; overflow: hidden; aspect-ratio: 1300 / 720;
+  border-radius: var(--r-img); background: var(--roof);
+}
+.bs-svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; display: block; }
+/* The finished pose of things that only exist mid-story: the dark before the light, the ladder and the
+   light through its hatch, the things still in the garage, the nose on the driveway, the headlights */
+.bs-dark, .bs-spill, .bs-s1, .bs-beam { opacity: 0; }
+.bs-s1 { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); rotate: calc(var(--r) * 1deg); }
+.bs-nose, .bs-pick { opacity: 0; }
+
+.bs-rail { display: none; }
+.bs-caps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px clamp(20px, 3vw, 40px); counter-reset: bs; }
+.bs-cap { counter-increment: bs; padding-top: 16px; border-top: 1px solid var(--roof-line); }
+.bs-cap::before {
+  content: counter(bs, decimal-leading-zero); display: block; margin-bottom: 8px;
+  color: var(--mint); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; font-variant-numeric: tabular-nums;
+}
+.bs-cap h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.bs-cap p { margin-top: 6px; color: rgba(255, 255, 255, 0.78); font-size: 0.95rem; line-height: 1.5; }
+.bs-cap .btn { margin-top: 16px; }
+.bs-cap:last-child { grid-column: span 2; }
+@media (max-width: 1000px) { .bs-caps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  /* a phone sees the garage and the roof over it: the same drawing, framed on the garage */
+  .bs-scene { aspect-ratio: 4 / 5; max-height: 78svh; container-type: size; }
+  .bs-svg { left: 50%; right: auto; height: 100cqh; width: calc(100cqh * 1300 / 720); translate: -43% 0; }
+}
+@media (max-width: 560px) {
+  .bs-caps { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .bs-cap:last-child { grid-column: auto; }
+}
+
+/* ---------- Pinned: the story plays as you scroll ---------- */
+/* (screens under 500px tall, a phone on its side, keep the picture and the list: a pinned stage there would
+   leave the drawing a sliver) */
+@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+@supports (width: calc(pow(2, 2) * 1px)) and (width: 1cqw) {
+  html.js .build { padding-bottom: 0; }
+  html.js .bs { position: relative; height: 470vh; margin-top: clamp(24px, 4vw, 48px); }
+  html.js .bs-stage {
+    position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0;
+    display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 0; overflow: hidden;
+    --bar: 0px;
+  }
+  html.js .bs-scene { aspect-ratio: auto; border-radius: 0; background: none; container-type: size; }
+  /* Wide stages: the drawing is as large as fits (--bs-s: px per unit of the 1300 x 720 viewBox), sat on the
+     scene's foot and centred on what matters, the car on the driveway (from -190 units, left of the
+     viewBox) to the gutter (1285). Where that doesn't fit across, a drawing fitted to the height gives up
+     to 7% of its size, then keeps the gutter at the right edge and shows as much of the car as it can. The
+     svg paints past its box (the sky and the street run on) and the scene clips.
+     The header: while it shows, if it would cover the roof's ridge, the picture steps down out from under
+     it, in step with it (only short screens need this; the bottom of the drawing is just earth). The ridge
+     sits 585 units above the drawing's foot. */
+  html.js .bs-svg {
+    --bs-s: min(100cqw / 1300, max(100cqw / 1475, 0.93 * 100cqh / 720), 100cqh / 720);
+    inset: auto; left: 50%; bottom: 0; width: calc(1300 * var(--bs-s)); height: calc(720 * var(--bs-s)); overflow: visible;
+    --bs-hk: 0;
+    translate:
+      calc(-50% + 650 * var(--bs-s) - clamp(547.5 * var(--bs-s), 1285 * var(--bs-s) - 50cqw, 650 * var(--bs-s)))
+      calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 585 * var(--bs-s))));
+    transition: --bs-hk 280ms var(--ease-in);
+  }
+  html.js.hdr-on .bs-svg { --bs-hk: 1; transition: --bs-hk 450ms var(--ease-out); }
+
+  /* The rail: one segment per step, filling as the step plays */
+  html.js .bs-rail {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;
+    width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto; padding-top: 14px;
+  }
+  html.js .bs-rail i { position: relative; height: 2px; background: rgba(143, 214, 204, 0.18); overflow: hidden; }
+  html.js .bs-rail i::after {
+    content: ""; position: absolute; inset: 0; background: var(--mint); transform-origin: 0 50%;
+    transform: scaleX(clamp(0, (var(--p) - var(--at)) / (var(--to) - var(--at)), 1));
+  }
+
+  /* Wide screens: the steps in a row under the picture; the current one lit, its line underneath */
+  html.js .bs-caps {
+    position: relative; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 8px;
+    width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto;
+    padding: 12px 0 calc(78px + var(--bar)); min-height: 0;
+  }
+  html.js .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.62; transition: opacity var(--t-out) var(--ease-in); }
+  html.js .bs-cap::before { margin-bottom: 4px; }
+  html.js .bs-cap h3 { font-size: 0.98rem; }
+  html.js .bs-cap p, html.js .bs-cap .btn {
+    position: absolute; left: 0; top: 74px; margin: 0;
+    opacity: 0; translate: 0 6px; pointer-events: none;
+    transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out);
+  }
+  /* (the button stays focusable while its step is off: focusing it jumps to the end, see main.js) */
+  html.js .bs-cap p { visibility: hidden; }
+  html.js .bs-cap p { width: min(58%, 40em); font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
+  html.js .bs-cap .btn { left: auto; right: 0; top: 66px; }
+  html.js .bs-cap.is-on { opacity: 1; transition: opacity var(--t-ui) var(--ease-out); }
+  html.js .bs-cap.is-on p, html.js .bs-cap.is-on .btn, html.js .bs-cap .btn:focus-visible {
+    opacity: 1; translate: none; visibility: visible; pointer-events: auto;
+    transition: opacity var(--t-text) var(--ease-out) 80ms, translate var(--t-text) var(--ease-out) 80ms, visibility 0s;
+  }
+  /* until main.js marks a step (or if it never runs), the last one shows */
+  html.js .bs-stage:not([data-beat]) .bs-cap:last-child { opacity: 1; }
+  html.js .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; visibility: visible; pointer-events: auto; }
+
+  /* Narrower screens: one step at a time in a panel, above the action bar on phones */
+  @media (max-width: 1099px) {
+    html.js .bs-caps { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px 0 calc(18px + var(--bar)); }
+    html.js .bs-cap { grid-area: 1 / 1; opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out); }
+    html.js .bs-cap:not(.is-on):not(:last-child) { visibility: hidden; }
+    html.js .bs-cap.is-on, html.js .bs-stage:not([data-beat]) .bs-cap:last-child, html.js .bs-cap:focus-within { opacity: 1; translate: none; visibility: visible; pointer-events: auto; transition: opacity var(--t-ui) var(--ease-out), translate var(--t-ui) var(--ease-out), visibility 0s; }
+    html.js .bs-cap::before { display: inline; margin-right: 10px; }
+    html.js .bs-cap h3 { display: inline; font-size: 1.0625rem; }
+    html.js .bs-cap p, html.js .bs-cap .btn { position: static; translate: none; }
+    html.js .bs-cap p { width: auto; margin-top: 4px; font-size: 0.95rem; line-height: 1.45; }
+    html.js .bs-cap .btn { margin-top: 12px; min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
+  }
+  @media (max-width: 960px) {
+    html.js .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
+    /* the action bar's own "Get my free quote" sits just under the last step here: one is enough */
+    html.js .bs-cap .btn { display: none; }
+  }
+  /* Phones and any portrait stage (tablets held upright, tall windows): a shorter track, and a camera on
+     the garage column that looks out to the car at the start and the end (--cx: the point of the drawing,
+     as a fraction of its width, at the middle of the screen). The drawing fills the stage's height, and
+     paints past its own box (the sky, the street and the car run on), so it reaches the edges at every
+     camera position; the scene clips. */
+  @media (max-width: 760px), (max-aspect-ratio: 1/1) {
+    html.js .bs { height: 375vh; }
+    html.js .bs-scene { container-type: size; }
+    html.js .bs-svg {
+      /* sized so a phone's width shows 5.4 m of the house; on a taller stage it fills the height */
+      left: 50%; right: auto; top: auto; bottom: 0; overflow: visible;
+      height: min(100cqh, 133.3cqw); width: calc(min(100cqh, 133.3cqw) * 1300 / 720);
+      /* (registered, not inherited: a camera move restyles the svg alone) */
+      --bs-c1: clamp(0, (var(--bs-cam) - var(--cam-a)) / var(--cam-l), 1);
+      --bs-c2: clamp(0, (var(--bs-cam) - var(--cam-b)) / var(--cam-m), 1);
+      translate:
+        calc((0.25 + 0.235 * var(--bs-c1) * var(--bs-c1) * (3 - 2 * var(--bs-c1)) - 0.055 * var(--bs-c2) * var(--bs-c2) * (3 - 2 * var(--bs-c2))) * -100%)
+        calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 0.8125 * min(100cqh, 133.3cqw))));
+    }
+  }
+
+  /* ----- The poses ----- */
+  html.js .bs .m { --bs-t: clamp(0, (var(--p) - var(--a)) / var(--l), 1); }
+
+  /* Dusk: the roof is dark, bay by bay the work light reaches in */
+  html.js .bs-dark { opacity: pow(1 - var(--bs-t), 1.6); }
+  /* The work light: off until its beat, then a quick, soft flicker (the site's lights-on rhythm) */
+  html.js .bs-lit { opacity: 0; }
+  html.js .bs-stage:not([data-beat="0"]) .bs-lit { opacity: 1; animation: bs-flicker 1.1s steps(1, end) both; }
+
+  /* H2 battens are lowered on, from the hatch outwards */
+  html.js .bs-batten {
+    --bs-e: pow(1 - var(--bs-t), 3);
+    translate: 0 calc(var(--bs-e) * -30px);
+    opacity: min(1, var(--bs-t) * 5);
+  }
+  /* Sheets are laid from the far end back to the hatch; each lands flat */
+  html.js .bs-sheet {
+    --bs-e: pow(1 - var(--bs-t), 3);
+    translate: 0 calc(var(--bs-e) * -24px);
+    opacity: min(1, var(--bs-t) * 4);
+  }
+
+  /* The ladder: the lid swings down about its hinge, then the sections unfold in turn; at the end they
+     fold away in reverse. --r is the closed angle; the open pose is the drawing. */
+  html.js .bs-fold {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
+    --bs-f: clamp(0, (var(--p) - var(--c)) / var(--m), 1);
+    rotate: calc(var(--r) * 1deg * min(1, var(--bs-e) + var(--bs-f) * var(--bs-f) * (3 - 2 * var(--bs-f))));
+  }
+  html.js .bs-s1 { opacity: calc(clamp(0, (var(--p) - var(--a) + 0.004) * 400, 1) - clamp(0, (var(--p) - var(--c) - var(--m) - 0.004) * 400, 1)); }
+  /* The old step ladder under the manhole folds, and is carried to the wall (lifted a little on the way) */
+  html.js .bs-step, html.js .bs-step-rear { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); }
+  html.js .bs-step-rear { --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t))); rotate: calc(var(--r) * var(--bs-e) * 1deg); }
+  html.js .bs-step {
+    --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
+    translate: calc(var(--dx) * var(--bs-e) * 1px) calc((var(--dy) * var(--bs-e) - 14 * sin(var(--bs-t) * 180deg)) * 1px);
+    rotate: calc(var(--r) * var(--bs-e) * 1deg);
+  }
+  /* Light falls through the open hatch while the lid is down */
+  html.js .bs-spill { opacity: calc(pow(var(--bs-t), 2) - clamp(0, (var(--p) - var(--b)) / var(--k), 1)); }
+
+  /* The things: each trip is the same path for both copies of a load (walk | climb | rise | set, the
+     window's fractions --s0..--s3, waypoints --x/--y/--k relative to the copy's own spot). The garage copy
+     walks to the ladder's foot and climbs; the roof copy climbs with it, then rises out of the hatch and is
+     set down in its row. Each is clipped to its own side of the ceiling's cut line (bs-below / bs-above), so
+     the hand-over hides inside the cut ceiling: no fade. Segments one and two are smoothsteps, the set-down
+     settles (cubic out). */
+  html.js :is(.bs-pick, .bs-load) {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    --bs-u1: clamp(0, (var(--bs-t) - var(--s0, 0)) / (var(--s1) - var(--s0, 0)), 1);
+    --bs-u2: clamp(0, (var(--bs-t) - var(--s1)) / (var(--s2) - var(--s1)), 1);
+    --bs-u3: clamp(0, (var(--bs-t) - var(--s2)) / (var(--s3, 1) - var(--s2)), 1);
+    --bs-e1: calc(var(--bs-u1) * var(--bs-u1) * (3 - 2 * var(--bs-u1)));
+    --bs-e2: calc(var(--bs-u2) * var(--bs-u2) * (3 - 2 * var(--bs-u2)));
+    --bs-e3: calc(1 - pow(1 - var(--bs-u3), 3));
+    translate:
+      calc((var(--x0, 0) + (var(--x1) - var(--x0, 0)) * var(--bs-e1) + (var(--x2) - var(--x1)) * var(--bs-e2) + (var(--x3, 0) - var(--x2)) * var(--bs-e3)) * 1px)
+      calc((var(--y0, 0) + (var(--y1) - var(--y0, 0)) * var(--bs-e1) + (var(--y2) - var(--y1)) * var(--bs-e2) + (var(--y3, 0) - var(--y2)) * var(--bs-e3)) * 1px);
+    scale: calc(var(--k0, 1) + (var(--k1) - var(--k0, 1)) * var(--bs-e1) + (var(--k2) - var(--k1)) * var(--bs-e2) + (var(--k3, 1) - var(--k2)) * var(--bs-e3));
+  }
+  /* the garage copy is gone once it's through the ceiling; the roof copy is there from the climb on */
+  html.js .bs-pick { opacity: clamp(0, (var(--s3) - var(--bs-t)) * 10000, 1); }
+  html.js .bs-load { opacity: clamp(0, (var(--bs-t) - var(--s0)) * 10000 + 1, 1); }
+  /* a load's contact shadow goes as it's lifted, and comes as it's set down */
+  html.js .bs-pick .bs-shade { opacity: calc(1 - min(1, (var(--p) - var(--a)) / var(--l) * 8)); }
+  html.js .bs-load .bs-shade { opacity: clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1); }
+
+  /* The car rolls in. Every plane of it moves by an exact affine map, linear in the distance still to go
+     (worked out per plane by the generator: the near side just translates; the planes on top also shear,
+     because their far edges are smaller; the nose shows only while the car is left of the eye). */
+  html.js .bs-car {
+    --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
+    transform-box: view-box; transform-origin: 0 0;
+    transform: matrix(calc(1 + var(--mx) * var(--bs-e)), 0, calc(var(--my) * var(--bs-e)), 1, calc(var(--m0) * var(--bs-e)), 0);
+  }
+  html.js .bs-nose { opacity: clamp(0, (var(--bs-e) - var(--nv)) * 300, 1); }
+  html.js .bs-wheel {
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
+    /* (--a, --l: the drive's window, from the car's side) */
+    rotate: calc(var(--rot) * (1 - pow(clamp(0, (var(--p) - var(--a)) / var(--l), 1), 2) * (3 - 2 * clamp(0, (var(--p) - var(--a)) / var(--l), 1))) * 1deg);
+  }
+  /* Headlights: on as it starts to roll, off once it's in; the beam shortens towards the wall */
+  html.js .bs-beam { opacity: calc(var(--bs-t) - clamp(0, (var(--p) - var(--b)) / var(--m), 1)); }
+  html.js .bs-beam[style*="--ra"] {
+    --bs-f: calc(pow(clamp(0, (var(--p) - var(--ra)) / var(--rl), 1), 2) * (3 - 2 * clamp(0, (var(--p) - var(--ra)) / var(--rl), 1)));
+    transform-box: view-box; transform-origin: calc(var(--ox) * 1px) 0;
+    scale: calc(1 - (1 - var(--w)) * var(--bs-f)) 1;
+  }
+  /* As the car stops (data-shut on the stage), the roller door comes down and the garage light settles
+     half way through: timed, so the finished picture lands within about 1.5 s whatever the scroll speed,
+     and back the other way (quicker) when scrolling up. The door is a curtain rolled up into its drum: on
+     its plane a rise is a vertical shear (--b0, --f0), so --bs-dn eases one number. */
+  html.js .bs-door {
+    --bs-dn: 0;
+    transform-box: view-box; transform-origin: 0 0;
+    transform: matrix(1, calc(var(--b0) * (1 - var(--bs-dn))), 0, 1, 0, calc(var(--f0) * (1 - var(--bs-dn))));
+    transition: --bs-dn 760ms var(--ease-io);
+  }
+  html.js .bs-stage[data-shut] .bs-door { --bs-dn: 1; transition: --bs-dn 1100ms cubic-bezier(0.35, 0, 0.15, 1); }
+  html.js .bs-dusk { opacity: 1; transition: opacity var(--t-ui) var(--ease-in); }
+  html.js :is(.bs-tube, .bs-rim) { opacity: 0; transition: opacity var(--t-ui) var(--ease-in); }
+  html.js .bs-stage[data-shut] .bs-dusk { opacity: 0; transition: opacity 1000ms var(--ease-out) 500ms; }
+  html.js .bs-stage[data-shut] .bs-tube { opacity: 1; transition: opacity 1000ms var(--ease-out) 500ms; }
+  html.js .bs-stage[data-shut] .bs-rim { opacity: 0.8; transition: opacity 1000ms var(--ease-out) 600ms; }
+}
+}
+/* At rest the garage light is on and the dusk has gone from the garage */
+.bs-dusk { opacity: 0; }
+
+@keyframes bs-flicker {
+  0% { opacity: 0; }
+  8% { opacity: 0.7; }
+  14% { opacity: 0.08; }
+  22% { opacity: 0.85; }
+  30% { opacity: 0.25; }
+  40%, 100% { opacity: 1; }
+}
+
+/* ==================== How it works (#how) ==================== */
+/* Engel Build's process pattern in Attic Worx's look. Wide screens (1000px and up): a sticky stage beside
+   three steps. A step lights up as its node passes 56% down the screen, and the stage shows the lit step's
+   drawing (it draws itself the first time) while its number rolls. Attic Worx's own twist: the line through
+   the nodes is a folding attic ladder. As a step lights, its section swings down out of the roof from the
+   node (its hinge) and settles; its rungs light from the hinge down as you read on. Narrower screens: no
+   stage; each drawing sits in its step and draws in as it arrives. The drawings are three inline SVGs, each
+   in the page twice (the stage's copy and the step's copy), so the layout is CSS alone and never waits for
+   the script. House and phone in roof ink, the thing that matters in teal (the ticked tiles, the ticks and
+   the circled day, the new floor and the ladder), notes in teal-deep. Strokes scale with the drawing; every
+   path has pathLength="1" and its own start (--t) and length (--u), in units of the drawing clock (--pace),
+   so it goes down in the order you'd draw it. The drawings are generated by scripts/how-drawings.mjs (it
+   rewrites both copies of each in index.html). main.js adds .is-live to the section in the same task
+   that works out which steps are lit; every "before" state hangs off it. Without JS: every step lit, the
+   ladder open and lit, the stage on step 1, every drawing complete. Reduced motion: the same, except the
+   stage still follows the steps (no fades, no roll). */
+
+/* ---------- Layout ---------- */
+.how-layout { display: grid; gap: clamp(36px, 6vw, 96px); align-items: start; }
+.how-copy { min-width: 0; }
+.how-copy .h2 { margin-top: 18px; }
+.how-stage { display: none; }
+
+/* Steps: a numbered node on a line, then the words */
+.hsteps { margin-top: clamp(32px, 4vw, 48px); }
+.hstep { position: relative; padding: 0 0 clamp(40px, 6vw, 56px) 56px; }
+.hstep:last-child { padding-bottom: 0; }
+.hstep h3 { padding-top: 3px; font-size: var(--step-2); font-weight: 700; line-height: 1.15; }
+.hstep p { margin-top: 8px; color: var(--ink-2); max-width: 34em; }
+.how .nw { white-space: nowrap; }
+.hstep-node {
+  position: absolute; left: 0; top: 0; z-index: 1;
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--white); box-shadow: inset 0 0 0 2px #c9d6d4;
+  color: var(--white); font-size: 0.95rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.hstep-node::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--teal); }
+.hstep-node > span { position: relative; }
+/* The line is a folding attic ladder in three sections, each hinged at its step's node (the node is the
+   hinge). The first two reach down to the next node; the last one stands on the call to action's floor
+   (its feet level with the bottom of the button), or, on phones, runs on behind step 3's drawing. Timber
+   (pale pine) until it's lit, teal once it is. Two stiles and the rungs are backgrounds on one box; the lit
+   copy on top is shown from the hinge down by two opposite translates (transform only). */
+.how {
+  --how-cta-gap: clamp(36px, 5vw, 52px);
+  --lad-w: 14px; --lad-sw: 2px; --lad-rw: 2px; --lad-pitch: 24px; --lad-y0: 30px; /* width, stile, rung, rung pitch, first rung */
+  --lad-off: #e3d2b6; --lad-on: var(--teal); --lad-foot: #3d4a49;
+}
+.hstep-lad {
+  position: absolute; left: calc(17px - var(--lad-w) / 2); top: 17px; bottom: -17px; width: var(--lad-w);
+  perspective: 560px; perspective-origin: 50% 0; pointer-events: none;
+}
+/* the last section: on phones it runs on behind step 3's drawing and ends clear of the card's rounded corner,
+   with no feet (it never reaches the floor there); from 640px it stands on the CTA's floor on rubber feet */
+.hstep:last-child .hstep-lad { bottom: var(--r-img); }
+@media (min-width: 640px) {
+  .hstep:last-child .hstep-lad { bottom: calc(-1 * (var(--how-cta-gap) + 56px)); } /* the CTA's gap + its .btn-lg */
+  .hstep:last-child .hstep-fold::after {
+    content: ""; position: absolute; left: -1px; right: -1px; bottom: 0; height: 5px;
+    background:
+      linear-gradient(var(--lad-foot), var(--lad-foot)) 0 0 / 4px 100% no-repeat,
+      linear-gradient(var(--lad-foot), var(--lad-foot)) 100% 0 / 4px 100% no-repeat;
+  }
+}
+.hstep-fold, .hstep-lit, .hstep-lit > span { position: absolute; inset: 0; }
+.hstep-fold { --c: var(--lad-off); transform-origin: 50% 0; }
+.hstep-lit { overflow: hidden; }
+.hstep-lit > span { --c: var(--lad-on); }
+.hstep-fold, .hstep-lit > span {
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / var(--lad-sw) 100% no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / var(--lad-sw) 100% no-repeat,
+    linear-gradient(var(--c) var(--lad-rw), transparent 0) 0 var(--lad-y0) / 100% var(--lad-pitch) repeat-y;
+}
+.how .how-cta { margin-top: var(--how-cta-gap); }
+/* Forced colours drop background images and shadows: keep the ladder (in system colours) and ring the nodes */
+@media (forced-colors: active) {
+  .hstep-lad { forced-color-adjust: none; --lad-off: GrayText; --lad-on: CanvasText; --lad-foot: CanvasText; }
+  .hstep-node { border: 2px solid CanvasText; }
+}
+
+/* A step's own drawing (narrow screens): a sheet of drawing paper */
+.how-fig {
+  max-width: 520px; margin-top: 22px; padding: clamp(14px, 4.5vw, 26px);
+  border: 1px solid var(--line); border-radius: var(--r-img);
+  background-color: var(--paper);
+  background-image: linear-gradient(rgba(17, 126, 121, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 126, 121, 0.065) 1px, transparent 1px);
+  background-size: 20px 20px; background-position: -1px -1px;
+}
+
+/* Phones: the drawing takes the full width, over the line (it picks up again below it) */
+@media (max-width: 639px) {
+  .how-fig { position: relative; z-index: 1; margin-left: -56px; padding: 14px 12px; }
+}
+
+/* Tablets: the drawing beside the words */
+@media (min-width: 640px) and (max-width: 999px) {
+  .hstep { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: clamp(24px, 4vw, 40px); }
+  .hstep > h3, .hstep > p { grid-column: 1; }
+  .how-fig { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; padding: clamp(10px, 2vw, 18px); }
+  .how .how-cta { padding-left: 56px; }
+}
+
+/* Wide screens: the stage */
+@media (min-width: 1000px) {
+  .how-layout { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); }
+  .how-fig { display: none; }
+  /* Each step owns ~220-300px of scroll, and the copy runs on past the CTA, so the stage is still stuck
+     when step 3 lights and stays (nearly) whole while its drawing plays, even on 1280x720 and 1366x768
+     laptops. The stage is capped to the screen's height, so short browser windows see all of it. */
+  .hstep { padding-bottom: clamp(96px, 20vh, 200px); }
+  .how-copy { padding-bottom: clamp(96px, 20vh, 200px); }
+  .how .how-cta { padding-left: 56px; }
+  .how-stage {
+    display: block; position: sticky; top: calc(var(--header-h) + 28px);
+    width: 100%; aspect-ratio: 1 / 1.07; max-height: calc(100svh - var(--header-h) - 56px); overflow: hidden;
+    border: 1px solid var(--line); border-radius: var(--r-card);
+    background-color: var(--paper);
+    background-image: linear-gradient(rgba(17, 126, 121, 0.065) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(17, 126, 121, 0.065) 1px, transparent 1px);
+    background-size: 24px 24px; background-position: -1px -1px;
+  }
+}
+/* the stage's drawings sit on top of each other; the lit step's shows. Each fits its box (the viewBox
+   scales to fit and centres), so on a short screen, where the stage is capped, it shrinks rather than
+   running into the number. */
+.how-ps { position: absolute; inset: 6% 6% 21%; opacity: 0; }
+.how-ps.is-on { opacity: 1; }
+.how-ps .how-draw { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* its number: 01 / 03, the first two digits roll */
+.how-num {
+  --lh: 0.8;
+  position: absolute; left: 7%; bottom: 6%;
+  display: flex; align-items: flex-end; gap: 10px;
+  color: var(--teal); font-size: clamp(3.4rem, 1.6rem + 3vw, 5.4rem); font-weight: 900; font-stretch: 64%;
+  line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+}
+.how-n { display: block; height: calc(var(--lh) * 1em); overflow: hidden; }
+.how-roll { display: block; transform: translateY(calc((var(--step, 1) - 1) * var(--lh) * -1em)); }
+.how-roll > span { display: block; height: calc(var(--lh) * 1em); line-height: calc(var(--lh) * 1em); }
+.how-of { padding-bottom: 0.06em; color: var(--ink-3); font-size: 0.24em; font-weight: 700; font-stretch: 80%; letter-spacing: 0.12em; }
+
+/* ---------- The drawings ---------- */
+.how-draw { display: block; width: 100%; height: auto; overflow: visible; color: var(--roof); }
+.how-draw .k1 { stroke-width: 1.9; }
+.how-draw .k2 { stroke-width: 1.35; }
+.how-draw .k3 { stroke-width: 0.9; color: #4c5a59; }
+.how-draw .ac { color: var(--teal); }
+.how-draw .ic { stroke-width: 1.1; color: var(--teal); }
+.how-draw .pg { stroke-width: 2.2; color: #d3dcda; }
+.how-draw .pg.ac { color: var(--teal); }
+.how-draw [class*="tx"] { color: #b9c5c3; }
+.how-draw .tx1 { stroke-width: 2.4; }
+.how-draw .tx2 { stroke-width: 1.4; }
+.how-draw .tx3 { stroke-width: 1.1; }
+.how-draw .tx-s { color: #5f6d6c; stroke-width: 2.8; } /* strong text: headings, totals, the picked day */
+.how-draw .tx-t { color: #8a9897; }                     /* tile names */
+.how-draw .tx-n { color: #9fadab; }
+.how-draw .wh { color: var(--white); stroke-width: 1.6; }
+.how-draw .dm { color: var(--teal-deep); stroke-width: 0.9; }
+.how-draw .f { stroke: none; }
+.how-draw .fw { fill: var(--white); }
+.how-draw .fm { fill: var(--mint-soft); }
+.how-draw .ft { fill: var(--teal); }
+.how-draw .lb {
+  fill: var(--teal-deep); stroke: none;
+  font-family: var(--font); font-size: 10.5px; font-weight: 700; font-stretch: 80%;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.how-draw .lb-lg { font-size: 12.5px; font-weight: 800; font-stretch: 75%; }
+/* Where a drawing is shown small (narrow phones, the tablet column, a small stage), its labels are set
+   larger in the drawing's own units so they stay readable: about 10-14px on screen. */
+@media (max-width: 479px), (min-width: 820px) and (max-width: 999px) {
+  .how-fig .how-draw .lb { font-size: 13.5px; }
+  .how-fig .how-draw .lb-lg { font-size: 15.5px; }
+}
+@media (min-width: 640px) and (max-width: 819px) {
+  .how-fig .how-draw .lb { font-size: 16px; }
+  .how-fig .how-draw .lb-lg { font-size: 18px; }
+}
+@media (min-width: 1000px) and (max-width: 1199px) {
+  .how-ps .how-draw .lb { font-size: 12px; }
+  .how-ps .how-draw .lb-lg { font-size: 14px; }
+}
+.how-draw .pop { transform-box: fill-box; transform-origin: 50% 50%; }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* Steps: grey until lit; the node fills */
+  .how.is-live .hstep h3 { transition: color 500ms var(--ease-out); }
+  .how.is-live .hstep:not(.is-on) h3 { color: #74807f; } /* 4.1:1 on white: readable before it lights */
+  .how.is-live .hstep-node { transition: color 300ms var(--ease-out); }
+  .how.is-live .hstep-node::before { transition: transform var(--t-ui) var(--ease-out); }
+  .how.is-live .hstep:not(.is-on) .hstep-node { color: #6b7877; }
+  .how.is-live .hstep:not(.is-on) .hstep-node::before { transform: scale(0); }
+  /* The ladder: a step's section is folded up into the roof (turned edge-on, away from you, about its hinge)
+     until the step lights. Then it swings down and settles, like a section let down by hand (a steady start,
+     a soft stop, no bounce); scroll back above it and it folds away, quicker. Its rungs light from the hinge
+     down as the reading line passes them (--pl, from main.js). */
+  .how.is-live .hstep-fold { transition: rotate 420ms var(--ease-in), opacity 100ms linear 320ms; }
+  .how.is-live .hstep:not(.is-on) .hstep-fold { rotate: x -90deg; opacity: 0; }
+  .how.is-live .hstep.is-on .hstep-fold { transition: rotate 1000ms var(--ease-draw), opacity 160ms linear; }
+  .how.is-live .hstep-lit { transform: translateY(calc((var(--pl, 0) - 1) * 100%)); will-change: transform; }
+  .how.is-live .hstep-lit > span { transform: translateY(calc((1 - var(--pl, 0)) * 100%)); will-change: transform; }
+  /* (their own layers: without them, Chromium's software compositor drew the swinging section with a jog) */
+  /* Stage: drawings cross-fade, the number rolls */
+  .how.is-live .how-ps { transition: opacity 500ms var(--ease-out); }
+  .how.is-live .how-roll { transition: transform 800ms var(--ease-io); }
+  /* ...but not while the first state is being set (on screen at load, it simply shows) */
+  .how.is-still .hstep *, .how.is-still .hstep *::before,
+  .how.is-still .how-stage * { transition: none !important; }
+
+  /* Drawings: wait (strokes undrawn, fills and labels out), then draw in, each path at its own --t.
+     A stage drawing plays the first time it shows while the stage is well in view (.is-armed) and holds
+     where it is while another step shows; a step's own drawing plays once it is well in view (.is-in).
+     .is-instant: shown complete (on screen as the page started, or seen with reduced motion).
+     (Plain compound selectors and type/class descendants on purpose: Chromium missed the restyle when
+     .is-armed landed with the same rules written as :is(.how-ps.is-armed, ...) ... [pathLength].) */
+  .how.is-live .how-draw path { stroke-dasharray: 1 2; }
+  .how.is-live .how-ps:not(.is-armed) .how-draw path,
+  .how.is-live .how-fig:not(.is-in) .how-draw path { stroke-dashoffset: 1.01; }
+  .how.is-live .how-ps:not(.is-armed) .how-draw .f, .how.is-live .how-ps:not(.is-armed) .how-draw text,
+  .how.is-live .how-fig:not(.is-in) .how-draw .f, .how.is-live .how-fig:not(.is-in) .how-draw text { opacity: 0; }
+  .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw path,
+  .how.is-live .how-fig.is-in:not(.is-instant) .how-draw path {
+    animation: how-draw calc(var(--u, 0.5) * var(--pace)) var(--ease-draw) calc(var(--t, 0) * var(--pace)) both;
+  }
+  .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw .f, .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw text,
+  .how.is-live .how-fig.is-in:not(.is-instant) .how-draw .f, .how.is-live .how-fig.is-in:not(.is-instant) .how-draw text {
+    animation: how-fade calc(var(--u, 0.4) * var(--pace)) var(--ease-out) calc(var(--t, 0) * var(--pace)) both;
+  }
+  .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw .pop,
+  .how.is-live .how-fig.is-in:not(.is-instant) .how-draw .pop { animation-name: how-pop; }
+  .how-draw { --pace: 0.5s; } /* the drawings' clock: --t and --u are in units of it (each is done in ~1.3s) */
+  .how.is-live .how-ps:not(.is-on) .how-draw * { animation-play-state: paused; }
+}
+
+@keyframes how-draw { from { stroke-dashoffset: 1.01; } to { stroke-dashoffset: 0; } }
+@keyframes how-fade { from { opacity: 0; } }
+@keyframes how-pop { from { opacity: 0; transform: scale(0.6); } }
+
+/* ==================== Before & after (#results) ==================== */
+/* A still pair per job, never a drag slider (Troy: sliders are tacky). At rest the before sits muted
+   (overlays: a saturation layer and a dark layer, by opacity; never a filter on the photo) and the after
+   is lit by a warm work light from above. As the pair scrolls in, the light passes once from the before
+   to the after: a soft warm band sweeps across (transform only) and the after's shadow leaves with it.
+   Switching jobs: the old pair leaves fast, the new one arrives under a plate that lifts while the
+   photos settle (the light passes only once). main.js runs the tabs and the triggers.
+   Without JS: every pair shows, one under the other, its caption above it (beside it, in the tabs' column,
+   from 1000px; a noscript rule in <head>). With
+   reduced motion: everything at rest, the tabs swap pairs instantly. */
+
+.results {
+  --rx-gap: clamp(8px, 1.4vw, 18px);
+  --rx-warm: 255, 236, 210;                 /* the work light: warm white */
+  --rx-shadow: #061212;                     /* the roof in the dark */
+  /* The light travels at an even pace with soft ends (it crosses both photos in about the same time);
+     an ease-in-out would rush it through the middle, which is where the photos are */
+  --rx-travel: cubic-bezier(0.3, 0.08, 0.4, 1);
+  overflow-x: clip; /* the light's spill reaches past the pair; never past the page */
+}
+.results :focus-visible { outline-color: var(--mint); }
+
+/* ---------- Layout ---------- */
+.results-head { margin-bottom: clamp(32px, 4.5vw, 60px); }
+.results-body { display: grid; gap: 22px; }
+@media (min-width: 1000px) {
+  .results-body {
+    grid-template-columns: minmax(220px, 0.3fr) minmax(0, 1fr);
+    gap: clamp(36px, 4.5vw, 72px);
+    align-items: start;
+  }
+}
+
+/* ---------- Tabs: one per job ---------- */
+.rx-tabs { display: grid; gap: 8px; }
+.rx-tab {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; align-items: center;
+  padding: 14px 16px; border-radius: 14px; border: 1px solid var(--roof-line);
+  background: transparent; color: var(--white); text-align: left; cursor: pointer;
+  transition: background-color var(--t-hover) var(--ease-out), border-color var(--t-hover) var(--ease-out);
+}
+.rx-tab:hover { border-color: rgba(143, 214, 204, 0.42); }
+.rx-tab[aria-selected="true"] { background: var(--roof-2); border-color: var(--mint); }
+.rx-tab-num {
+  grid-row: 1 / 3; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid rgba(143, 214, 204, 0.5); color: var(--mint);
+  font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  transition: background-color var(--t-hover) var(--ease-out), color var(--t-hover) var(--ease-out);
+}
+.rx-tab[aria-selected="true"] .rx-tab-num { background: var(--mint); border-color: var(--mint); color: var(--roof); }
+.rx-tab strong { font-size: 1rem; line-height: 1.3; }
+.rx-tab small { color: rgba(255, 255, 255, 0.64); font-size: 0.88rem; line-height: 1.35; }
+.rx-tab:active { transition-duration: var(--t-press); }
+
+@media (max-width: 999px) {
+  .rx-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rx-tab { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: start; gap: 6px; padding: 14px 10px; text-align: center; }
+  .rx-tab-num { grid-row: auto; width: 30px; height: 30px; margin-bottom: 2px; }
+}
+@media (max-width: 599px) {
+  .rx-tabs { gap: 6px; }
+  .rx-tab { padding: 12px 6px; border-radius: 12px; }
+  .rx-tab strong { font-size: 0.88rem; line-height: 1.2; }
+  .rx-tab small { display: none; } /* the pair's caption carries it on phones */
+}
+
+/* ---------- The stage: one pair at a time, every pair in the same cell ---------- */
+.rx-stage { display: grid; }
+/* (Every pair has the same box, so a switch never changes the stage's height. A hidden pair isn't
+   rendered, so its photos wait until a visitor reaches for the tabs: main.js.) */
+html.js .rx-panel { grid-area: 1 / 1; }
+.rx-panel { position: relative; border-radius: calc(var(--r-img) + 6px); }
+.rx-panel:focus-visible { outline-offset: 6px; border-radius: calc(var(--r-img) + 6px); }
+
+.rx-pair {
+  container-type: inline-size; /* the light travels in the pair's own units (cqw) */
+  position: relative; isolation: isolate;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--rx-gap);
+}
+/* The light spilling onto the roof around the lit photo */
+.rx-pair::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  inset: -14% -10% -10% 34%;
+  background: radial-gradient(48% 52% at 62% 40%, rgba(var(--rx-warm), 0.075), transparent 72%);
+}
+
+.rx-shot { position: relative; }
+.rx-photo {
+  position: relative; overflow: hidden; isolation: isolate;
+  aspect-ratio: 4 / 5; border-radius: var(--r-img);
+  background: var(--roof-2);
+}
+.rx-photo picture, .rx-photo img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rx-photo img { object-fit: cover; }
+.rx-photo::before, .rx-photo::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+
+/* Before: muted. The colour drains (a grey layer blended as saturation) and the light drops. */
+.rx-before .rx-photo { box-shadow: 0 0 0 1px rgba(143, 214, 204, 0.1); }
+.rx-before .rx-photo::before { z-index: 1; background: hsl(0 0% 50%); mix-blend-mode: saturation; opacity: 0.78; }
+.rx-before .rx-photo::after { z-index: 2; background: var(--rx-shadow); opacity: 0.46; }
+
+/* After: lit. A warm pool from a work light above. */
+.rx-after .rx-photo {
+  /* (the drop stays inside the band's bottom padding: 24 + 56 - 32 = 48px below the photo) */
+  box-shadow: 0 0 0 1px rgba(var(--rx-warm), 0.16), 0 24px 56px -32px rgba(0, 0, 0, 0.75);
+}
+.rx-after .rx-photo::after {
+  z-index: 1;
+  background: radial-gradient(120% 70% at 50% -12%, rgba(var(--rx-warm), 0.2), transparent 64%);
+  mix-blend-mode: screen;
+}
+
+.rx-shot .photo-tag { z-index: 4; }
+.rx-band { display: none; }
+
+/* Caption: on phones it carries the job's description (the tabs only fit its name) */
+.rx-cap { display: none; }
+@media (max-width: 599px) {
+  .rx-cap { display: block; margin-top: 12px; min-height: 2lh; color: rgba(255, 255, 255, 0.66); font-size: 0.92rem; line-height: 1.4; }
+  .rx-cap strong { display: none; }
+  .rx-shot .photo-tag { left: 8px; top: 8px; padding: 4px 9px; gap: 6px; font-size: 0.68rem; }
+}
+
+/* ---------- Motion ---------- */
+@supports (animation-timing-function: linear(0, 1)) {
+  .results { --rx-travel: linear(0, 0.02 7%, 0.4 43%, 0.62 62%, 0.82 81%, 0.93 90%, 1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Where the light is: one band in the pair's coordinates (--ox is each photo's offset in the pair),
+     so it crosses the before, the gap, then the after as one light. */
+  .rx-before { --ox: 0px; --pd: 0ms; }
+  .rx-after { --ox: calc(50cqw + var(--rx-gap) / 2); --pd: 90ms; }
+  .rx-shot { --bw: 34cqw; }
+
+  html.js .rx-band {
+    display: block; position: absolute; z-index: 3; top: 0; bottom: 0; left: 0; width: var(--bw);
+    pointer-events: none;
+    background: linear-gradient(90deg,
+      rgba(var(--rx-warm), 0) 0%, rgba(var(--rx-warm), 0.13) 26%, rgba(var(--rx-warm), 0.34) 50%,
+      rgba(var(--rx-warm), 0.13) 74%, rgba(var(--rx-warm), 0) 100%);
+    mix-blend-mode: screen;
+    transform: translateX(calc(112cqw - var(--ox))) skewX(-14deg); /* at rest: gone past */
+  }
+  /* The after's shadow: a dark sheet with a soft leading edge that the light pushes off */
+  html.js .rx-after .rx-photo::before {
+    z-index: 2; inset: 0 auto 0 0; width: 220cqw;
+    background: linear-gradient(90deg, transparent 0, var(--rx-shadow) 24cqw);
+    opacity: 0.86;
+    transform: translateX(calc(112cqw + var(--bw) / 2 - 12cqw - var(--ox))) skewX(-14deg); /* at rest: gone */
+  }
+  /* Plate for a job switch: the section colour, square (the photo below clips itself), ruled edge */
+  html.js .rx-shot::before {
+    content: ""; position: absolute; inset: -1px; z-index: 5; pointer-events: none;
+    background: var(--plate); border-bottom: 1px solid var(--plate-edge);
+    transform-origin: 50% 0; transform: scaleY(0);
+  }
+
+  /* In the dark, waiting (only once main.js has armed a pair that wasn't on screen at load) */
+  html.js .rx-stage.is-armed:not(.is-in) .rx-band { transform: translateX(calc(-1 * var(--bw) - 12cqw - var(--ox))) skewX(-14deg); }
+  html.js .rx-stage.is-armed:not(.is-in) .rx-after .rx-photo::before { transform: translateX(calc(-12cqw - var(--bw) / 2 - 12cqw - var(--ox))) skewX(-14deg); }
+  html.js .rx-stage.is-armed:not(.is-in) .rx-after .rx-photo::after,
+  html.js .rx-stage.is-armed:not(.is-in) .rx-pair::before { opacity: 0; }
+  html.js .rx-stage.is-armed:not(.is-in) .rx-after .photo-tag { opacity: 0.4; }
+
+  /* The light passes, once */
+  .rx-stage.is-in:not(.is-instant):not(.is-switched) .rx-panel:not([hidden]) .rx-band {
+    animation: rx-sweep 2100ms var(--rx-travel) 200ms both;
+  }
+  .rx-stage.is-in:not(.is-instant):not(.is-switched) .rx-panel:not([hidden]) .rx-after .rx-photo::before {
+    animation: rx-unveil 2100ms var(--rx-travel) 200ms both;
+  }
+  /* ...and the work light over the after comes on (a soft flicker, an echo of the hero's), its glow spilling
+     onto the roof around it */
+  .rx-stage.is-in:not(.is-instant):not(.is-switched) .rx-panel:not([hidden]) .rx-after .rx-photo::after {
+    animation: rx-light-flicker 900ms linear 1300ms both;
+  }
+  .rx-stage.is-in:not(.is-instant):not(.is-switched) .rx-panel:not([hidden]) .rx-pair::before {
+    animation: rx-light-on 1100ms var(--ease-out) 1500ms both;
+  }
+  .rx-stage.is-in:not(.is-instant):not(.is-switched) .rx-panel:not([hidden]) .rx-after .photo-tag {
+    animation: rx-tag-on 700ms var(--ease-out) 1400ms both;
+  }
+
+  /* Switching jobs: the old pair leaves fast (its caption at once, so two never overlap on a phone)... */
+  .rx-panel.is-leaving { z-index: 1; animation: rx-leave 180ms var(--ease-in) both; }
+  .rx-panel.is-leaving .rx-cap { opacity: 0; }
+  /* ...the new one arrives: plates lift, photos settle, tags and caption follow. The plates are the
+     transition: the light passed once, and the after the visitor just picked arrives lit. */
+  .rx-panel.is-arriving .rx-shot::before { animation: rx-plate 680ms var(--ease-io) var(--pd) both; }
+  .rx-panel.is-arriving .rx-photo img { animation: rx-settle 1150ms var(--ease-out) var(--pd) both; }
+  .rx-panel.is-arriving .photo-tag { animation: rx-tag-in 480ms var(--ease-out) calc(var(--pd) + 480ms) both; }
+  .rx-panel.is-arriving .rx-cap { animation: rx-tag-in 360ms var(--ease-out) 180ms both; }
+  /* Held at their first frame until the new photos are decoded */
+  .rx-panel.is-pending *, .rx-panel.is-pending *::before, .rx-panel.is-pending *::after { animation-play-state: paused !important; }
+}
+
+@keyframes rx-sweep {
+  from { transform: translateX(calc(-1 * var(--bw) - 12cqw - var(--ox))) skewX(-14deg); }
+  to { transform: translateX(calc(112cqw - var(--ox))) skewX(-14deg); }
+}
+@keyframes rx-unveil {
+  from { transform: translateX(calc(-12cqw - var(--bw) / 2 - 12cqw - var(--ox))) skewX(-14deg); }
+  to { transform: translateX(calc(112cqw + var(--bw) / 2 - 12cqw - var(--ox))) skewX(-14deg); }
+}
+@keyframes rx-light-on { from { opacity: 0; } }
+@keyframes rx-light-flicker {
+  0% { opacity: 0; }
+  14% { opacity: 0.7; }
+  24% { opacity: 0.2; }
+  38% { opacity: 0.85; }
+  48% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+@keyframes rx-tag-on { from { opacity: 0.4; } }
+@keyframes rx-tag-in { from { opacity: 0; translate: 0 6px; } }
+@keyframes rx-leave { to { opacity: 0; transform: scale(0.985); } }
+@keyframes rx-plate { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes rx-settle { from { scale: 1.08; } to { scale: 1; } }
+
+/* ==================== Recent work (#work) ==================== */
+/* Two layouts from one piece of markup:
+   - The strip (no JS, reduced motion, screens under 1000px wide): a native swipe strip with scroll snap,
+     ending on a quote panel. The photos lift in together as the strip comes into view; with JS a progress
+     line follows the strip, and a mouse gets previous/next buttons.
+   - The run (wide screens with motion): the section pins for the length of the track and the page's scroll
+     moves the track sideways. Photos drift inside their frames and each lifts in as it slides on; a
+     counter and a progress line keep the place; the heading steps down out from under the header whenever
+     it shows (html.hdr-on), in step with it.
+   - The work light (both, with motion): the photos rest a little dim, as if in the roof, and a warm work
+     light travels the run. In the run it hangs near the middle of the rail and each photo lights up as it
+     slides under it, its neighbours catching the edge of it; at the end it moves on to the quote button. In
+     the strip the photo the strip has come to rest on is the lit one. Only overlay opacity and the light's
+     transform change; the photos themselves are never filtered. Without JS or with reduced motion, every
+     photo is simply lit. */
+
+/* ---------- The strip ---------- */
+.work {
+  /* the wrap's content edge, so the strip and the run start in line with the heading */
+  --edge: max(var(--gutter), env(safe-area-inset-left, 0px), (100% - var(--max)) / 2);
+  --work-gap: 16px;
+}
+.work-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px; }
+.work-title { display: grid; gap: 16px; justify-items: start; }
+.work-count { display: none; }
+.work-nav { display: none; gap: 8px; }
+.work-nav .round-btn[aria-disabled="true"] { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink); }
+
+.work-intro {
+  display: grid; gap: 14px; justify-items: start;
+  margin: 20px 0 0; padding-inline: var(--edge);
+}
+.work-lead { max-width: 34em; color: var(--ink-2); font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem); }
+
+.work-strip {
+  display: flex; align-items: flex-start; gap: var(--work-gap);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-inline: var(--edge); scroll-padding-inline: var(--edge);
+  /* the room above the photos is the strip's own (not the intro's margin), so the work light's glow
+     around a photo isn't cut off by the strip's edge */
+  padding-top: 32px; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #b8c7c4 transparent;
+}
+.work-strip:focus-visible { outline-offset: -3px; }
+.work-list { display: flex; gap: var(--work-gap); flex: none; }
+.work-card { position: relative; flex: none; width: clamp(240px, 34vw, 320px); scroll-snap-align: start; }
+.work-card figure { display: grid; gap: 12px; }
+/* The frame stays square-cornered so its plate (Motion) covers every corner; the picture clips the photo */
+.work-frame { position: relative; aspect-ratio: 3 / 4; }
+.work-frame picture { height: 100%; overflow: hidden; border-radius: var(--r-img); }
+.work-frame img { width: 100%; height: 100%; object-fit: cover; }
+.work-card figcaption {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 1px;
+  line-height: 1.35;
+}
+.work-no {
+  grid-row: 1 / 3; padding-top: 0.2em;
+  color: var(--teal-deep); font-size: .78rem; font-weight: 700; letter-spacing: .08em;
+  font-variant-numeric: tabular-nums;
+}
+.work-t { font-weight: 700; font-size: 1rem; }
+.work-s { color: var(--ink-3); font-size: .875rem; }
+
+/* The strip ends on a panel the height of a photo: a ruled top, the question, the button */
+.work-end {
+  flex: none; align-self: stretch; scroll-snap-align: end;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px;
+  width: clamp(250px, 26vw, 300px); margin-left: 8px;
+  border-top: 1px solid var(--line);
+}
+.work-end-t { font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem); line-height: .95; }
+.work-end-s { color: var(--ink-2); font-size: .95rem; max-width: 22em; }
+.work-end .btn { margin-top: 6px; }
+
+.work-foot { display: none; }
+.work-progress { position: relative; height: 2px; border-radius: 2px; overflow: hidden; background: var(--line); }
+.work-progress span {
+  position: absolute; inset: 0; border-radius: inherit; background: var(--teal);
+  transform-origin: 0 50%; transform: scaleX(0); /* main.js sets the scale */
+}
+/* Everything fits (a very wide screen with reduced motion): nothing to step through */
+.work.is-fit .work-foot, .work.is-fit .work-nav { display: none !important; }
+
+/* With scripting on, the progress line (and, for a mouse, the buttons) say where you are, so the scrollbar
+   can go. Gated on the media feature, not html.js: the browser knows it from the first frame, so the
+   section's height never changes when the scripts start (a link to /#reviews or /#faq lands without a
+   shift). Browsers without the feature keep the plain strip with its scrollbar. */
+@media (scripting: enabled) {
+  .work-strip { scrollbar-width: none; padding-bottom: 26px; } /* (the foot's gap, inside the strip: room for the glow) */
+  .work-strip::-webkit-scrollbar { display: none; }
+  .work-foot { display: block; margin-top: 0; }
+}
+@media (scripting: enabled) and (hover: hover) and (pointer: fine) {
+  .work-nav { display: flex; }
+}
+/* Their room is kept from the first frame; they show once main.js runs (.is-live), so if it never
+   loads there are no dead buttons */
+.work:not(.is-live) .work-nav, .work:not(.is-live) .work-progress { visibility: hidden; }
+@media (max-width: 599px) {
+  .work-card { width: 74vw; }
+  .work-end { width: 66vw; }
+  .work-strip { padding-top: 26px; }
+}
+
+/* The heading's step under the header (the run): a number, so it can follow the header's timing */
+@property --work-k { syntax: '<number>'; inherits: false; initial-value: 0; }
+
+/* ---------- The run ----------
+   Its layout comes from CSS alone, from the first frame (the scripts run after it): wide screens, motion
+   allowed, scripting on (no JS: the strip). So the page never changes height when main.js starts, and a
+   shared link like /#faq or /#work lands without a shift. The section's length is the track's travel plus a
+   screen: the spacer (::after) gets the travel from the same sizes the track uses (its padding percentages
+   resolve against the section's width, the rail's). main.js adds .is-h when it drives the track; until
+   then (or if it never loads) the rail simply scrolls sideways. Browsers without the scripting media
+   feature get the strip. Keep this query in step with RUN in main.js. */
+@media (scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference) {
+  .work {
+    --pin-pt: clamp(40px, 6vh, 72px);
+    --hdr-step: max(0px, calc(var(--header-h) - var(--pin-pt) + 8px)); /* the heading's step under the header */
+    --tk-h: clamp(240px, calc(100vh - 23rem), 620px);  /* a photo's height */
+    --tk-gap: clamp(36px, 4vw, 72px);
+    --intro-w: clamp(280px, 24vw, 380px);
+    --end-w: clamp(280px, 24vw, 360px);
+    padding: 0;
+    /* a jump to #work lands where the run starts (the page keeps room for the header above anchors) */
+    scroll-margin-top: calc(-1 * (var(--header-h) + 16px));
+  }
+  /* The travel: two edges, the panels, four photos at 0.75 and two at 0.6 of --tk-h, eight gaps, less the rail */
+  .work::after {
+    content: ""; display: block;
+    padding-top: max(0px, calc(2 * var(--edge) + var(--intro-w) + var(--end-w) + 4.2 * var(--tk-h) + 8 * var(--tk-gap) - 100%));
+  }
+  .work-pin {
+    position: sticky; top: 0; height: 100vh;
+    overflow: hidden; overflow: clip; /* clip: focus can't scroll it sideways */
+    display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: var(--pin-pt) 0 clamp(24px, 3.4vh, 36px);
+  }
+  .work-head { flex-wrap: nowrap; }
+  .work-count {
+    display: flex; align-items: baseline; gap: 7px; padding-bottom: .5em; visibility: hidden;
+    color: var(--ink-3); font-size: 1rem; font-weight: 700; letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+  }
+  /* The rail keeps the heading's step free at all times (a constant, so the header coming and going never
+     changes the layout): the photos stay clear of the heading on short screens too */
+  .work-rail { display: flex; align-items: center; min-width: 0; padding-top: var(--hdr-step); overflow-x: auto; scrollbar-width: none; }
+  .work-rail::-webkit-scrollbar { display: none; }
+  .work-track {
+    display: flex; align-items: center; gap: var(--tk-gap);
+    width: max-content; padding-inline: var(--edge);
+  }
+  .work-intro { flex: none; width: var(--intro-w); margin: 0 calc(var(--tk-gap) * .5) 0 0; padding: 0; }
+  .work-lead { font-size: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem); line-height: 1.5; }
+  .work-strip {
+    display: flex; align-items: center; gap: var(--tk-gap);
+    overflow: visible; padding: 0; scroll-snap-type: none;
+  }
+  .work-list { align-items: flex-start; gap: var(--tk-gap); }
+  .work-card { width: calc(var(--tk-h) * 0.75); }
+  .work-frame { height: var(--tk-h); }
+  /* Every third photo, from the second, sits smaller and lower: the run reads as a row of jobs, not a grid */
+  .work-card:nth-child(3n + 2) { width: calc(var(--tk-h) * 0.6); margin-top: calc(var(--tk-h) * 0.1); }
+  .work-card:nth-child(3n + 2) .work-frame { height: calc(var(--tk-h) * 0.8); }
+  .work-card figcaption { margin-top: 4px; }
+  .work-frame img { scale: 1.16; } /* room for the drift (main.js), from the first frame */
+  html.js .work-card:not(.is-in) img { scale: 1.3; } /* under its plate: it settles from further in */
+  .work-t { font-size: 1.0625rem; }
+  .work-s { font-size: .9375rem; }
+  .work-end {
+    align-self: center; width: var(--end-w); margin-left: calc(var(--tk-gap) * .5);
+    padding-top: 26px; gap: 16px;
+  }
+  .work-end-t { font-size: clamp(2.4rem, 1.4rem + 2vw, 3.4rem); }
+  .work-foot { display: block; margin-top: 0; }
+  .work-nav { display: none; }
+  .work-progress { visibility: hidden; }
+
+  /* main.js is driving the track */
+  .work.is-h .work-rail { overflow: visible; }
+  .work.is-h .work-track { will-change: transform; }
+  .work.is-h .work-count, .work.is-h .work-progress { visibility: visible; }
+  /* The drift: main.js sets each photo's translate per frame */
+  .work.is-h .work-frame img { will-change: translate; }
+  /* The heading steps down out from under the header while it shows (html.hdr-on; before main.js runs the
+     header always shows), 8px clear of it, in step with the header. Only as far as the header would cover
+     it: main.js sets --work-step per frame (0 while the heading sits lower on the screen, up to
+     --hdr-step once the stage is pinned), and --work-k (0 or 1) carries the header's timing. So a header
+     coming back while the section is mid-screen moves nothing, and the step never lags the scroll. */
+  .work-head { translate: 0 calc(var(--work-k) * var(--work-step, var(--hdr-step))); }
+  html:not(.js) .work-head, html.hdr-on .work-head { --work-k: 1; }
+  .work.is-h .work-head { transition: --work-k 280ms var(--ease-in); }
+  html.hdr-on .work.is-h .work-head { transition: --work-k 450ms var(--ease-out); }
+}
+.work-n { display: inline-block; overflow: hidden; color: var(--teal-deep); }
+.work-n > span { display: inline-block; }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* The intro settles in under the heading */
+  html.js .work-intro { transition: opacity var(--t-text) var(--ease-out), translate var(--t-text) var(--ease-out); transition-delay: calc(var(--d, 0ms) + 240ms); }
+  html.js .work-intro:not(.is-in) { opacity: 0; translate: 0 14px; }
+  /* Each card is a [data-reveal="photo"]: its plate covers just the photo (the card's top, at 3:4) */
+  /* It overhangs the frame by 1px at the sides and top: in the run the photo is on its own layer (the drift)
+     and, cut exactly to the frame, the plate let a 1px line of photo show at its edges */
+  html.js .work-card[data-reveal="photo"]::before { top: -1px; right: -1px; bottom: auto; left: -1px; aspect-ratio: 3 / 4; }
+  /* The caption follows its photo's plate up */
+  html.js .work-card figcaption { transition: opacity 700ms var(--ease-out), translate 900ms var(--ease-out); transition-delay: calc(var(--d, 0ms) + 520ms); }
+  html.js .work-card:not(.is-in) figcaption { opacity: 0; translate: 0 8px; }
+  /* The end panel: its rule draws (data-rule), the question rises (data-split), then the rest */
+  html.js .work-end .work-end-s, html.js .work-end .btn {
+    transition: opacity var(--t-text) var(--ease-out), translate var(--t-text) var(--ease-out),
+      background-color var(--t-hover), color var(--t-hover), transform var(--t-press);
+    transition-delay: calc(var(--d, 0ms) + 380ms), calc(var(--d, 0ms) + 380ms), 0s, 0s, 0s;
+  }
+  html.js .work-end .btn { transition-delay: calc(var(--d, 0ms) + 460ms), calc(var(--d, 0ms) + 460ms), 0s, 0s, 0s; }
+  html.js .work-end:not(.is-in) .work-end-s, html.js .work-end:not(.is-in) .btn { opacity: 0; translate: 0 10px; }
+  .work-progress span { transition: transform 120ms linear; }
+  .work.is-h .work-progress span { transition: none; }
+}
+
+/* ---------- The work light ----------
+   Each photo has a .work-shade over it in the roof's colour (aria-hidden): main.js sets its opacity,
+   from 0 in the light (the photo exactly as shot: nothing else ever sits over it) to --wl-dim out of it.
+   The warmth is all around the lit photo, never on it. In the run that's a composited opacity per photo
+   per frame (nothing repaints), and one warm pool (.work-light) moves with the light behind the track.
+   In the strip the light is handed from photo to photo with a short crossfade as the strip comes to rest:
+   the lit photo glows a little (its frame's ::before, from --work-lit), and at the end of the strip the
+   quote button does (--work-lit on it). The counter (01 / 06) names the photo in the light. */
+.work {
+  --wl-warm: 255, 198, 126;  /* the work light: a warm white */
+  --wl-dim: 0.28;            /* a photo out of the light (main.js reads it) */
+}
+.work-light, .work-shade { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .work.is-live .work-card { isolation: isolate; } /* the glow sits behind its photo, over the band */
+  .work.is-live .work-shade {
+    display: block; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    border-radius: var(--r-img); background: var(--roof); opacity: 0;
+  }
+  .work.is-h .work-shade { will-change: opacity; }
+  /* The strip: the glow around the lit photo, a shadow (so it never adds to the strip's scroll width; the
+     strip keeps room for it above and below) */
+  .work.is-live:not(.is-h) .work-frame::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-radius: var(--r-img);
+    box-shadow: 0 -2px 18px 1px rgba(var(--wl-warm), 0.55);
+    opacity: calc(var(--work-lit, 0) * var(--work-lit, 0));
+  }
+  /* ...which waits for its photo's plate to lift (it would ring a blank plate) */
+  .work.is-live .work-card:not(.is-in) .work-frame::before { opacity: 0; }
+  .work.is-live .work-card.is-in:not(.is-instant) .work-frame::before {
+    animation: aw-work-glow 900ms var(--ease-out) calc(var(--d, 0ms) + 650ms) backwards;
+  }
+  /* ...and the quote button in the light at the end of the strip */
+  .work.is-live:not(.is-h) .work-end .btn { position: relative; isolation: isolate; }
+  .work.is-live:not(.is-h) .work-end .btn::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-radius: inherit;
+    box-shadow: 0 4px 56px 10px rgba(var(--wl-warm), 0.42);
+    opacity: var(--work-lit, 0);
+  }
+  /* The strip hands the light over as it settles */
+  .work.is-live:not(.is-h) .work-shade,
+  .work.is-live:not(.is-h) .work-frame::before,
+  .work.is-live:not(.is-h) .work-end .btn::before { transition: opacity 760ms var(--ease-draw); }
+}
+/* The run: the pool of light on the band, behind the track; main.js moves it (transform only) */
+@media (scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference) {
+  .work-rail { position: relative; }
+  .work.is-h .work-light {
+    /* z-index -1: under everything in the stage (the heading too), over the band */
+    display: block; position: absolute; left: 0; top: 0; z-index: -1; pointer-events: none;
+    width: calc(var(--tk-h) * 1.7); height: calc(var(--tk-h) * 1.9);
+    margin: calc(var(--tk-h) * -1.05) 0 0 calc(var(--tk-h) * -0.85); /* centred over the photo's top third */
+    background: radial-gradient(50% 50% at 50% 50%, rgba(var(--wl-warm), 0.62), rgba(var(--wl-warm), 0.38) 30%,
+      rgba(var(--wl-warm), 0.15) 62%, rgba(var(--wl-warm), 0.04) 86%, rgba(var(--wl-warm), 0));
+    will-change: transform;
+  }
+  /* The light comes up as the first photos finish lifting in (it would show their plates) */
+  .work.is-h .work-light { transition: opacity 1200ms var(--ease-draw) 650ms; }
+  @supports selector(:has(*)) {
+    .work.is-h:not(:has(.work-card.is-in)) .work-light { opacity: 0; transition-duration: 0s; transition-delay: 0s; }
+  }
+}
+@keyframes aw-work-glow { from { opacity: 0; } }
+@media (forced-colors: active) {
+  .work .work-shade, .work .work-frame::before, .work .work-end .btn::before,
+  .work .work-light { display: none; }
 }
