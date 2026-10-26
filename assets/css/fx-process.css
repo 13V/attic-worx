@@ -51,9 +51,17 @@
   position: absolute; left: calc(17px - var(--lad-w) / 2); top: 17px; bottom: -17px; width: var(--lad-w);
   perspective: 560px; perspective-origin: 50% 0; pointer-events: none;
 }
-.hstep:last-child .hstep-lad { bottom: 0; }
+/* the last section: on phones it runs on behind step 3's drawing and ends clear of the card's rounded corner,
+   with no feet (it never reaches the floor there); from 640px it stands on the CTA's floor on rubber feet */
+.hstep:last-child .hstep-lad { bottom: var(--r-img); }
 @media (min-width: 640px) {
   .hstep:last-child .hstep-lad { bottom: calc(-1 * (var(--how-cta-gap) + 56px)); } /* the CTA's gap + its .btn-lg */
+  .hstep:last-child .hstep-fold::after {
+    content: ""; position: absolute; left: -1px; right: -1px; bottom: 0; height: 5px;
+    background:
+      linear-gradient(var(--lad-foot), var(--lad-foot)) 0 0 / 4px 100% no-repeat,
+      linear-gradient(var(--lad-foot), var(--lad-foot)) 100% 0 / 4px 100% no-repeat;
+  }
 }
 .hstep-fold, .hstep-lit, .hstep-lit > span { position: absolute; inset: 0; }
 .hstep-fold { --c: var(--lad-off); transform-origin: 50% 0; }
@@ -64,13 +72,6 @@
     linear-gradient(var(--c), var(--c)) 0 0 / var(--lad-sw) 100% no-repeat,
     linear-gradient(var(--c), var(--c)) 100% 0 / var(--lad-sw) 100% no-repeat,
     linear-gradient(var(--c) var(--lad-rw), transparent 0) 0 var(--lad-y0) / 100% var(--lad-pitch) repeat-y;
-}
-/* rubber feet on the last section */
-.hstep:last-child .hstep-fold::after {
-  content: ""; position: absolute; left: -1px; right: -1px; bottom: 0; height: 5px;
-  background:
-    linear-gradient(var(--lad-foot), var(--lad-foot)) 0 0 / 4px 100% no-repeat,
-    linear-gradient(var(--lad-foot), var(--lad-foot)) 100% 0 / 4px 100% no-repeat;
 }
 .how .how-cta { margin-top: var(--how-cta-gap); }
 /* Forced colours drop background images and shadows: keep the ladder (in system colours) and ring the nodes */
@@ -201,8 +202,9 @@
   .how.is-live .hstep-fold { transition: rotate 420ms var(--ease-in), opacity 100ms linear 320ms; }
   .how.is-live .hstep:not(.is-on) .hstep-fold { rotate: x -90deg; opacity: 0; }
   .how.is-live .hstep.is-on .hstep-fold { transition: rotate 1000ms var(--ease-draw), opacity 160ms linear; }
-  .how.is-live .hstep-lit { transform: translateY(calc((var(--pl, 0) - 1) * 100%)); }
-  .how.is-live .hstep-lit > span { transform: translateY(calc((1 - var(--pl, 0)) * 100%)); }
+  .how.is-live .hstep-lit { transform: translateY(calc((var(--pl, 0) - 1) * 100%)); will-change: transform; }
+  .how.is-live .hstep-lit > span { transform: translateY(calc((1 - var(--pl, 0)) * 100%)); will-change: transform; }
+  /* (their own layers: without them, Chromium's software compositor drew the swinging section with a jog) */
   /* Stage: drawings cross-fade, the number rolls */
   .how.is-live .how-ps { transition: opacity 500ms var(--ease-out); }
   .how.is-live .how-roll { transition: transform 800ms var(--ease-io); }

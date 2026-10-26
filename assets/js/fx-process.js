@@ -1,13 +1,13 @@
 /* fx-process.js: How it works (#how). Owned by the PROCESS agent; uses window.AW from main.js.
    One scroll job: read where each step's node is, then write. A step is lit once its node is above 56% of
    the screen (CSS swings its section of the ladder down from the node), and that section's rungs light
-   (--pl, 0 to 1) as the reading line travels from its hinge to its end: the next node, or for the last
-   section its feet (each section's untransformed box, .hstep-lad, says where it ends). On wide screens the
-   stage shows the drawing of the last lit step (step 1 before any) and its number rolls to it. A stage
-   drawing plays the first time it shows while the stage is on screen (.is-armed), and holds where it is
-   while another step is showing (CSS pauses it). The steps' own drawings (narrow screens) play as each
-   comes into view. Whatever is on screen when the page starts is simply shown, complete. The CSS hangs
-   every "before" state off .is-live, added here in the same task that sets the first state. */
+   (--pl, 0 to 1, set on the section) as the reading line travels from its hinge to its end: the next node,
+   or for the last section its feet (each section's untransformed box, .hstep-lad, says where it ends). On
+   wide screens the stage shows the drawing of the last lit step (step 1 before any) and its number rolls to
+   it. A stage drawing plays the first time it shows while the stage is on screen (.is-armed), and holds
+   where it is while another step is showing (CSS pauses it). The steps' own drawings (narrow screens) play
+   as each comes into view. Whatever is on screen when the page starts is simply shown, complete. The CSS
+   hangs every "before" state off .is-live, added here in the same task that sets the first state. */
 (function () {
   'use strict';
   var AW = window.AW;
@@ -54,7 +54,8 @@
     return function () {
       steps.forEach(function (s, i) {
         if (on !== lit) s.classList.toggle('is-on', i < on);
-        if (pl[i] !== fills[i]) { s.style.setProperty('--pl', pl[i]); fills[i] = pl[i]; }
+        // on the ladder section, its only reader: written on the step, it restyled the step's drawing every frame
+        if (pl[i] !== fills[i]) { (lads[i] || s).style.setProperty('--pl', pl[i]); fills[i] = pl[i]; }
       });
       lit = on;
       var show = Math.max(1, on);
