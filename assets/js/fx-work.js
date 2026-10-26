@@ -3,8 +3,9 @@
      moves when this file starts); this file moves the track sideways as the page scrolls past the pinned
      stage. Geometry is measured once (on start, resize, load) in track coordinates, so a scroll frame only
      does arithmetic: one read (the section's top), then direct transform writes (the track, each nearby
-     photo's drift, the progress line) and the counter. Idle while the section is far off screen. A
-     keyboard focus inside the track scrolls the page to bring its card in.
+     photo's drift, the progress line, the heading's step under the header) and the counter. Idle while
+     the section is far off screen. A keyboard focus inside the track scrolls the page to bring its card in.
+     A resize that changes the run's length keeps a visitor reading below the section where they were.
    - The strip (everything else): previous/next buttons for a mouse, a progress line, and the photos lift
      in together as the strip comes into view (so a swipe never lands on a blank frame).
    Without this file the strip simply swipes, every photo at rest. */
@@ -19,6 +20,7 @@
   var one = function (sel) { return work.querySelector(sel); };
   var all = function (sel) { return Array.prototype.slice.call(work.querySelectorAll(sel)); };
   var pin = one('[data-work-pin]');
+  var head = one('.work-head');
   var rail = one('[data-work-rail]');
   var track = one('[data-work-track]');
   var strip = one('[data-work-strip]');
@@ -29,7 +31,7 @@
   var frames = all('.work-frame');
   var imgs = frames.map(function (f) { return f.querySelector('img'); });
   var steps = all('[data-work-step]');
-  if (!pin || !rail || !track || !strip || !cards.length) return;
+  if (!pin || !head || !rail || !track || !strip || !cards.length) return;
 
   // The run's query: the same as the media block in fx-work.css (scripting on, wide, motion allowed)
   var RUN = '(scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference)';
@@ -38,6 +40,7 @@
   var DRIFT = 6;  // % of a photo's width it drifts across a screen's width of travel (it rests at scale 1.16)
   var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
   if (totalEl) totalEl.textContent = pad2(cards.length);
+  work.classList.add('is-live'); // the buttons and the progress line work from here
 
   // Scroll to y without the page's smooth scrolling (html.is-loaded), for corrections nobody should see.
   var jump = function (y) {
@@ -56,8 +59,14 @@
   var railX = 0;
   var frameGeo = [];   // each frame's centre along the track
   var cardGeo = [];    // each card's left edge along the track
+  var pinH = 0;
+  var hdrStep = 0;     // the heading's full step under the header (the rail's top padding, --hdr-step)
   var lastP = -1;
+  var lastStep = -1;
   var active = -1;
+  var workH = 0;       // the section's height as last seen
+  var lastY = window.scrollY; // the page's scroll position and the screen's height as of the last frame
+  var lastVh = window.innerHeight;
 
   /* ---------- The strip ---------- */
   var stripMax = 0;
@@ -137,15 +146,25 @@
     if (p > 0.999) a = cardGeo.length - 1;
     if (a !== active) setCount(a);
   };
+  // The heading steps down only as far as the header would cover it (CSS applies it while the header
+  // shows): nothing while the heading sits lower on the screen, the full step once the stage is pinned.
+  var setStep = function (s) {
+    lastStep = s;
+    head.style.setProperty('--work-step', s.toFixed(1) + 'px');
+  };
   // Reads where the section is (one read) into view; returns the run's progress.
-  var view = { inside: false, run: false, p: 0 };
+  var view = { inside: false, below: false, run: false, p: 0, step: 0 };
   var look = function () {
     var r = work.getBoundingClientRect();
     var vh = window.innerHeight;
     var p = on && span ? AW.clamp(-r.top / span, 0, 1) : 0;
     view.inside = r.top <= vh / 2 && r.bottom >= vh / 2;
+    view.below = r.bottom < vh / 2; // the visitor is reading what follows the section
     view.run = on;
     view.p = p;
+    // where the sticky stage sits: with the section, held at the top, then leaving with the section's end
+    var pinTop = Math.min(Math.max(r.top, 0), r.bottom - pinH);
+    view.step = Math.round(AW.clamp(hdrStep - pinTop, 0, hdrStep) * 2) / 2;
     return p;
   };
   var update = function () {
@@ -153,6 +172,7 @@
     if (!on) return;
     lastP = p;
     place(p);
+    setStep(view.step);
   };
 
   // Decides the layout and caches the geometry (reads and writes freely: it runs on start, resize, load).
@@ -169,10 +189,13 @@
         strip.setAttribute('tabindex', '0');
         track.style.transform = '';
         imgs.forEach(function (im) { if (im) im.style.translate = ''; });
+        head.style.removeProperty('--work-step');
         active = -1;
       }
       lastP = -1;
+      lastStep = -1;
     }
+    workH = work.offsetHeight;
     if (!on) {
       stripMax = Math.max(0, strip.scrollWidth - strip.clientWidth);
       work.classList.toggle('is-fit', stripMax < 2);
@@ -183,7 +206,9 @@
     }
     railW = rail.clientWidth;
     travel = Math.max(0, track.scrollWidth - railW);
-    span = Math.max(0, work.offsetHeight - pin.offsetHeight);
+    pinH = pin.offsetHeight;
+    span = Math.max(0, workH - pinH);
+    hdrStep = parseFloat(getComputedStyle(rail).paddingTop) || 0;
     // In track coordinates: the track's own transform cancels out.
     var t0 = track.getBoundingClientRect().left;
     railX = rail.getBoundingClientRect().left;
@@ -211,11 +236,21 @@
   };
 
   AW.onScrollFrame(function () {
+    lastY = window.scrollY; // (free: layout is clean when the frame's jobs read)
+    lastVh = window.innerHeight;
     if (!near) return;
     var p = look(); // the one read
-    if (!on || p === lastP) return;
+    if (!on) return;
+    var s = view.step;
+    var moved = p !== lastP;
+    var stepped = s !== lastStep;
+    if (!moved && !stepped) return;
     lastP = p;
-    return function () { place(p); };
+    lastStep = s;
+    return function () {
+      if (moved) place(p);
+      if (stepped) setStep(s);
+    };
   });
 
   if ('IntersectionObserver' in window) {
@@ -245,10 +280,60 @@
     pin.scrollLeft = 0;
   });
 
+  // Holding a reader's place below the section through a resize (see queue): where each of the page's
+  // blocks (main's sections) began as of the last layout. A ResizeObserver keeps the table current; it
+  // runs after layout, so at a resize event the table still describes the page the visitor was reading.
+  var blocks = Array.prototype.slice.call(work.parentNode.children);
+  var tops = null;
+  var mapBlocks = function () {
+    var y = window.scrollY;
+    tops = blocks.map(function (b) { return b.offsetHeight ? b.getBoundingClientRect().top + y : NaN; });
+  };
+  if ('ResizeObserver' in window) {
+    var ro = new ResizeObserver(mapBlocks);
+    blocks.forEach(function (b) { ro.observe(b); });
+  }
+
   // Resizes settle first (a dragged window sends a stream of them); the place is copied at the first one.
+  // A visitor reading below the section is held at once, at every step: the run's length follows the
+  // screen's size (about 2,000px between 1440 and 900 wide), so without this what they were reading would
+  // move by that much. The block that was at the middle of the screen goes back to where it was (this runs
+  // before the frame paints, so nothing visibly jumps). It only corrects a page the browser left where it
+  // was (desktop browsers keep the scroll position across a width change) or merely stopped at its new
+  // end; when the browser has kept its own anchor (a phone or tablet turning), that stands.
   var resizeT = 0;
   var queue = function () {
-    if (!keep) keep = { inside: view.inside, run: view.run, p: view.p };
+    if (!keep) {
+      keep = {
+        inside: near && view.inside,
+        // far off: which side of it the visitor is on (the section's top only moves a little in a resize)
+        below: near ? view.below : work.getBoundingClientRect().top < 0,
+        run: view.run,
+        p: view.p
+      };
+    }
+    var h = work.offsetHeight; // the new layout (and any clamp of the scroll position at the page's end)
+    if (keep.below) {
+      var y = window.scrollY;
+      if (Math.abs(y - lastY) < 1 || y >= root.scrollHeight - window.innerHeight - 1) {
+        var shift = workH ? h - workH : 0; // (no table: the section's own change)
+        if (tops) {
+          var line = lastY + lastVh / 2;
+          for (var k = blocks.length - 1; k >= 0; k--) {
+            if (tops[k] <= line) { shift = blocks[k].getBoundingClientRect().top + y - tops[k]; break; }
+          }
+        }
+        if (Math.abs(shift) >= 0.5) {
+          lastY = Math.max(0, lastY + shift);
+          jump(lastY);
+        }
+      }
+    }
+    // The page as it is now (a media query change can follow the resize event in the same frame, before
+    // the observer reports)
+    if (tops) mapBlocks();
+    lastVh = window.innerHeight;
+    workH = h;
     clearTimeout(resizeT);
     resizeT = setTimeout(remeasure, 120);
   };
