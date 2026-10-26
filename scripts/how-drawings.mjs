@@ -2,9 +2,11 @@
 // and both copies of each (the stage's and the step's) stay the same.
 // Run from anywhere:  node scripts/how-drawings.mjs   (no dependencies; it rewrites the drawings in index.html)
 // viewBox 0 0 360 300. Every stroke is a <path pathLength="1"> with its own start (--t) and length (--u), in
-// units of the drawing clock (--pace in the CSS), so the CSS can draw each one in order. Fills (.f) and labels
-// fade in on the same clock. Classes: k1/k2/k3 line weights, ac teal (the new work), dm notes (teal-deep),
-// tx* text bars, ic icons, wh white, fw/fm/ft fills (white, mint, teal), lb labels. Styles: assets/css/fx-process.css.
+// units of the drawing clock (--pace in the CSS, 0.5s), so the CSS can draw each one in order. Each drawing
+// shows its point first (what's ticked, circled or new) and is done within ~1.3s; secondary text bars trail.
+// Fills (.f) and labels fade in on the same clock. Classes: k1/k2/k3 line weights, ac teal (the new work),
+// dm notes (teal-deep), tx* text bars, ic icons, wh white, fw/fm/ft fills (white, mint, teal), lb labels.
+// Styles: assets/css/fx-process.css.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -141,23 +143,23 @@ function drawing1() {
   const px = 176, py = 20, pw = 124, ph = 260; // phone body
   const sx = px + 6, sy = py + 6, sw = pw - 12, sh = ph - 12; // screen
   const cx0 = sx + 10, cw = sw - 20; // content box (x 192..284)
-  // fills first (under everything)
-  D.fill(RR(px, py, pw, ph, 20), 'fw', 0.4, 0.6);
-  // body, screen, island, buttons
-  D.s(RR(px, py, pw, ph, 20), 'k1', 0, 0.95);
-  D.s(RR(sx, sy, sw, sh, 14), 'k3', 0.25, 0.8);
-  D.s(RR(px + pw / 2 - 13, py + 14, 26, 8, 4), 'k2', 0.6, 0.3);
-  D.s(RR(px + pw, py + 76, 2.5, 40, 1.25), 'k2', 0.75, 0.2);
-  D.s(RR(px - 2.5, py + 58, 2.5, 14, 1.25) + RR(px - 2.5, py + 84, 2.5, 24, 1.25) + RR(px - 2.5, py + 116, 2.5, 24, 1.25), 'k2', 0.8, 0.25);
-  // form head
-  D.s(H(cx0, cx0 + 54, 58), 'tx1', 0.7, 0.3);
-  D.s(H(cx0, cx0 + 76, 67), 'tx2', 0.78, 0.3);
+  // fills first (under everything); the paper follows its outline in
+  D.fill(RR(px, py, pw, ph, 20), 'fw', 0.35, 0.4);
+  // body, screen, island, buttons: the phone is there within the first ~0.35s
+  D.s(RR(px, py, pw, ph, 20), 'k1', 0, 0.7);
+  D.s(RR(sx, sy, sw, sh, 14), 'k3', 0.12, 0.6);
+  D.s(RR(px + pw / 2 - 13, py + 14, 26, 8, 4), 'k2', 0.45, 0.25);
+  D.s(RR(px + pw, py + 76, 2.5, 40, 1.25), 'k2', 0.55, 0.18);
+  D.s(RR(px - 2.5, py + 58, 2.5, 14, 1.25) + RR(px - 2.5, py + 84, 2.5, 24, 1.25) + RR(px - 2.5, py + 116, 2.5, 24, 1.25), 'k2', 0.6, 0.2);
+  // form head (text trails the tiles)
   const seg = (cw - 8) / 3;
-  for (let i = 0; i < 3; i++) D.s(H(cx0 + i * (seg + 4), cx0 + i * (seg + 4) + seg, 79), i ? 'pg' : 'pg ac', 0.86 + i * 0.06, 0.22);
-  D.s(H(cx0, cx0 + 20, 87), 'tx3', 0.98, 0.15);
-  D.s(H(cx0, cx0 + 60, 101), 'tx1 tx-s', 1.02, 0.25);
-  D.s(H(cx0, cx0 + 44, 108.5), 'tx2', 1.08, 0.2);
-  // tiles (2 x 2)
+  for (let i = 0; i < 3; i++) D.s(H(cx0 + i * (seg + 4), cx0 + i * (seg + 4) + seg, 79), i ? 'pg' : 'pg ac', 0.9 + i * 0.06, 0.2);
+  D.s(H(cx0, cx0 + 54, 58), 'tx1', 1.0, 0.25);
+  D.s(H(cx0, cx0 + 76, 67), 'tx2', 1.06, 0.25);
+  D.s(H(cx0, cx0 + 20, 87), 'tx3', 1.18, 0.14);
+  D.s(H(cx0, cx0 + 60, 101), 'tx1 tx-s', 1.12, 0.25);
+  D.s(H(cx0, cx0 + 44, 108.5), 'tx2', 1.2, 0.2);
+  // tiles (2 x 2): the two that get ticked are drawn in teal from the start
   const tw = (cw - 4) / 2, th = 50, ty0 = 117;
   const names = ['box', 'ladder', 'wind', 'layers'];
   const picked = [0, 1];
@@ -165,107 +167,102 @@ function drawing1() {
   for (let i = 0; i < 4; i++) {
     const x = cx0 + (i % 2) * (tw + 4), y = ty0 + Math.floor(i / 2) * (th + 4);
     tiles.push([x, y]);
-    if (picked.includes(i)) D.fill(RR(x, y, tw, th, 7), 'fm', 1.9 + picked.indexOf(i) * 0.32, 0.35);
+    if (picked.includes(i)) D.fill(RR(x, y, tw, th, 7), 'fm', 0.85 + picked.indexOf(i) * 0.16, 0.3);
   }
   tiles.forEach(([x, y], i) => {
-    const t = 1.12 + i * 0.07;
-    D.s(RR(x, y, tw, th, 7), 'k3', t, 0.4);
-    D.s(ICONS[names[i]].map((d) => icon(d, x + 6.5, y + 7, 12)).join(''), 'ic', t + 0.16, 0.35);
-    D.s(H(x + 7, x + 7 + [26, 25, 22, 24][i], y + 33), 'tx1 tx-t', t + 0.22, 0.2);
-    D.s(H(x + 7, x + 7 + [21, 18, 23, 19][i], y + 40), 'tx2', t + 0.26, 0.18);
-    D.s(circle(x + tw - 8.5, y + 9.5, 4.25), 'k3', t + 0.3, 0.2);
+    const t = 0.4 + i * 0.06;
+    D.s(RR(x, y, tw, th, 7), picked.includes(i) ? 'k2 ac' : 'k3', t, 0.3);
+    D.s(ICONS[names[i]].map((d) => icon(d, x + 6.5, y + 7, 12)).join(''), 'ic', t + 0.12, 0.3);
+    D.s(H(x + 7, x + 7 + [26, 25, 22, 24][i], y + 33), 'tx1 tx-t', 1.3 + i * 0.06, 0.2);
+    D.s(H(x + 7, x + 7 + [21, 18, 23, 19][i], y + 40), 'tx2', 1.36 + i * 0.06, 0.18);
+    D.s(circle(x + tw - 8.5, y + 9.5, 4.25), 'k3', t + 0.2, 0.18);
   });
-  // ticked: the tile's outline goes teal, it fills mint, its radio fills teal and the check draws
+  // ticked: the tile fills mint, its radio fills teal and the check draws
   picked.forEach((i, n) => {
     const [x, y] = tiles[i];
-    const t = 1.85 + n * 0.32;
-    D.s(RR(x, y, tw, th, 7), 'k2 ac', t, 0.35);
-    D.fill(circle(x + tw - 8.5, y + 9.5, 4.6), 'ft pop', t + 0.12, 0.25);
-    D.s(check(x + tw - 12.5, y + 5.5, 8), 'wh', t + 0.2, 0.18);
+    const t = 0.85 + n * 0.16;
+    D.fill(circle(x + tw - 8.5, y + 9.5, 4.6), 'ft pop', t + 0.08, 0.2);
+    D.s(check(x + tw - 12.5, y + 5.5, 8), 'wh', t + 0.14, 0.15);
   });
   // Next button
   const by = 231;
-  D.fill(RR(cx0, by, cw, 20, 10), 'ft', 1.5, 0.35);
-  D.s(H(cx0 + cw / 2 - 12, cx0 + cw / 2 + 4, by + 10) + `M${f(cx0 + cw / 2 + 7)} ${f(by + 10)}h8m-3.2 -3.2 3.2 3.2 -3.2 3.2`, 'wh', 1.68, 0.3);
+  D.fill(RR(cx0, by, cw, 20, 10), 'ft', 1.0, 0.3);
+  D.s(H(cx0 + cw / 2 - 12, cx0 + cw / 2 + 4, by + 10) + `M${f(cx0 + cw / 2 + 7)} ${f(by + 10)}h8m-3.2 -3.2 3.2 3.2 -3.2 3.2`, 'wh', 1.12, 0.25);
   // home indicator
-  D.s(H(px + pw / 2 - 18, px + pw / 2 + 18, py + ph - 13), 'k2', 0.95, 0.25);
+  D.s(H(px + pw / 2 - 18, px + pw / 2 + 18, py + ph - 13), 'k2', 0.6, 0.2);
   // dimension: about a minute
   const dx = 160;
-  D.s(H(dx - 6, px - 6, py) + H(dx - 6, px - 6, py + ph), 'dm', 1.55, 0.22);
-  D.s(V(dx, py, py + ph), 'dm', 1.7, 0.5);
-  D.s(tick(dx, py) + tick(dx, py + ph), 'dm', 2.15, 0.12);
-  D.text(dx - 9, py + ph / 2 + 3.4, 'About a minute', '', 2.2, 0.45, 'end');
+  D.s(H(dx - 6, px - 6, py) + H(dx - 6, px - 6, py + ph), 'dm', 1.2, 0.18);
+  D.s(V(dx, py, py + ph), 'dm', 1.3, 0.4);
+  D.s(tick(dx, py) + tick(dx, py + ph), 'dm', 1.65, 0.1);
+  D.text(dx - 9, py + ph / 2 + 3.4, 'About a minute', '', 1.5, 0.4, 'end');
   return wrap(1, D.out, 'Step 1: the quote form on a phone. Storage and ladder ticked; "about a minute" down its side.');
 }
 
 /* ---------------------------------------------------------------------------------------------
    2 · Get your price and options: a docket held by a bulldog clip. Three options with prices; two
-   get ticked. Below the tear-off line, a week: a day gets circled, "pick a day".
+   are ticked. Below the tear-off line, a week: a day gets circled, "pick a day". The sheet, the
+   ticks and the circled day come first (done by ~0.75s); the text bars trail.
    --------------------------------------------------------------------------------------------- */
 function drawing2() {
   const D = Drawing();
   const ox = 70; // sheet left
   const x0 = ox, x1 = ox + 152, y0 = 28, y1 = 284, perf = 198;
   const cl = x0 + 10, cr = x1 - 10; // content box
-  D.fill(`M${x0 + 3} ${y0}H${x1 - 3}A3 3 0 0 1 ${x1} ${y0 + 3}V${perf - 4}A4 4 0 0 0 ${x1} ${perf + 4}V${y1 - 3}A3 3 0 0 1 ${x1 - 3} ${y1}H${x0 + 3}A3 3 0 0 1 ${x0} ${y1 - 3}V${perf + 4}A4 4 0 0 0 ${x0} ${perf - 4}V${y0 + 3}A3 3 0 0 1 ${x0 + 3} ${y0}Z`, 'fw', 0.45, 0.6);
-  D.s(`M${x0 + 3} ${y0}H${x1 - 3}A3 3 0 0 1 ${x1} ${y0 + 3}V${perf - 4}A4 4 0 0 0 ${x1} ${perf + 4}V${y1 - 3}A3 3 0 0 1 ${x1 - 3} ${y1}H${x0 + 3}A3 3 0 0 1 ${x0} ${y1 - 3}V${perf + 4}A4 4 0 0 0 ${x0} ${perf - 4}V${y0 + 3}A3 3 0 0 1 ${x0 + 3} ${y0}Z`, 'k1', 0, 1.0);
+  D.fill(`M${x0 + 3} ${y0}H${x1 - 3}A3 3 0 0 1 ${x1} ${y0 + 3}V${perf - 4}A4 4 0 0 0 ${x1} ${perf + 4}V${y1 - 3}A3 3 0 0 1 ${x1 - 3} ${y1}H${x0 + 3}A3 3 0 0 1 ${x0} ${y1 - 3}V${perf + 4}A4 4 0 0 0 ${x0} ${perf - 4}V${y0 + 3}A3 3 0 0 1 ${x0 + 3} ${y0}Z`, 'fw', 0.35, 0.4);
+  D.s(`M${x0 + 3} ${y0}H${x1 - 3}A3 3 0 0 1 ${x1} ${y0 + 3}V${perf - 4}A4 4 0 0 0 ${x1} ${perf + 4}V${y1 - 3}A3 3 0 0 1 ${x1 - 3} ${y1}H${x0 + 3}A3 3 0 0 1 ${x0} ${y1 - 3}V${perf + 4}A4 4 0 0 0 ${x0} ${perf - 4}V${y0 + 3}A3 3 0 0 1 ${x0 + 3} ${y0}Z`, 'k1', 0, 0.7);
   // bulldog clip: body, pivot, wire handle
   const mx = (x0 + x1) / 2;
-  D.fill(RR(mx - 22, 18, 44, 18, 3), 'fw', 0.4, 0.3);
-  D.s(RR(mx - 22, 18, 44, 18, 3), 'k2', 0.35, 0.45);
-  D.s(H(mx - 22, mx + 22, 24), 'k3', 0.55, 0.25);
-  D.s(`M${mx - 15} 19C${mx - 15} 13 ${mx - 18} 9 ${mx - 18} 6.5A2.5 2.5 0 0 1 ${mx - 15.5} 4H${mx + 15.5}A2.5 2.5 0 0 1 ${mx + 18} 6.5C${mx + 18} 9 ${mx + 15} 13 ${mx + 15} 19`, 'k2', 0.6, 0.4);
+  D.fill(RR(mx - 22, 18, 44, 18, 3), 'fw', 0.3, 0.2);
+  D.s(RR(mx - 22, 18, 44, 18, 3), 'k2', 0.05, 0.35);
+  D.s(H(mx - 22, mx + 22, 24), 'k3', 0.35, 0.15);
+  D.s(`M${mx - 15} 19C${mx - 15} 13 ${mx - 18} 9 ${mx - 18} 6.5A2.5 2.5 0 0 1 ${mx - 15.5} 4H${mx + 15.5}A2.5 2.5 0 0 1 ${mx + 18} 6.5C${mx + 18} 9 ${mx + 15} 13 ${mx + 15} 19`, 'k2', 0.4, 0.3);
   // header: the Attic Worx mark (circle + ladder A), name, reference
   const hy = 54;
-  D.s(circle(cl + 9, hy, 9), 'k2 ac', 0.45, 0.4);
-  D.s(`M${cl + 5} ${hy + 5}L${cl + 9} ${hy - 5}L${cl + 13} ${hy + 5}M${cl + 6.6} ${hy + 1}H${cl + 11.4}`, 'k2 ac', 0.7, 0.3);
-  D.s(H(cl + 26, cl + 78, hy - 3), 'tx1', 0.62, 0.3);
-  D.s(H(cl + 26, cl + 60, hy + 5), 'tx2', 0.7, 0.25);
-  D.s(H(cr - 26, cr, hy - 3), 'tx2', 0.75, 0.2);
-  D.s(H(cr - 16, cr, hy + 4), 'tx3', 0.8, 0.15);
-  D.s(H(cl, cr, 76), 'k3', 0.82, 0.4);
-  // three options: checkbox, description, amount
+  D.s(circle(cl + 9, hy, 9), 'k2 ac', 0.45, 0.3);
+  D.s(`M${cl + 5} ${hy + 5}L${cl + 9} ${hy - 5}L${cl + 13} ${hy + 5}M${cl + 6.6} ${hy + 1}H${cl + 11.4}`, 'k2 ac', 0.6, 0.2);
+  D.s(H(cl + 26, cl + 78, hy - 3), 'tx1', 1.3, 0.25);
+  D.s(H(cl + 26, cl + 60, hy + 5), 'tx2', 1.36, 0.2);
+  D.s(H(cr - 26, cr, hy - 3), 'tx2', 1.42, 0.18);
+  D.s(H(cr - 16, cr, hy + 4), 'tx3', 1.48, 0.14);
+  D.s(H(cl, cr, 76), 'k3', 0.55, 0.3);
+  // three options: checkbox (the two picked ones in teal, ticked at once), description, amount
   const rows = [96, 120, 144];
   rows.forEach((c, i) => {
-    const t = 0.95 + i * 0.12;
-    D.s(RR(cl, c - 6, 12, 12, 2.5), 'k2', t, 0.25);
-    D.s(H(cl + 20, cl + 20 + [52, 40, 46][i], c - 2.5), 'tx1', t + 0.05, 0.28);
-    D.s(H(cl + 20, cl + 20 + [36, 30, 40][i], c + 4), 'tx2', t + 0.1, 0.22);
-    D.s(H(cr - [26, 22, 24][i], cr, c), 'tx1', t + 0.15, 0.2);
+    D.s(RR(cl, c - 6, 12, 12, 2.5), i < 2 ? 'k2 ac' : 'k2', 0.55 + i * 0.07, 0.18);
+    D.s(H(cl + 20, cl + 20 + [52, 40, 46][i], c - 2.5), 'tx1', 1.45 + i * 0.08, 0.25);
+    D.s(H(cl + 20, cl + 20 + [36, 30, 40][i], c + 4), 'tx2', 1.52 + i * 0.08, 0.2);
+    D.s(H(cr - [26, 22, 24][i], cr, c), 'tx1', 1.6 + i * 0.08, 0.18);
   });
+  // the ticks: storage floor and ladder
+  [0, 1].forEach((i) => D.s(check(cl + 1, rows[i] - 5.5, 10.5), 'k1 ac', 0.78 + i * 0.14, 0.2));
   // total
-  D.s(H(cr - 46, cr, 160), 'k3', 1.32, 0.3);
-  D.s(H(cl, cl + 30, 174), 'tx1 tx-s', 1.38, 0.25);
-  D.s(H(cr - 36, cr, 174), 'tx1 tx-s', 1.45, 0.25);
-  D.s(H(cr - 36, cr, 181.5) + H(cr - 36, cr, 184.5), 'k3', 1.55, 0.2);
+  D.s(H(cr - 46, cr, 160), 'k3', 1.8, 0.2);
+  D.s(H(cl, cl + 30, 174), 'tx1 tx-s', 1.85, 0.22);
+  D.s(H(cr - 36, cr, 174), 'tx1 tx-s', 1.9, 0.22);
+  D.s(H(cr - 36, cr, 181.5) + H(cr - 36, cr, 184.5), 'k3', 2.0, 0.18);
   // tear-off line
   let perfD = '';
   for (let x = x0 + 8; x < x1 - 8; x += 7) perfD += H(x, Math.min(x + 3.5, x1 - 8), perf);
-  D.s(perfD, 'k3', 1.6, 0.45);
+  D.s(perfD, 'k3', 0.65, 0.35);
   // the stub: pick a day
-  D.s(H(cl, cl + 40, 216), 'tx1 tx-t', 1.7, 0.2);
+  D.s(H(cl, cl + 40, 216), 'tx1 tx-t', 1.9, 0.2);
   const cw = 21, gap = 5.75, gx = (x0 + x1) / 2 - (5 * cw + 4 * gap) / 2;
   const pick = 3;
   for (let i = 0; i < 5; i++) {
-    const x = gx + i * (cw + gap), t = 1.75 + i * 0.05;
-    D.s(RR(x, 226, cw, 28, 5), 'k3', t, 0.3);
-    D.s(H(x + 6, x + cw - 6, 233.5), 'tx3', t + 0.12, 0.12);
-    D.s(H(x + 7.5, x + cw - 7.5, 243), i === pick ? 'tx1 tx-s' : 'tx1 tx-n', t + 0.16, 0.12);
+    const x = gx + i * (cw + gap), t = 0.7 + i * 0.04;
+    D.s(RR(x, 226, cw, 28, 5), 'k3', t, 0.2);
+    D.s(H(x + 6, x + cw - 6, 233.5), 'tx3', t + 0.14, 0.12);
+    D.s(H(x + 7.5, x + cw - 7.5, 243), i === pick ? 'tx1 tx-s' : 'tx1 tx-n', t + 0.18, 0.12);
   }
-  D.s(H(cl, cl + 52, 270), 'tx3', 2.0, 0.2);
-  // the ticks: storage floor and ladder
-  [0, 1].forEach((i) => {
-    const c = rows[i], t = 2.0 + i * 0.22;
-    D.s(RR(cl, c - 6, 12, 12, 2.5), 'k2 ac', t - 0.08, 0.2);
-    D.s(check(cl + 1, c - 5.5, 10.5), 'k1 ac', t, 0.22);
-  });
+  D.s(H(cl, cl + 52, 270), 'tx3', 2.1, 0.2);
   // a day, circled by hand
   const dcx = gx + pick * (cw + gap) + cw / 2;
-  D.s(ring(dcx, 240, 16.5, 19.5, -118, 384, 0.07), 'k2 ac', 2.45, 0.55);
+  D.s(ring(dcx, 240, 16.5, 19.5, -118, 384, 0.07), 'k2 ac', 1.0, 0.5);
   // leader and label
   const lx = x1 + 24;
-  D.s(`M${f(dcx + 15)} ${f(226)}L${f(lx)} 206H${f(lx + 10)}`, 'dm', 2.9, 0.25);
-  D.text(lx + 14, 209.4, 'Pick a day', '', 3.0, 0.4);
+  D.s(`M${f(dcx + 15)} ${f(226)}L${f(lx)} 206H${f(lx + 10)}`, 'dm', 1.45, 0.2);
+  D.text(lx + 14, 209.4, 'Pick a day', '', 1.5, 0.4);
   return wrap(2, D.out, 'Step 2: the price docket. Two options ticked; a day circled below the tear-off line.');
 }
 
@@ -273,7 +270,8 @@ function drawing2() {
    3 · We install: a section through the house. Room below, roof above, the manhole in the ceiling,
    the folding ladder down (its stiles converge as it leans away), the new floor on H2 battens over
    the ceiling joists with boxes on it. A dimension from the room floor to the new floor: 4–5 hours.
-   New work is teal; the house is ink.
+   New work is teal; the house is ink. The house goes down in ~0.45s, the new work by ~1s, the
+   dimension by ~1.3s.
    --------------------------------------------------------------------------------------------- */
 function drawing3() {
   const D = Drawing();
@@ -287,32 +285,32 @@ function drawing3() {
   const roofY = (x) => (x <= ridge[0] ? eL[1] + (x - eL[0]) * slope : eR[1] + (x - eR[0]) * -slope);
 
   // room floor and slab
-  D.s(H(8, 352, FL), 'k1', 0, 0.7);
-  D.s(H(8, 352, FL + 6), 'k3', 0.2, 0.6);
+  D.s(H(8, 352, FL), 'k1', 0, 0.6);
+  D.s(H(8, 352, FL + 6), 'k3', 0.1, 0.5);
   // walls (two faces each), skirtings
-  D.s(V(WL, CB, FL) + V(WR, CB, FL), 'k2', 0.1, 0.6);
-  D.s(V(WL - 8, CB, FL) + V(WR + 8, CB, FL), 'k3', 0.18, 0.6);
-  D.s(`M${WL} ${FL - 8}h3.5v8M${WR} ${FL - 8}h-3.5v8`, 'k3', 0.75, 0.15);
+  D.s(V(WL, CB, FL) + V(WR, CB, FL), 'k2', 0.05, 0.55);
+  D.s(V(WL - 8, CB, FL) + V(WR + 8, CB, FL), 'k3', 0.1, 0.55);
+  D.s(`M${WL} ${FL - 8}h3.5v8M${WR} ${FL - 8}h-3.5v8`, 'k3', 0.9, 0.15);
   // bottom chord (ceiling joist), with the opening trimmed out
-  D.s(H(eL[0], OL - 6, CT) + H(OR + 6, eR[0], CT), 'k1', 0.2, 0.75);
-  D.s(H(eL[0] + 2, OL - 6, CB) + H(OR + 6, eR[0] - 2, CB), 'k2', 0.28, 0.7);
+  D.s(H(eL[0], OL - 6, CT) + H(OR + 6, eR[0], CT), 'k1', 0.1, 0.6);
+  D.s(H(eL[0] + 2, OL - 6, CB) + H(OR + 6, eR[0] - 2, CB), 'k2', 0.15, 0.55);
   // plasterboard ceiling and cornices
-  D.s(H(WL, OL, CL) + H(OR, WR, CL), 'k2', 0.32, 0.65);
-  D.s(`M${WL} ${CL + 7}A7 7 0 0 0 ${WL + 7} ${CL}M${WR} ${CL + 7}A7 7 0 0 1 ${WR - 7} ${CL}`, 'k3', 0.85, 0.15);
+  D.s(H(WL, OL, CL) + H(OR, WR, CL), 'k2', 0.2, 0.5);
+  D.s(`M${WL} ${CL + 7}A7 7 0 0 0 ${WL + 7} ${CL}M${WR} ${CL + 7}A7 7 0 0 1 ${WR - 7} ${CL}`, 'k3', 0.95, 0.15);
   // trimmers either side of the opening (timber in section) and the hatch frame
-  D.s(RR(OL - 6, CT, 6, CB - CT, 0) + RR(OR, CT, 6, CB - CT, 0), 'k2', 0.7, 0.25);
-  D.s(L(OL - 6, CT, OL, CB) + L(OR, CT, OR + 6, CB), 'k3', 0.82, 0.12);
-  D.s(V(OL, CB, CL + 2) + V(OR, CB, CL + 2) + H(OL - 4, OL, CL + 2) + H(OR, OR + 4, CL + 2), 'k3', 0.85, 0.15);
+  D.s(RR(OL - 6, CT, 6, CB - CT, 0) + RR(OR, CT, 6, CB - CT, 0), 'k2', 0.6, 0.2);
+  D.s(L(OL - 6, CT, OL, CB) + L(OR, CT, OR + 6, CB), 'k3', 0.7, 0.1);
+  D.s(V(OL, CB, CL + 2) + V(OR, CB, CL + 2) + H(OL - 4, OL, CL + 2) + H(OR, OR + 4, CL + 2), 'k3', 0.7, 0.12);
   // roof: rafters from both eaves up to the ridge, roofing above them, battens between
-  D.s(`M${eL[0]} ${eL[1]}L${ridge[0]} ${ridge[1]}`, 'k1', 0.35, 0.8);
-  D.s(`M${eR[0]} ${eR[1]}L${ridge[0]} ${ridge[1]}`, 'k1', 0.35, 0.8);
+  D.s(`M${eL[0]} ${eL[1]}L${ridge[0]} ${ridge[1]}`, 'k1', 0.1, 0.6);
+  D.s(`M${eR[0]} ${eR[1]}L${ridge[0]} ${ridge[1]}`, 'k1', 0.1, 0.6);
   {
     // the roofing line, on the battens (4.5 units above the rafters (offset along the normal), with an overhang
     const ang = Math.atan(-slope), off = 4.5 / Math.cos(ang);
     const yL = (x) => eL[1] + (x - eL[0]) * slope - off;
-    D.s(`M${f(4)} ${f(yL(4))}L${ridge[0]} ${f(ridge[1] - off)}L${f(356)} ${f(yL(4))}`, 'k3', 0.55, 0.75);
+    D.s(`M${f(4)} ${f(yL(4))}L${ridge[0]} ${f(ridge[1] - off)}L${f(356)} ${f(yL(4))}`, 'k3', 0.35, 0.55);
     // box gutters at the eaves
-    D.s(`M${f(1.5)} ${f(yL(4) - 1)}v6.5a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5 -1.5v-4M${f(358.5)} ${f(yL(4) - 1)}v6.5a1.5 1.5 0 0 1 -1.5 1.5h-5a1.5 1.5 0 0 1 -1.5 -1.5v-4`, 'k3', 1.25, 0.2);
+    D.s(`M${f(1.5)} ${f(yL(4) - 1)}v6.5a1.5 1.5 0 0 0 1.5 1.5h5a1.5 1.5 0 0 0 1.5 -1.5v-4M${f(358.5)} ${f(yL(4) - 1)}v6.5a1.5 1.5 0 0 1 -1.5 1.5h-5a1.5 1.5 0 0 1 -1.5 -1.5v-4`, 'k3', 1.0, 0.18);
     // battens: small squares sitting on the rafters, every ~30 units along each slope
     let bat = '';
     for (const side of [-1, 1]) {
@@ -328,24 +326,26 @@ function drawing3() {
         bat += poly([p[0], p[1], q[1], q[0]], true);
       }
     }
-    D.s(bat, 'k3', 0.95, 0.3);
+    D.s(bat, 'k3', 0.8, 0.25);
   }
   // the new floor (teal): H2 battens in section, then the 19mm sheet laid left to right
   const FX0 = 66, FX1 = OL - 6, ST = 95, SB = 99.5;
+  const battens = [];
   for (let i = 0; i < 6; i++) {
     const x = 70 + i * 24.5;
-    D.s(RR(x, SB, 7, CT - SB, 0) + L(x, CT, x + 7, SB), 'k3 ac', 1.0 + i * 0.05, 0.2);
+    battens.push(x);
+    D.s(RR(x, SB, 7, CT - SB, 0) + L(x, CT, x + 7, SB), 'k3 ac', 0.8 + i * 0.04, 0.16);
   }
-  D.s(RR(FX0, ST, FX1 - FX0, SB - ST, 0.8), 'k2 ac', 1.25, 0.55);
+  D.s(RR(FX0, ST, FX1 - FX0, SB - ST, 0.8), 'k2 ac', 0.95, 0.4);
   // boxes, a tub
   const bx = [[106, 140, 22], [146, 172, 16]];
   bx.forEach(([a, b, h], i) => {
-    const t = 1.55 + i * 0.12, top = ST - h;
-    D.s(RR(a, top, b - a, h, 1), 'k2', t, 0.35);
-    D.s(H(a, b, top + 4.5) + H((a + b) / 2 - 2, (a + b) / 2 + 2, top) + V((a + b) / 2 - 2, top, top + 9) + V((a + b) / 2 + 2, top, top + 9), 'k3', t + 0.22, 0.2);
+    const t = 1.45 + i * 0.1, top = ST - h;
+    D.s(RR(a, top, b - a, h, 1), 'k2', t, 0.3);
+    D.s(H(a, b, top + 4.5) + H((a + b) / 2 - 2, (a + b) / 2 + 2, top) + V((a + b) / 2 - 2, top, top + 9) + V((a + b) / 2 + 2, top, top + 9), 'k3', t + 0.18, 0.16);
   });
-  D.s(`M181 ${ST}L178.5 79.5H205.5L203 ${ST}Z`, 'k2', 1.8, 0.35);
-  D.s(RR(176, 75.5, 32, 4, 1.5) + H(186, 198, 87), 'k3', 1.98, 0.2);
+  D.s(`M181 ${ST}L178.5 79.5H205.5L203 ${ST}Z`, 'k2', 1.65, 0.3);
+  D.s(RR(176, 75.5, 32, 4, 1.5) + H(186, 198, 87), 'k3', 1.8, 0.16);
   // the hatch panel, swung down behind the ladder
   const PB = 178, PX0 = OL + 4, PX1 = OR - 4;
   // stiles: outer and inner edges, converging as the ladder leans away (top y 117, foot y 276)
@@ -356,30 +356,30 @@ function drawing3() {
   };
   const at = (e, y) => e[0][0] + (e[1][0] - e[0][0]) * ((y - e[0][1]) / (e[1][1] - e[0][1]));
   // panel bottom edge, broken where the stiles cross in front of it
-  D.s(V(PX0, CL + 2, PB) + V(PX1, CL + 2, PB), 'k2', 1.3, 0.35);
-  D.s(H(PX0, at(stile.lo, PB), PB) + H(at(stile.li, PB), at(stile.ri, PB), PB) + H(at(stile.ro, PB), PX1, PB), 'k2', 1.55, 0.2);
+  D.s(V(PX0, CL + 2, PB) + V(PX1, CL + 2, PB), 'k2', 1.05, 0.25);
+  D.s(H(PX0, at(stile.lo, PB), PB) + H(at(stile.li, PB), at(stile.ri, PB), PB) + H(at(stile.ro, PB), PX1, PB), 'k2', 1.2, 0.15);
   // stiles draw down from the hatch (the ladder unfolding)
-  D.s(L(...stile.lo[0], ...stile.lo[1]) + L(...stile.li[0], ...stile.li[1]), 'k1 ac', 1.6, 0.8);
-  D.s(L(...stile.ri[0], ...stile.ri[1]) + L(...stile.ro[0], ...stile.ro[1]), 'k1 ac', 1.6, 0.8);
-  D.s(H(stile.lo[0][0], stile.li[0][0], LT) + H(stile.ri[0][0], stile.ro[0][0], LT), 'k2 ac', 1.6, 0.1);
+  D.s(L(...stile.lo[0], ...stile.lo[1]) + L(...stile.li[0], ...stile.li[1]), 'k1 ac', 1.15, 0.55);
+  D.s(L(...stile.ri[0], ...stile.ri[1]) + L(...stile.ro[0], ...stile.ro[1]), 'k1 ac', 1.15, 0.55);
+  D.s(H(stile.lo[0][0], stile.li[0][0], LT) + H(stile.ri[0][0], stile.ro[0][0], LT), 'k2 ac', 1.15, 0.08);
   // treads, top to bottom; spacing closes up towards the top (it's further away)
   const treads = [];
   let y = 262, sp = 19;
   for (let i = 0; i < 9; i++) { treads.push(y); y -= sp; sp *= 0.955; }
   treads.reverse().forEach((ty, i) => {
     const a = at(stile.li, ty), b = at(stile.ri, ty);
-    D.s(RR(a, ty - 1.25, b - a, 2.5, 0.6), 'k2 ac', 1.72 + i * 0.07, 0.16);
+    D.s(RR(a, ty - 1.25, b - a, 2.5, 0.6), 'k2 ac', 1.25 + i * 0.05, 0.12);
   });
   // section joints (where it folds) and the feet
   const J = [168, 222];
-  D.s(J.map((jy) => L(at(stile.lo, jy), jy + 1.5, at(stile.li, jy), jy - 1.5) + L(at(stile.ri, jy), jy - 1.5, at(stile.ro, jy), jy + 1.5)).join(''), 'k3 ac', 2.3, 0.15);
-  D.s(RR(at(stile.lo, LB) - 0.5, LB, 7, FL - LB, 1.5) + RR(at(stile.ri, LB) - 0.5, LB, 7, FL - LB, 1.5), 'k2', 2.38, 0.18);
-  // dimension: room floor to the new floor, 4–5 hours
-  const dx = 50;
-  D.s(H(dx - 6, FX0 - 4, ST), 'dm', 2.4, 0.18);
-  D.s(V(dx, ST, FL), 'dm', 2.5, 0.5);
-  D.s(tick(dx, ST) + tick(dx, FL), 'dm', 2.95, 0.12);
-  D.text(dx + 9, 203, '4–5 hours', 'lb-lg', 2.9, 0.45);
+  D.s(J.map((jy) => L(at(stile.lo, jy), jy + 1.5, at(stile.li, jy), jy - 1.5) + L(at(stile.ri, jy), jy - 1.5, at(stile.ro, jy), jy + 1.5)).join(''), 'k3 ac', 1.75, 0.12);
+  D.s(RR(at(stile.lo, LB) - 0.5, LB, 7, FL - LB, 1.5) + RR(at(stile.ri, LB) - 0.5, LB, 7, FL - LB, 1.5), 'k2', 1.8, 0.14);
+  // dimension: room floor to the top of the new floor, 4–5 hours. It stands inboard, between two
+  // battens, so it reads off the sheet's top face and stays clear of the rafter.
+  const dx = (battens[0] + 7 + battens[1]) / 2;
+  D.s(V(dx, ST, FL), 'dm', 1.95, 0.4);
+  D.s(tick(dx, ST, 3.5) + tick(dx, FL, 3.5), 'dm', 2.3, 0.1);
+  D.text(dx + 9, 203, '4–5 hours', 'lb-lg', 2.15, 0.45);
   return wrap(3, D.out, 'Step 3: a section through the house. The ladder down through the manhole, the new floor above; "4–5 hours" from floor to floor.');
 }
 

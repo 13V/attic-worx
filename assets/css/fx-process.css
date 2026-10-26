@@ -61,9 +61,9 @@
 
 /* Tablets: the drawing beside the words */
 @media (min-width: 640px) and (max-width: 999px) {
-  .hstep { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); grid-template-rows: auto 1fr; column-gap: clamp(24px, 4vw, 40px); }
+  .hstep { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: clamp(24px, 4vw, 40px); }
   .hstep > h3, .hstep > p { grid-column: 1; }
-  .how-fig { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+  .how-fig { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; padding: clamp(10px, 2vw, 18px); }
   .how .how-cta { padding-left: 56px; }
 }
 
@@ -71,12 +71,15 @@
 @media (min-width: 1000px) {
   .how-layout { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); }
   .how-fig { display: none; }
-  .hstep { padding-bottom: clamp(64px, 12vh, 124px); }
-  .hstep:last-child { padding-bottom: 0; }
+  /* Each step owns ~220-300px of scroll, and the copy runs on past the CTA, so the stage is still stuck
+     when step 3 lights and stays (nearly) whole while its drawing plays, even on 1280x720 and 1366x768
+     laptops. The stage is capped to the screen's height, so short browser windows see all of it. */
+  .hstep { padding-bottom: clamp(96px, 20vh, 200px); }
+  .how-copy { padding-bottom: clamp(96px, 20vh, 200px); }
   .how .how-cta { padding-left: 56px; }
   .how-stage {
     display: block; position: sticky; top: calc(var(--header-h) + 28px);
-    aspect-ratio: 1 / 1.07; overflow: hidden;
+    width: 100%; aspect-ratio: 1 / 1.07; max-height: calc(100svh - var(--header-h) - 56px); overflow: hidden;
     border: 1px solid var(--line); border-radius: var(--r-card);
     background-color: var(--paper);
     background-image: linear-gradient(rgba(17, 126, 121, 0.065) 1px, transparent 1px),
@@ -84,10 +87,12 @@
     background-size: 24px 24px; background-position: -1px -1px;
   }
 }
-/* the stage's drawings sit on top of each other; the lit step's shows */
-.ps { position: absolute; inset: 6% 6% 21%; display: grid; place-items: center; opacity: 0; }
-.ps.is-on { opacity: 1; }
-.ps .how-draw { width: 100%; height: 100%; }
+/* the stage's drawings sit on top of each other; the lit step's shows. Each fits its box (the viewBox
+   scales to fit and centres), so on a short screen, where the stage is capped, it shrinks rather than
+   running into the number. */
+.how-ps { position: absolute; inset: 6% 6% 21%; opacity: 0; }
+.how-ps.is-on { opacity: 1; }
+.how-ps .how-draw { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* its number: 01 / 03, the first two digits roll */
 .how-num {
   --lh: 0.8;
@@ -129,6 +134,20 @@
   letter-spacing: 0.1em; text-transform: uppercase;
 }
 .how-draw .lb-lg { font-size: 12.5px; font-weight: 800; font-stretch: 75%; }
+/* Where a drawing is shown small (narrow phones, the tablet column, a small stage), its labels are set
+   larger in the drawing's own units so they stay readable: about 10-14px on screen. */
+@media (max-width: 479px), (min-width: 820px) and (max-width: 999px) {
+  .how-fig .how-draw .lb { font-size: 13.5px; }
+  .how-fig .how-draw .lb-lg { font-size: 15.5px; }
+}
+@media (min-width: 640px) and (max-width: 819px) {
+  .how-fig .how-draw .lb { font-size: 16px; }
+  .how-fig .how-draw .lb-lg { font-size: 18px; }
+}
+@media (min-width: 1000px) and (max-width: 1199px) {
+  .how-ps .how-draw .lb { font-size: 12px; }
+  .how-ps .how-draw .lb-lg { font-size: 14px; }
+}
 .how-draw .pop { transform-box: fill-box; transform-origin: 50% 50%; }
 
 /* ---------- Motion ---------- */
@@ -142,7 +161,7 @@
   .how.is-live .hstep:not(.is-on) .hstep-node::before { transform: scale(0); }
   .how.is-live .hstep::after { transform: scaleY(var(--pl, 0)); }
   /* Stage: drawings cross-fade, the number rolls */
-  .how.is-live .ps { transition: opacity 500ms var(--ease-out); }
+  .how.is-live .how-ps { transition: opacity 500ms var(--ease-out); }
   .how.is-live .how-roll { transition: transform 800ms var(--ease-io); }
   /* ...but not while the first state is being set (on screen at load, it simply shows) */
   .how.is-still .hstep *, .how.is-still .hstep::after, .how.is-still .hstep *::before,
@@ -153,26 +172,24 @@
      where it is while another step shows; a step's own drawing plays once it is well in view (.is-in).
      .is-instant: shown complete (on screen as the page started, or seen with reduced motion).
      (Plain compound selectors and type/class descendants on purpose: Chromium missed the restyle when
-     .is-armed landed with the same rules written as :is(.ps.is-armed, ...) ... [pathLength].) */
+     .is-armed landed with the same rules written as :is(.how-ps.is-armed, ...) ... [pathLength].) */
   .how.is-live .how-draw path { stroke-dasharray: 1 2; }
-  .how.is-live .ps:not(.is-armed) .how-draw path,
+  .how.is-live .how-ps:not(.is-armed) .how-draw path,
   .how.is-live .how-fig:not(.is-in) .how-draw path { stroke-dashoffset: 1.01; }
-  .how.is-live .ps:not(.is-armed) .how-draw .f, .how.is-live .ps:not(.is-armed) .how-draw text,
+  .how.is-live .how-ps:not(.is-armed) .how-draw .f, .how.is-live .how-ps:not(.is-armed) .how-draw text,
   .how.is-live .how-fig:not(.is-in) .how-draw .f, .how.is-live .how-fig:not(.is-in) .how-draw text { opacity: 0; }
-  .how.is-live .ps.is-armed:not(.is-instant) .how-draw path,
+  .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw path,
   .how.is-live .how-fig.is-in:not(.is-instant) .how-draw path {
-    animation: how-draw calc(var(--u, 0.5) * var(--pace)) var(--ease-draw) calc(var(--t0, 0s) + var(--t, 0) * var(--pace)) both;
+    animation: how-draw calc(var(--u, 0.5) * var(--pace)) var(--ease-draw) calc(var(--t, 0) * var(--pace)) both;
   }
-  .how.is-live .ps.is-armed:not(.is-instant) .how-draw .f, .how.is-live .ps.is-armed:not(.is-instant) .how-draw text,
+  .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw .f, .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw text,
   .how.is-live .how-fig.is-in:not(.is-instant) .how-draw .f, .how.is-live .how-fig.is-in:not(.is-instant) .how-draw text {
-    animation: how-fade calc(var(--u, 0.4) * var(--pace)) var(--ease-out) calc(var(--t0, 0s) + var(--t, 0) * var(--pace)) both;
+    animation: how-fade calc(var(--u, 0.4) * var(--pace)) var(--ease-out) calc(var(--t, 0) * var(--pace)) both;
   }
-  .how.is-live .ps.is-armed:not(.is-instant) .how-draw .pop,
+  .how.is-live .how-ps.is-armed:not(.is-instant) .how-draw .pop,
   .how.is-live .how-fig.is-in:not(.is-instant) .how-draw .pop { animation-name: how-pop; }
-  .how-draw { --pace: 0.85s; } /* the drawings' clock: --t and --u are in units of it */
-  .ps { --t0: 0.15s; }
-  .how-fig { --t0: 0.1s; }
-  .how.is-live .ps:not(.is-on) .how-draw * { animation-play-state: paused; }
+  .how-draw { --pace: 0.5s; } /* the drawings' clock: --t and --u are in units of it (each is done in ~1.3s) */
+  .how.is-live .how-ps:not(.is-on) .how-draw * { animation-play-state: paused; }
 }
 
 @keyframes how-draw { from { stroke-dashoffset: 1.01; } to { stroke-dashoffset: 0; } }
