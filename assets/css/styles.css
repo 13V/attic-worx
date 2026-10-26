@@ -49,6 +49,24 @@
   --shadow-lg: 0 30px 80px -24px rgba(5, 20, 20, 0.55);
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
+  /* Motion (from Engel Build): entrances slower than exits, nothing bounces */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);   /* settle: every entrance */
+  --ease-io: cubic-bezier(0.7, 0, 0.2, 1);     /* a sheet or mask crossing a whole frame */
+  --ease-draw: cubic-bezier(0.45, 0, 0.2, 1);  /* a pen: steady start, soft stop */
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);    /* exits */
+  --t-press: 90ms;   /* :active */
+  --t-out: 200ms;    /* anything leaving */
+  --t-hover: 280ms;  /* hover in */
+  --t-ui: 440ms;     /* menus, form steps arriving */
+  --t-text: 760ms;   /* small text settling */
+  --t-rise: 1050ms;  /* words rising out of their mask */
+  --t-rule: 1000ms;  /* hairlines */
+  --t-photo: 1150ms; /* a plate lifting off a photo */
+  --t-draw: 900ms;   /* one line drawing itself */
+  --stagger: 80ms;   /* between siblings, capped at 5 */
+  --plate: var(--white);                   /* [data-reveal="photo"]: the section colour */
+  --plate-edge: rgba(17, 126, 121, 0.45);  /* ...and its ruled bottom edge */
+
   color-scheme: light;
 }
 
@@ -101,6 +119,13 @@ p { text-wrap: pretty; }
 }
 .skip-link:focus { top: calc(12px + env(safe-area-inset-top, 0px)); }
 
+/* [data-split] headings: main.js wraps each word in a mask (.w) with the word inside it */
+.w {
+  display: inline-block; overflow: hidden; vertical-align: top;
+  padding: 0.06em 0.02em 0.14em; margin: -0.06em -0.02em -0.14em;
+}
+.w > span { display: inline-block; }
+
 .icon { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .icon-fill { fill: currentColor; stroke: none; }
 
@@ -113,8 +138,8 @@ p { text-wrap: pretty; }
   padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
 }
 .band { padding-block: clamp(72px, 9vw, 132px); }
-.band-paper { background: var(--paper); }
-.band-dark { background: var(--roof); color: var(--white); }
+.band-paper { background: var(--paper); --plate: var(--paper); }
+.band-dark { background: var(--roof); color: var(--white); --plate: var(--roof); --plate-edge: rgba(143, 214, 204, 0.4); }
 
 /* ---------- Type helpers ---------- */
 .display {
@@ -154,9 +179,8 @@ p { text-wrap: pretty; }
   cursor: pointer;
   transition: background-color .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
 }
-.btn .icon { width: 1.1em; height: 1.1em; transition: transform .2s var(--ease); }
-.btn:hover .icon-go { transform: translateX(3px); }
-.btn:active { transform: translateY(1px); }
+.btn .icon { width: 1.1em; height: 1.1em; }
+.btn:active { transform: translateY(1px) scale(0.985); transition-duration: var(--t-press); }
 .btn-primary { background: var(--teal); color: var(--white); }
 .btn-primary:hover { background: var(--teal-deep); }
 .btn-mint { background: var(--mint); color: var(--roof); }
@@ -175,8 +199,6 @@ p { text-wrap: pretty; }
   display: inline-flex; align-items: center; gap: 8px;
   font-weight: 700; text-decoration: none; color: var(--teal-deep);
 }
-.text-link .icon { transition: transform .2s var(--ease); }
-.text-link:hover .icon { transform: translateX(3px); }
 
 /* ---------- Header ---------- */
 .site-header {
@@ -184,7 +206,11 @@ p { text-wrap: pretty; }
   height: var(--header-h);
   margin-bottom: calc(-1 * var(--header-h));
   color: var(--white);
-  transition: background-color .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease);
+  transition: transform 450ms var(--ease-out), background-color .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.site-header.is-hidden {
+  transform: translateY(calc(-100% - 2px));
+  transition: transform 280ms var(--ease-in), background-color .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease);
 }
 .site-header.is-scrolled {
   background: rgba(255, 255, 255, 0.94);
@@ -232,9 +258,12 @@ p { text-wrap: pretty; }
 .mobile-menu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
 .mobile-menu nav { display: grid; }
 .mobile-menu nav a {
+  position: relative;
   font-stretch: 70%; font-weight: 800; text-transform: uppercase; font-size: 2rem; line-height: 1;
   text-decoration: none; padding-block: 14px; border-bottom: 1px solid var(--roof-line);
 }
+.mobile-menu .t { display: block; overflow: hidden; padding-block: 0.06em 0.1em; margin-block: -0.06em -0.1em; }
+.mobile-menu .t > span { display: block; }
 .mobile-menu .btn { margin-top: 14px; }
 .mobile-menu-actions { display: grid; margin-top: 24px; }
 .close-btn {
@@ -341,8 +370,15 @@ p { text-wrap: pretty; }
 .qf-title { font-stretch: 70%; font-weight: 800; text-transform: uppercase; font-size: 1.75rem; line-height: 1; }
 .qf-sub { color: var(--ink-2); font-size: 0.95rem; }
 .qf-progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
-.qf-progress span { height: 4px; border-radius: 4px; background: var(--line); transition: background-color .3s var(--ease); }
-.qf-progress span.is-done { background: var(--teal); }
+.qf-progress span { position: relative; overflow: hidden; height: 4px; border-radius: 4px; background: var(--line); }
+.qf-progress span::after {
+  content: ""; position: absolute; inset: 0; background: var(--teal);
+  transform: scaleX(0); transform-origin: 0 50%;
+}
+.qf-progress span.is-done::after { transform: none; }
+.quote-form { position: relative; }
+.qf-step.qf-leaving { position: absolute; left: 0; right: 0; pointer-events: none; }
+.quote-card:has(.qf-leaving) { overflow: clip; }
 .qf-step-label { font-size: 0.8rem; color: var(--ink-3); font-weight: 600; letter-spacing: .04em; }
 .qf-step { display: grid; gap: 16px; }
 .qf-step legend { font-weight: 700; font-size: 1.125rem; margin-bottom: 2px; }
@@ -355,6 +391,7 @@ p { text-wrap: pretty; }
   cursor: pointer; transition: border-color .2s var(--ease), background-color .2s var(--ease), transform .15s var(--ease);
 }
 .tile:hover { border-color: #a9bcb9; }
+.tile:active { transition-duration: var(--t-press); }
 .tile:active { transform: scale(.98); }
 .tile input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
 .tile .icon { width: 26px; height: 26px; color: var(--teal); }
@@ -366,10 +403,13 @@ p { text-wrap: pretty; }
   transition: background-color .2s, border-color .2s;
 }
 .tile:has(input:checked) { border-color: var(--teal); background: var(--mint-soft); }
-.tile:has(input:checked)::after {
-  border-color: var(--teal); background-color: var(--teal);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+.tile:has(input:checked)::after { border-color: var(--teal); background-color: var(--teal); }
+.tile-check {
+  position: absolute; z-index: 1; top: 16px; right: 16px; width: 12px; height: 12px; pointer-events: none;
+  fill: none; stroke: var(--white); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1 2; stroke-dashoffset: 1.01;
 }
+.tile:has(input:checked) .tile-check { stroke-dashoffset: 0; }
 .tile:has(input:focus-visible) { outline: 3px solid var(--teal); outline-offset: 2px; }
 
 .field { display: grid; gap: 7px; }
@@ -411,6 +451,7 @@ select.input {
   background: var(--mint-soft); color: var(--teal);
 }
 .qf-done-icon .icon { width: 28px; height: 28px; }
+.qf-done-icon path { stroke-dasharray: 1 2; }
 .qf-done h3 { font-stretch: 70%; font-weight: 800; text-transform: uppercase; font-size: 1.9rem; line-height: 1; }
 .qf-done p { color: var(--ink-2); }
 .qf-done a { font-weight: 700; color: var(--teal-deep); }
@@ -439,11 +480,19 @@ select.input {
 
 /* ---------- Story (garage) ---------- */
 .story-grid {
-  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(36px, 6vw, 96px); align-items: center;
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: clamp(20px, 3vw, 40px); row-gap: clamp(32px, 4.5vw, 64px); align-items: center;
 }
-.story-copy { display: grid; gap: 22px; }
+.story-head { grid-column: 1 / -1; display: grid; gap: 22px; justify-items: start; }
+.statement { grid-column: 1 / 11; }
+.story-copy { grid-column: 1 / 6; display: grid; gap: 22px; }
+.compare-wrap { grid-column: 7 / -1; }
 .story-copy p { color: var(--ink-2); max-width: 34em; }
+/* The one statement on the page: its words darken as you read down (Motion part) */
+.statement {
+  font-size: clamp(1.5rem, 1.1rem + 1.25vw, 2.1rem); line-height: 1.24;
+  font-weight: 500; letter-spacing: -0.012em; color: var(--ink); max-width: 30em;
+}
 .pull-quote {
   display: grid; gap: 12px; padding: 22px 24px; margin-top: 6px;
   background: var(--white); border-radius: 16px; border: 1px solid var(--line);
@@ -453,6 +502,8 @@ select.input {
 .pull-quote footer strong { color: var(--ink); }
 .compare-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: end; }
 .compare-pair figure { position: relative; }
+/* The picture clips the photo; the figure stays square so its plate (Motion part) covers every corner */
+.compare-pair picture { overflow: hidden; border-radius: var(--r-img); }
 .compare-pair figure:last-child { transform: translateY(-36px); }
 .compare-pair img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--r-img); }
 .photo-tag {
@@ -469,8 +520,9 @@ select.input {
   background: var(--white); color: var(--teal); box-shadow: 0 10px 30px -10px rgba(0,0,0,.35);
 }
 .compare-wrap { position: relative; }
+.compare-arrow path { stroke-dasharray: 1 2; }
 @media (max-width: 860px) {
-  .story-grid { grid-template-columns: minmax(0, 1fr); }
+  .story-grid > * { grid-column: 1 / -1; }
   .compare-pair figure:last-child { transform: none; }
 }
 
@@ -486,14 +538,14 @@ select.input {
   padding: clamp(20px, 2.4vw, 30px);
   border-radius: var(--r-card); color: var(--white); background: var(--roof);
   min-height: 330px;
+  --plate: var(--roof); --plate-edge: rgba(143, 214, 204, 0.4);
 }
 .svc-storage { grid-column: 1 / 3; grid-row: 1; }
 .svc-ladder { grid-column: 3; grid-row: 1 / 3; }
 .svc-vent { grid-column: 1; grid-row: 2; background: var(--roof-2); justify-content: space-between; }
 .svc-insulation { grid-column: 2; grid-row: 2; }
 .svc-media, .svc-media img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
-.svc-media img { object-fit: cover; transition: transform 1.2s var(--ease); }
-.svc:hover .svc-media img { transform: scale(1.04); }
+.svc-media img { object-fit: cover; }
 .svc-media::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(0deg, rgba(8, 22, 22, 0.94) 0%, rgba(8, 22, 22, 0.72) 34%, rgba(8, 22, 22, 0.05) 70%);
@@ -514,7 +566,7 @@ select.input {
 .vent-stat { display: flex; align-items: baseline; gap: 12px; }
 .vent-stat b { font-stretch: 64%; font-weight: 900; font-size: 4rem; line-height: .8; color: var(--mint); }
 .vent-stat span { font-size: 0.85rem; color: rgba(255,255,255,.72); line-height: 1.3; }
-.vanes { animation: vanes-spin .7s linear infinite; }
+.vanes { animation: vanes-spin .7s linear infinite; } /* main.js speeds it up with scroll */
 @keyframes vanes-spin { to { transform: translateX(10px); } }
 
 .spec-line {
@@ -540,6 +592,9 @@ select.input {
   .svc-ladder { min-height: 480px; }
   .svc-vent { min-height: 0; }
 }
+
+/* ---------- Roof build (3D section skeleton; fx-build.css takes it from here) ---------- */
+.build-head { display: grid; gap: 18px; justify-items: start; }
 
 /* ---------- Before & after ---------- */
 .results-grid {
@@ -732,14 +787,14 @@ select.input {
 .faq-item summary::-webkit-details-marker { display: none; }
 .faq-toggle {
   position: relative; width: 32px; height: 32px; flex: none; border-radius: 50%;
-  border: 1.5px solid var(--line); transition: background-color .2s, border-color .2s, transform .3s var(--ease);
+  border: 1.5px solid var(--line); transition: background-color .2s, border-color .2s;
 }
 .faq-toggle::before, .faq-toggle::after {
   content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; border-radius: 2px;
   background: currentColor; translate: -50% -50%;
 }
-.faq-toggle::after { rotate: 90deg; transition: rotate .3s var(--ease); }
-.faq-item[open] .faq-toggle { background: var(--teal); border-color: var(--teal); color: var(--white); }
+.faq-toggle::after { rotate: 90deg; }
+.faq-item[open] .faq-toggle { background: var(--teal); border-color: var(--teal); color: var(--white); rotate: 180deg; }
 .faq-item[open] .faq-toggle::after { rotate: 0deg; }
 .faq-item summary:hover .faq-toggle { border-color: var(--teal); }
 .faq-answer { padding-bottom: 24px; padding-right: 52px; color: var(--ink-2); display: grid; gap: 10px; max-width: 40em; }
@@ -754,8 +809,10 @@ select.input {
 .cta-band .wrap { position: relative; }
 .cta-mark {
   position: absolute; z-index: -1; right: -6%; top: 50%; translate: 0 -50%;
-  width: min(560px, 70vw); height: auto; opacity: .12;
+  width: min(560px, 70vw); height: auto;
 }
+.cta-mark use { opacity: .12; }
+.cta-rungs path { opacity: .16; }
 .cta-inner { display: grid; gap: 24px; max-width: 760px; }
 .cta-inner h2 { font-size: var(--step-3); }
 .cta-inner p { color: var(--white); font-size: 1.15rem; max-width: 34em; }
@@ -791,15 +848,260 @@ select.input {
     padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
     background: rgba(255,255,255,.96); border-top: 1px solid var(--line);
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    transition: transform .3s var(--ease);
   }
   .action-bar.is-hidden { transform: translateY(110%); }
   .action-bar .btn { min-height: 50px; }
   .site-footer { padding-bottom: calc(32px + 72px + env(safe-area-inset-bottom, 0px)); }
 }
 
-/* ---------- Motion preferences ---------- */
+
+/* ---------- Motion ----------
+   "Drawn, then lit, then built": lines draw, plates lift off photos, words rise out of a baseline.
+   Nothing bounces, nothing loops (except the whirlybird) and nothing follows the cursor.
+   Only transform, opacity, clip-path and stroke-dashoffset move. Entrances are slower than exits.
+   Every "before" state needs html.js (main.js) and no reduced-motion preference, so without JS or
+   with reduced motion everything rests in its final state. main.js adds .is-in once as an element
+   scrolls into view; elements already on screen at load get .is-in and .is-instant, with their
+   transitions held for two frames (.aw-still), so nothing hides and re-animates. Gate keyframe
+   reveals with .is-in:not(.is-instant). Primitives, usable in any section:
+     [data-split]          heading: words rise line by line (main.js sets --l per word, --d per batch)
+     [data-reveal="photo"] positioned, overflow-hidden photo wrapper: a plate in --plate lifts into the
+                           top edge (it's the wrapper's ::before) and the image settles from 1.12
+     [data-reveal]         just gets .is-in; the feature's CSS decides what that means
+     [data-rule]           the element's top hairline draws left to right
+     [data-words]          the one statement: its words darken as they cross the reading line
+     [data-draw]           inline <svg>: strokes with pathLength="1" draw in, child by child
+   --delay adds an authored offset on top of the batch stagger (--d). */
+
+.aw-still, .aw-still *, .aw-still::before, .aw-still::after, .aw-still *::before, .aw-still *::after { transition: none !important; }
+
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Headings: line by line out of their masks */
+  html.js [data-split] .w > span {
+    transition: translate var(--t-rise) var(--ease-out);
+    transition-delay: calc(var(--d, 0ms) + var(--delay, 0ms) + var(--l, 0) * 90ms);
+  }
+  html.js [data-split]:not(.is-in) .w > span { translate: 0 110%; }
+
+  /* Photos: a plate in the section colour shrinks up into the top edge, its ruled edge sweeping up
+     (transform only), and the photo settles */
+  /* (The garage story's pair uses the same plates, triggered together by the pair, garage first.)
+     A rounded wrapper that clips both plate and photo lets a hairline of photo show at the corners:
+     clip the picture instead and leave the wrapper square, as the story pair does. */
+  html.js [data-reveal="photo"]::before,
+  html.js .compare-pair figure::before {
+    content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: var(--plate); border-bottom: 1px solid var(--plate-edge);
+    transform-origin: 50% 0;
+    transition: transform var(--t-photo) var(--ease-io) calc(var(--d, 0ms) + var(--delay, 0ms));
+  }
+  html.js [data-reveal="photo"].is-in::before,
+  html.js .compare-wrap.is-in figure::before { transform: scaleY(0); }
+  html.js [data-reveal="photo"] img,
+  html.js .compare-pair img {
+    transition: scale 1500ms var(--ease-out) calc(var(--d, 0ms) + var(--delay, 0ms)), transform 1100ms var(--ease-out);
+  }
+  html.js [data-reveal="photo"]:not(.is-in) img,
+  html.js .compare-wrap:not(.is-in) img { scale: 1.12; }
+
+  /* Hairlines that draw */
+  html.js [data-rule] { position: relative; border-top-color: transparent; }
+  html.js [data-rule]::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px;
+    background: var(--rule, var(--line)); transform-origin: 0 50%;
+    transition: transform var(--t-rule) var(--ease-draw) calc(var(--d, 0ms) + var(--delay, 0ms));
+  }
+  html.js [data-rule]:not(.is-in)::before { transform: scaleX(0); }
+
+  /* Line drawings: each stroke drawn with a pen, child by child */
+  html.js [data-draw] [pathLength] {
+    stroke-dasharray: 1 2;
+    transition: stroke-dashoffset var(--t-draw) var(--ease-draw);
+    transition-delay: calc(var(--d, 0ms) + var(--delay, 0ms) + var(--i, 0) * 90ms);
+  }
+  html.js [data-draw]:not(.is-in) [pathLength] { stroke-dashoffset: 1.01; }
+  [data-draw] > :nth-child(2) { --i: 1; }
+  [data-draw] > :nth-child(3) { --i: 2; }
+  [data-draw] > :nth-child(4) { --i: 3; }
+  [data-draw] > :nth-child(5) { --i: 4; }
+  [data-draw] > :nth-child(n + 6) { --i: 5; }
+
+  /* The statement: words go from a grey (3:1 for large text) to ink as they cross the reading line,
+     62% down the screen. Each word has its own view timeline, so a line darkens as it crosses. */
+  @supports (animation-timeline: view()) {
+    .statement .sw {
+      display: inline-block;
+      animation: aw-lit linear both;
+      animation-timeline: view(block 0% 38%);
+      animation-range: entry -20% entry 120%;
+    }
+  }
+
+  /* Buttons: hover colours ease in */
+  .btn { transition-duration: var(--t-hover); }
+
+  /* Mobile menu: the panel slides in from the side it lives on; links rise, rules draw; it leaves fast.
+     Only where popovers exist (elsewhere the panel isn't a popover and must stay visible). */
+  @supports selector(:popover-open) {
+  .mobile-menu {
+    opacity: 0; transform: translateX(24px);
+    transition: opacity var(--t-out) var(--ease-in), transform var(--t-out) var(--ease-in),
+      overlay var(--t-out) allow-discrete, display var(--t-out) allow-discrete;
+  }
+  .mobile-menu:popover-open {
+    opacity: 1; transform: none;
+    transition: opacity 320ms var(--ease-out), transform var(--t-ui) var(--ease-out),
+      overlay var(--t-ui) allow-discrete, display var(--t-ui) allow-discrete;
+  }
+  @starting-style {
+    .mobile-menu:popover-open { opacity: 0; transform: translateX(24px); }
+  }
+  .mobile-menu::backdrop {
+    opacity: 0;
+    transition: opacity var(--t-out) var(--ease-in), overlay var(--t-out) allow-discrete, display var(--t-out) allow-discrete;
+  }
+  .mobile-menu:popover-open::backdrop { opacity: 1; transition: opacity 320ms var(--ease-out), overlay var(--t-ui) allow-discrete, display var(--t-ui) allow-discrete; }
+  @starting-style {
+    .mobile-menu:popover-open::backdrop { opacity: 0; }
+  }
+  .mobile-menu nav a { border-bottom-color: transparent; }
+  .mobile-menu nav a::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: var(--roof-line); transform-origin: 0 50%;
+  }
+  .mobile-menu:popover-open nav .t > span { animation: aw-rise 800ms var(--ease-out) calc(140ms + var(--k, 0) * 50ms) both; }
+  .mobile-menu:popover-open nav a::after { animation: aw-draw-x 800ms var(--ease-draw) calc(200ms + var(--k, 0) * 50ms) both; }
+  .mobile-menu:popover-open .mobile-menu-actions { animation: aw-fade-up 700ms var(--ease-out) 420ms both; }
+  .mobile-menu nav a:nth-child(2) { --k: 1; }
+  .mobile-menu nav a:nth-child(3) { --k: 2; }
+  .mobile-menu nav a:nth-child(4) { --k: 3; }
+  .mobile-menu nav a:nth-child(5) { --k: 4; }
+  }
+
+  /* Phone action bar: rises, then its buttons follow; drops away quickly */
+  .action-bar { transition: transform 240ms var(--ease-in); }
+  .action-bar:not(.is-hidden) { transition: transform 520ms var(--ease-out); }
+  .action-bar .btn {
+    transition: opacity 420ms var(--ease-out), translate 520ms var(--ease-out), transform var(--t-press),
+      background-color .2s, border-color .2s, color .2s;
+  }
+  .action-bar:not(.is-hidden) .btn:nth-child(1) { transition-delay: 140ms, 140ms, 0s, 0s, 0s, 0s; }
+  .action-bar:not(.is-hidden) .btn:nth-child(2) { transition-delay: 190ms, 190ms, 0s, 0s, 0s, 0s; }
+  .action-bar.is-hidden .btn {
+    opacity: 0; translate: 0 8px;
+    transition: opacity 120ms linear, translate 0s linear 120ms;
+  }
+
+  /* Garage story: the garage lifts in, then the roof, then the arrow between them draws */
+  .compare-pair figure:last-child { --delay: 260ms; }
+  html.js .compare-wrap .compare-arrow {
+    transition: opacity 400ms var(--ease-out), scale 700ms var(--ease-out);
+    transition-delay: calc(var(--d, 0ms) + 760ms);
+  }
+  html.js .compare-wrap:not(.is-in) .compare-arrow { opacity: 0; scale: 0.6; }
+  html.js .compare-wrap .compare-arrow path {
+    transition: stroke-dashoffset 640ms var(--ease-draw) calc(var(--d, 0ms) + 920ms);
+  }
+  html.js .compare-wrap .compare-arrow path + path { transition-delay: calc(var(--d, 0ms) + 1120ms); }
+  html.js .compare-wrap:not(.is-in) .compare-arrow path { stroke-dashoffset: 1.01; }
+
+  /* Services: photos lean in slowly under a fine pointer */
+  @media (hover: hover) {
+    .svc:hover .svc-media img { transform: scale(1.04); }
+  }
+
+  /* Reviews: no card fade-ups; the stars fill gold left to right as each card comes in */
+  html.js .review:not(.is-in) .stars .icon { color: var(--star-off, var(--line)); }
+  html.js .review.is-in:not(.is-instant) .stars .icon {
+    animation: aw-star 520ms var(--ease-out) both;
+    animation-delay: calc(var(--d, 0ms) + 160ms + var(--i, 0) * 70ms);
+  }
+  .review-feature { --star-off: rgba(255, 255, 255, 0.3); }
+  .stars .icon:nth-child(2) { --i: 1; }
+  .stars .icon:nth-child(3) { --i: 2; }
+  .stars .icon:nth-child(4) { --i: 3; }
+  .stars .icon:nth-child(5) { --i: 4; }
+
+  /* FAQ: answers open smoothly where the browser can size to auto; the toggle turns */
+  .faq-item::details-content {
+    block-size: 0; overflow-y: clip;
+    transition: block-size 450ms var(--ease-io), content-visibility 450ms allow-discrete;
+  }
+  .faq-item[open]::details-content { block-size: auto; }
+  .faq-item.is-toggled[open] .faq-answer { animation: aw-fade-up 520ms var(--ease-out) 60ms both; }
+  .faq-toggle { transition: background-color .2s, border-color .2s, rotate 450ms var(--ease-io); }
+  .faq-toggle::after { transition: rotate 450ms var(--ease-io); }
+
+  /* Final call to action: the ladder mark drifts up as you scroll past; its rungs light up once,
+     bottom to top, as it comes in */
+  @supports (animation-timeline: view()) {
+    .cta-mark { animation: aw-drift linear both; animation-timeline: view(); animation-range: cover; }
+  }
+  html.js .cta-mark:not(.is-in) .cta-rungs path { opacity: 0; }
+  html.js .cta-mark.is-in:not(.is-instant) .cta-rungs path {
+    animation: aw-rung 1600ms var(--ease-out) calc(var(--d, 0ms) + 350ms + var(--k, 0) * 150ms) both;
+  }
+
+  /* Quote form: the progress fills; a ticked tile draws its check; errors open downwards; the old
+     step leaves fast towards where it came from while the new one arrives (main.js) */
+  .qf-progress span::after { transition: transform 550ms var(--ease-io); }
+  .tile-check { transition: stroke-dashoffset 120ms var(--ease-in); }
+  .tile:has(input:checked) .tile-check { transition: stroke-dashoffset 380ms var(--ease-draw) 60ms; }
+  .tile.is-pending .tile-check { stroke-dashoffset: 1.01; transition: none; }
+  /* (it fades out fast, so the two never read as one) */
+  .qf-step.qf-leaving { animation: aw-fade-out 140ms var(--ease-out) both, aw-step-out var(--t-out) var(--ease-in) both; }
+  .qf-error { transition: clip-path 320ms var(--ease-out), opacity 320ms var(--ease-out); }
+  @starting-style {
+    .qf-error { clip-path: inset(0 0 100% 0); opacity: 0; }
+  }
+  /* Thanks: the check draws itself, then the words settle */
+  .qf-done:not([hidden]) .qf-done-icon { animation: aw-fade 400ms var(--ease-out) both; }
+  .qf-done:not([hidden]) .qf-done-icon path { animation: aw-draw 620ms var(--ease-draw) 200ms both; }
+  .qf-done:not([hidden]) > :not(.qf-done-icon) { animation: aw-fade-up var(--t-text) var(--ease-out) 640ms both; }
+  .qf-done:not([hidden]) > p { animation-delay: 720ms; }
+  .qf-done:not([hidden]) > p + p { animation-delay: 800ms; }
+}
+
+/* Hover (fine pointers): the arrow leaves through the right edge and comes back from the left.
+   It moves the <use>, so the icon's own <svg> box clips it. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .btn:hover .icon-go use,
+  .btn:focus-visible .icon-go use,
+  .text-link:hover .icon use { animation: aw-conveyor 520ms both; }
+  .text-link:hover .icon use[href="#i-arrow-ur"] { animation-name: aw-conveyor-ne; }
+}
+
+/* Reduced motion: everything at rest, nothing waits hidden, the vent and the hero light stay still */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-delay: 0s !important; transition-delay: 0s !important; }
+  .hero::before, .vanes { animation: none; }
+}
+
+@keyframes aw-rise { from { transform: translateY(110%); } }
+@keyframes aw-fade { from { opacity: 0; } }
+@keyframes aw-fade-up { from { opacity: 0; transform: translateY(10px); } }
+@keyframes aw-draw-x { from { transform: scaleX(0); } }
+@keyframes aw-draw { from { stroke-dashoffset: 1.01; } to { stroke-dashoffset: 0; } }
+@keyframes aw-lit { from { color: #77817f; } }
+@keyframes aw-star { from { color: var(--star-off, var(--line)); } }
+@keyframes aw-rung { 0% { opacity: 0; } 30% { opacity: 0.5; } 100% { opacity: 0.16; } }
+@keyframes aw-drift { from { transform: translateY(9%); } to { transform: translateY(-9%); } }
+@keyframes aw-fade-out { to { opacity: 0; } }
+@keyframes aw-step-out { to { transform: translateX(calc(var(--dir, 1) * -1.5%)); } }
+@keyframes aw-conveyor {
+  0% { transform: none; animation-timing-function: var(--ease-in); }
+  42% { transform: translateX(100%); animation-timing-function: steps(1, end); }
+  43% { transform: translateX(-100%); animation-timing-function: var(--ease-out); }
+  100% { transform: none; }
+}
+@keyframes aw-conveyor-ne {
+  0% { transform: none; animation-timing-function: var(--ease-in); }
+  42% { transform: translate(100%, -100%); animation-timing-function: steps(1, end); }
+  43% { transform: translate(-100%, 100%); animation-timing-function: var(--ease-out); }
+  100% { transform: none; }
 }

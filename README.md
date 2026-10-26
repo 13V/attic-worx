@@ -10,11 +10,12 @@ It is plain static HTML, CSS and JavaScript. There is no framework and no build 
 2. **Trust strip:** same-day installs, priced online, no council approval, no space no charge.
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review.
 4. **Services bento:** storage floors, ladders, roof ventilation (with an animated whirlybird), insulation.
-5. **Before and after:** three real jobs with a drag-to-compare slider.
+5. **The install:** a dark section where a storage floor goes in (the 3D build).
 6. **How it works:** three steps, with the 4–5 hour install time.
-7. **Recent work:** a swipeable strip of job photos and a link to Facebook.
-8. **Reviews, FAQ, final call to action, footer.**
-9. **Mobile action bar:** Call and Get a quote buttons stay at the bottom of the screen on phones. They step aside while the form is on screen.
+7. **Before and after:** three real jobs.
+8. **Recent work:** a swipeable strip of job photos and a link to Facebook.
+9. **Reviews, FAQ, final call to action, footer.**
+10. **Mobile action bar:** Call and Get a quote buttons stay at the bottom of the screen on phones. They step aside while the form is on screen.
 
 ## Before going live
 
@@ -60,7 +61,8 @@ If Google Tag Manager is added later, a successful submission pushes `{ event: "
 - **Copy** lives in `index.html`. Each section is marked with a comment (`<!-- Services -->`, `<!-- FAQ -->` and so on).
 - **FAQ:** if you change a question, update the matching entry in the `FAQPage` JSON-LD in `<head>` so Google sees the same text.
 - **Styles** are in `assets/css/styles.css`. Colours, type sizes and spacing are tokens at the top of the file.
-- **Behaviour** (form steps, slider, menus) is in `assets/js/main.js`.
+- **Behaviour** (form steps, menus, the action bar) is in `assets/js/main.js`.
+- **Motion** is a small system: tokens at the top of `styles.css`, the rules in its "Motion" part, and the engine at the top of `main.js` (`window.AW`). Mark a heading `data-split` and its words rise as it scrolls into view; `data-reveal="photo"` lifts a plate off a photo; `data-rule` draws a hairline; `data-draw` draws an inline SVG's strokes. With reduced motion, or without JavaScript, everything simply shows at rest.
 
 ### Brand
 
