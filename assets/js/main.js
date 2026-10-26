@@ -541,18 +541,7 @@
 
   /* (Before & after: fx-results.js) */
 
-  /* ---------- Recent work scroller buttons ---------- */
-  var track = $('[data-track]');
-  if (track) {
-    $$('[data-scroll]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var dir = Number(btn.getAttribute('data-scroll'));
-        var item = track.querySelector('figure');
-        var step = item ? item.getBoundingClientRect().width + 16 : 300;
-        track.scrollBy({ left: dir * step, behavior: motionOK() ? 'smooth' : 'auto' });
-      });
-    });
-  }
+  /* (Recent work: fx-work.js) */
 
   /* ---------- Mobile action bar: rises once the hero buttons are gone, steps aside for the form ----------
      It's hidden by default in CSS (so it never shows at first paint, then drops away) and .is-visible

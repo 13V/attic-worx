@@ -1,1 +1,212 @@
-/* fx-work.css: Recent work. Owned by the WORK agent; consolidated into styles.css later. */
+/* fx-work.css: Recent work. Owned by the WORK agent; consolidated into styles.css later.
+   Two layouts from one piece of markup:
+   - The strip (no JS, reduced motion, screens under 1000px wide): a native swipe strip with scroll snap,
+     ending on a quote panel. The photos lift in together as the strip comes into view; with JS a progress
+     line follows the strip, and a mouse gets previous/next buttons.
+   - The run (wide screens with motion): the section pins for the length of the track and the page's scroll
+     moves the track sideways. Photos drift inside their frames and each lifts in as it slides on; a
+     counter and a progress line keep the place; the heading steps down out from under the header whenever
+     it shows (html.hdr-on), in step with it. */
+
+/* ---------- The strip ---------- */
+.work {
+  /* the wrap's content edge, so the strip and the run start in line with the heading */
+  --edge: max(var(--gutter), env(safe-area-inset-left, 0px), (100% - var(--max)) / 2);
+  --work-gap: 16px;
+}
+.work-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px; }
+.work-title { display: grid; gap: 16px; justify-items: start; }
+.work-count { display: none; }
+.work-nav { display: none; gap: 8px; }
+.work-nav .round-btn[aria-disabled="true"] { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink); }
+
+.work-intro {
+  display: grid; gap: 14px; justify-items: start;
+  margin: 20px 0 32px; padding-inline: var(--edge);
+}
+.work-lead { max-width: 34em; color: var(--ink-2); font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem); }
+
+.work-strip {
+  display: flex; align-items: flex-start; gap: var(--work-gap);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-inline: var(--edge); scroll-padding-inline: var(--edge);
+  padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #b8c7c4 transparent;
+}
+.work-strip:focus-visible { outline-offset: -3px; }
+.work-list { display: flex; gap: var(--work-gap); flex: none; }
+.work-card { position: relative; flex: none; width: clamp(240px, 34vw, 320px); scroll-snap-align: start; }
+.work-card figure { display: grid; gap: 12px; }
+/* The frame stays square-cornered so its plate (Motion) covers every corner; the picture clips the photo */
+.work-frame { position: relative; aspect-ratio: 3 / 4; }
+.work-frame picture { height: 100%; overflow: hidden; border-radius: var(--r-img); }
+.work-frame img { width: 100%; height: 100%; object-fit: cover; }
+.work-card figcaption {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 1px;
+  line-height: 1.35;
+}
+.work-no {
+  grid-row: 1 / 3; padding-top: 0.2em;
+  color: var(--teal-deep); font-size: .78rem; font-weight: 700; letter-spacing: .08em;
+  font-variant-numeric: tabular-nums;
+}
+.work-t { font-weight: 700; font-size: 1rem; }
+.work-s { color: var(--ink-3); font-size: .875rem; }
+
+/* The strip ends on a panel the height of a photo: a ruled top, the question, the button */
+.work-end {
+  flex: none; align-self: stretch; scroll-snap-align: end;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px;
+  width: clamp(250px, 26vw, 300px); margin-left: 8px;
+  border-top: 1px solid var(--line);
+}
+.work-end-t { font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem); line-height: .95; }
+.work-end-s { color: var(--ink-2); font-size: .95rem; max-width: 22em; }
+.work-end .btn { margin-top: 6px; }
+
+.work-foot { display: none; }
+.work-progress { position: relative; height: 2px; border-radius: 2px; overflow: hidden; background: var(--line); }
+.work-progress span {
+  position: absolute; inset: 0; border-radius: inherit; background: var(--teal);
+  transform-origin: 0 50%; transform: scaleX(0); /* fx-work.js sets the scale */
+}
+/* Everything fits (a very wide screen with reduced motion): nothing to step through */
+.work.is-fit .work-foot, .work.is-fit .work-nav { display: none !important; }
+
+/* With scripting on, the progress line (and, for a mouse, the buttons) say where you are, so the scrollbar
+   can go. Gated on the media feature, not html.js: the browser knows it from the first frame, so the
+   section's height never changes when the scripts start (a link to /#reviews or /#faq lands without a
+   shift). Browsers without the feature keep the plain strip with its scrollbar. */
+@media (scripting: enabled) {
+  .work-strip { scrollbar-width: none; padding-bottom: 4px; }
+  .work-strip::-webkit-scrollbar { display: none; }
+  .work-foot { display: block; margin-top: 22px; }
+}
+@media (scripting: enabled) and (hover: hover) and (pointer: fine) {
+  .work-nav { display: flex; }
+}
+/* Their room is kept from the first frame; they show once fx-work.js runs (.is-live), so if it never
+   loads there are no dead buttons */
+.work:not(.is-live) .work-nav, .work:not(.is-live) .work-progress { visibility: hidden; }
+@media (max-width: 599px) {
+  .work-card { width: 74vw; }
+  .work-end { width: 66vw; }
+  .work-intro { margin-bottom: 26px; }
+}
+
+/* The heading's step under the header (the run): a number, so it can follow the header's timing */
+@property --work-k { syntax: '<number>'; inherits: false; initial-value: 0; }
+
+/* ---------- The run ----------
+   Its layout comes from CSS alone, from the first frame (the scripts run after it): wide screens, motion
+   allowed, scripting on (no JS: the strip). So the page never changes height when fx-work.js starts, and a
+   shared link like /#faq or /#work lands without a shift. The section's length is the track's travel plus a
+   screen: the spacer (::after) gets the travel from the same sizes the track uses (its padding percentages
+   resolve against the section's width, the rail's). fx-work.js adds .is-h when it drives the track; until
+   then (or if it never loads) the rail simply scrolls sideways. Browsers without the scripting media
+   feature get the strip. Keep this query in step with RUN in fx-work.js. */
+@media (scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference) {
+  .work {
+    --pin-pt: clamp(40px, 6vh, 72px);
+    --hdr-step: max(0px, calc(var(--header-h) - var(--pin-pt) + 8px)); /* the heading's step under the header */
+    --tk-h: clamp(240px, calc(100vh - 23rem), 620px);  /* a photo's height */
+    --tk-gap: clamp(36px, 4vw, 72px);
+    --intro-w: clamp(280px, 24vw, 380px);
+    --end-w: clamp(280px, 24vw, 360px);
+    padding: 0;
+    /* a jump to #work lands where the run starts (the page keeps room for the header above anchors) */
+    scroll-margin-top: calc(-1 * (var(--header-h) + 16px));
+  }
+  /* The travel: two edges, the panels, four photos at 0.75 and two at 0.6 of --tk-h, eight gaps, less the rail */
+  .work::after {
+    content: ""; display: block;
+    padding-top: max(0px, calc(2 * var(--edge) + var(--intro-w) + var(--end-w) + 4.2 * var(--tk-h) + 8 * var(--tk-gap) - 100%));
+  }
+  .work-pin {
+    position: sticky; top: 0; height: 100vh;
+    overflow: hidden; overflow: clip; /* clip: focus can't scroll it sideways */
+    display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: var(--pin-pt) 0 clamp(24px, 3.4vh, 36px);
+  }
+  .work-head { flex-wrap: nowrap; }
+  .work-count {
+    display: flex; align-items: baseline; gap: 7px; padding-bottom: .5em; visibility: hidden;
+    color: var(--ink-3); font-size: 1rem; font-weight: 700; letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+  }
+  /* The rail keeps the heading's step free at all times (a constant, so the header coming and going never
+     changes the layout): the photos stay clear of the heading on short screens too */
+  .work-rail { display: flex; align-items: center; min-width: 0; padding-top: var(--hdr-step); overflow-x: auto; scrollbar-width: none; }
+  .work-rail::-webkit-scrollbar { display: none; }
+  .work-track {
+    display: flex; align-items: center; gap: var(--tk-gap);
+    width: max-content; padding-inline: var(--edge);
+  }
+  .work-intro { flex: none; width: var(--intro-w); margin: 0 calc(var(--tk-gap) * .5) 0 0; padding: 0; }
+  .work-lead { font-size: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem); line-height: 1.5; }
+  .work-strip {
+    display: flex; align-items: center; gap: var(--tk-gap);
+    overflow: visible; padding: 0; scroll-snap-type: none;
+  }
+  .work-list { align-items: flex-start; gap: var(--tk-gap); }
+  .work-card { width: calc(var(--tk-h) * 0.75); }
+  .work-frame { height: var(--tk-h); }
+  /* Every third photo, from the second, sits smaller and lower: the run reads as a row of jobs, not a grid */
+  .work-card:nth-child(3n + 2) { width: calc(var(--tk-h) * 0.6); margin-top: calc(var(--tk-h) * 0.1); }
+  .work-card:nth-child(3n + 2) .work-frame { height: calc(var(--tk-h) * 0.8); }
+  .work-card figcaption { margin-top: 4px; }
+  .work-frame img { scale: 1.16; } /* room for the drift (fx-work.js), from the first frame */
+  html.js .work-card:not(.is-in) img { scale: 1.3; } /* under its plate: it settles from further in */
+  .work-t { font-size: 1.0625rem; }
+  .work-s { font-size: .9375rem; }
+  .work-end {
+    align-self: center; width: var(--end-w); margin-left: calc(var(--tk-gap) * .5);
+    padding-top: 26px; gap: 16px;
+  }
+  .work-end-t { font-size: clamp(2.4rem, 1.4rem + 2vw, 3.4rem); }
+  .work-foot { display: block; margin-top: 0; }
+  .work-nav { display: none; }
+  .work-progress { visibility: hidden; }
+
+  /* fx-work.js is driving the track */
+  .work.is-h .work-rail { overflow: visible; }
+  .work.is-h .work-track { will-change: transform; }
+  .work.is-h .work-count, .work.is-h .work-progress { visibility: visible; }
+  /* The drift: fx-work.js sets each photo's translate per frame */
+  .work.is-h .work-frame img { will-change: translate; }
+  /* The heading steps down out from under the header while it shows (html.hdr-on; before main.js runs the
+     header always shows), 8px clear of it, in step with the header. Only as far as the header would cover
+     it: fx-work.js sets --work-step per frame (0 while the heading sits lower on the screen, up to
+     --hdr-step once the stage is pinned), and --work-k (0 or 1) carries the header's timing. So a header
+     coming back while the section is mid-screen moves nothing, and the step never lags the scroll. */
+  .work-head { translate: 0 calc(var(--work-k) * var(--work-step, var(--hdr-step))); }
+  html:not(.js) .work-head, html.hdr-on .work-head { --work-k: 1; }
+  .work.is-h .work-head { transition: --work-k 280ms var(--ease-in); }
+  html.hdr-on .work.is-h .work-head { transition: --work-k 450ms var(--ease-out); }
+}
+.work-n { display: inline-block; overflow: hidden; color: var(--teal-deep); }
+.work-n > span { display: inline-block; }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* The intro settles in under the heading */
+  html.js .work-intro { transition: opacity var(--t-text) var(--ease-out), translate var(--t-text) var(--ease-out); transition-delay: calc(var(--d, 0ms) + 240ms); }
+  html.js .work-intro:not(.is-in) { opacity: 0; translate: 0 14px; }
+  /* Each card is a [data-reveal="photo"]: its plate covers just the photo (the card's top, at 3:4) */
+  /* It overhangs the frame by 1px at the sides and top: in the run the photo is on its own layer (the drift)
+     and, cut exactly to the frame, the plate let a 1px line of photo show at its edges */
+  html.js .work-card[data-reveal="photo"]::before { top: -1px; right: -1px; bottom: auto; left: -1px; aspect-ratio: 3 / 4; }
+  /* The caption follows its photo's plate up */
+  html.js .work-card figcaption { transition: opacity 700ms var(--ease-out), translate 900ms var(--ease-out); transition-delay: calc(var(--d, 0ms) + 520ms); }
+  html.js .work-card:not(.is-in) figcaption { opacity: 0; translate: 0 8px; }
+  /* The end panel: its rule draws (data-rule), the question rises (data-split), then the rest */
+  html.js .work-end .work-end-s, html.js .work-end .btn {
+    transition: opacity var(--t-text) var(--ease-out), translate var(--t-text) var(--ease-out),
+      background-color var(--t-hover), color var(--t-hover), transform var(--t-press);
+    transition-delay: calc(var(--d, 0ms) + 380ms), calc(var(--d, 0ms) + 380ms), 0s, 0s, 0s;
+  }
+  html.js .work-end .btn { transition-delay: calc(var(--d, 0ms) + 460ms), calc(var(--d, 0ms) + 460ms), 0s, 0s, 0s; }
+  html.js .work-end:not(.is-in) .work-end-s, html.js .work-end:not(.is-in) .btn { opacity: 0; translate: 0 10px; }
+  .work-progress span { transition: transform 120ms linear; }
+  .work.is-h .work-progress span { transition: none; }
+}
