@@ -30,12 +30,12 @@ VARIANTS = [
     ("story-garage",   "garage-clutter",     1 / 1,  0.50, [480, 800, 1200]),
     ("story-roof",     "storage-boxes",      1 / 1,  0.62, [480, 790]),
     ("step-ladder",    "ladder-garage",      4 / 5,  0.45, [480, 800]),
-    ("work-laundry",   "ladder-laundry",     3 / 4,  0.50, [400, 700]),
+    ("work-laundry",   "ladder-laundry",     3 / 4,  0.50, [400, 700, 1000]),
     ("work-hatch",     "hatch-above",        3 / 4,  0.50, [400, 500]),
-    ("work-deck",      "deck-after",         3 / 4,  0.55, [400, 700]),
+    ("work-deck",      "deck-after",         3 / 4,  0.55, [400, 700, 1000]),
     ("work-boxes",     "storage-boxes",      3 / 4,  0.55, [400, 700]),
-    ("work-garage",    "ladder-garage",      3 / 4,  0.45, [400, 700]),
-    ("work-floor",     "open-floor-after",   3 / 4,  0.55, [400, 700]),
+    ("work-garage",    "ladder-garage",      3 / 4,  0.45, [400, 700, 1000]),
+    ("work-floor",     "open-floor-after",   3 / 4,  0.55, [400, 700, 1000]),
 ]
 
 AVIF_Q, WEBP_Q, JPEG_Q = 52, 74, 76

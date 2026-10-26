@@ -538,27 +538,77 @@
   <!-- /Before & after -->
 
   <!-- Recent work -->
-  <section class="band band-paper" aria-labelledby="work-title">
-    <div class="wrap work-head">
-      <div>
-        <p class="eyebrow">Recent work</p>
-        <h2 class="display h2" id="work-title" data-split>On the job around Adelaide.</h2>
+  <!-- Wide screens with motion: the section pins (CSS) and the page's scroll moves the track sideways
+       (fx-work.js). Narrow screens, reduced motion and no JS: the strip swipes, with scroll snap. -->
+  <section class="band band-paper work" id="work" aria-labelledby="work-title" data-work>
+    <div class="work-pin" data-work-pin>
+      <div class="wrap work-head">
+        <div class="work-title">
+          <p class="eyebrow">Recent work</p>
+          <h2 class="display h2" id="work-title" data-split>On the job around Adelaide.</h2>
+        </div>
+        <p class="work-count" aria-hidden="true"><span class="work-n"><span data-work-n>01</span></span><span class="of">/</span><span data-work-total>06</span></p>
+        <div class="work-nav">
+          <button class="round-btn" type="button" data-work-step="-1" aria-label="Previous photos"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
+          <button class="round-btn" type="button" data-work-step="1" aria-label="More photos"><svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+        </div>
       </div>
-      <div class="work-nav">
-        <button class="round-btn" type="button" data-scroll="-1" aria-label="Previous photos"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
-        <button class="round-btn" type="button" data-scroll="1" aria-label="More photos"><svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+      <div class="work-rail" data-work-rail>
+        <div class="work-track" data-work-track>
+          <div class="work-intro" data-reveal>
+            <p class="work-lead">Ladders in laundries and garages. Floors laid over the joists. A few recent jobs from around Adelaide.</p>
+            <a class="text-link" href="https://www.facebook.com/profile.php?id=61562459426494" target="_blank" rel="noopener">See more on Facebook <svg class="icon" aria-hidden="true"><use href="#i-arrow-ur"></use></svg></a>
+          </div>
+          <div class="work-strip" data-work-strip role="region" aria-label="Recent installs" tabindex="0">
+            <ol class="work-list" role="list">
+          <li class="work-card" data-reveal="photo">
+            <figure>
+              <div class="work-frame"><picture><source type="image/avif" srcset="assets/img/work-laundry-400.avif 400w, assets/img/work-laundry-700.avif 700w, assets/img/work-laundry-1000.avif 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><source type="image/webp" srcset="assets/img/work-laundry-400.webp 400w, assets/img/work-laundry-700.webp 700w, assets/img/work-laundry-1000.webp 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><img src="assets/img/work-laundry-800.jpg" width="800" height="1067" alt="A folding attic ladder coming down in a laundry" loading="lazy" decoding="async"></picture></div>
+              <figcaption><span class="work-no" aria-hidden="true">01</span><span class="work-t">Laundry ladder</span><span class="work-s">Pull-down access next to the washer</span></figcaption>
+            </figure>
+          </li>
+          <li class="work-card" data-reveal="photo">
+            <figure>
+              <div class="work-frame"><picture><source type="image/avif" srcset="assets/img/work-hatch-400.avif 400w, assets/img/work-hatch-500.avif 500w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><source type="image/webp" srcset="assets/img/work-hatch-400.webp 400w, assets/img/work-hatch-500.webp 500w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><img src="assets/img/work-hatch-500.jpg" width="500" height="667" alt="Looking down through an attic hatch at a folding ladder" loading="lazy" decoding="async"></picture></div>
+              <figcaption><span class="work-no" aria-hidden="true">02</span><span class="work-t">Through the hatch</span><span class="work-s">Ladder framed into the new floor</span></figcaption>
+            </figure>
+          </li>
+          <li class="work-card" data-reveal="photo">
+            <figure>
+              <div class="work-frame"><picture><source type="image/avif" srcset="assets/img/work-deck-400.avif 400w, assets/img/work-deck-700.avif 700w, assets/img/work-deck-1000.avif 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><source type="image/webp" srcset="assets/img/work-deck-400.webp 400w, assets/img/work-deck-700.webp 700w, assets/img/work-deck-1000.webp 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><img src="assets/img/work-deck-800.jpg" width="800" height="1067" alt="A framed storage deck over the ceiling joists" loading="lazy" decoding="async"></picture></div>
+              <figcaption><span class="work-no" aria-hidden="true">03</span><span class="work-t">Storage deck</span><span class="work-s">Boxed in with treated timber</span></figcaption>
+            </figure>
+          </li>
+          <li class="work-card" data-reveal="photo">
+            <figure>
+              <div class="work-frame"><picture><source type="image/avif" srcset="assets/img/work-boxes-400.avif 400w, assets/img/work-boxes-700.avif 700w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><source type="image/webp" srcset="assets/img/work-boxes-400.webp 400w, assets/img/work-boxes-700.webp 700w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><img src="assets/img/work-boxes-700.jpg" width="700" height="933" alt="Boxes, tubs and suitcases stored on an attic floor" loading="lazy" decoding="async"></picture></div>
+              <figcaption><span class="work-no" aria-hidden="true">04</span><span class="work-t">Packed and organised</span><span class="work-s">Out of the garage, into the roof</span></figcaption>
+            </figure>
+          </li>
+          <li class="work-card" data-reveal="photo">
+            <figure>
+              <div class="work-frame"><picture><source type="image/avif" srcset="assets/img/work-garage-400.avif 400w, assets/img/work-garage-700.avif 700w, assets/img/work-garage-1000.avif 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><source type="image/webp" srcset="assets/img/work-garage-400.webp 400w, assets/img/work-garage-700.webp 700w, assets/img/work-garage-1000.webp 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><img src="assets/img/work-garage-800.jpg" width="800" height="1067" alt="A pull-down ladder in a garage with brick walls" loading="lazy" decoding="async"></picture></div>
+              <figcaption><span class="work-no" aria-hidden="true">05</span><span class="work-t">Garage ladder</span><span class="work-s">Straight up to the storage floor</span></figcaption>
+            </figure>
+          </li>
+          <li class="work-card" data-reveal="photo">
+            <figure>
+              <div class="work-frame"><picture><source type="image/avif" srcset="assets/img/work-floor-400.avif 400w, assets/img/work-floor-700.avif 700w, assets/img/work-floor-1000.avif 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><source type="image/webp" srcset="assets/img/work-floor-400.webp 400w, assets/img/work-floor-700.webp 700w, assets/img/work-floor-1000.webp 1000w" sizes="(min-width: 1000px) 52vh, (min-width: 600px) 310px, 74vw"><img src="assets/img/work-floor-800.jpg" width="800" height="1067" alt="A wide new storage floor lit by a work light" loading="lazy" decoding="async"></picture></div>
+              <figcaption><span class="work-no" aria-hidden="true">06</span><span class="work-t">Open-plan floor</span><span class="work-s">Room for years of storage</span></figcaption>
+            </figure>
+          </li>
+            </ol>
+            <div class="work-end" data-rule>
+              <p class="work-end-t display" data-split>Room in your roof?</p>
+              <p class="work-end-s">Priced online from a few questions. No home visit needed.</p>
+              <a class="btn btn-primary btn-lg" href="#quote" data-quote-link>Get my free quote <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="work-track" data-track tabindex="0" aria-label="Photos of recent installs">
-      <figure><picture><source type="image/avif" srcset="assets/img/work-laundry-400.avif 400w, assets/img/work-laundry-700.avif 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><source type="image/webp" srcset="assets/img/work-laundry-400.webp 400w, assets/img/work-laundry-700.webp 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><img src="assets/img/work-laundry-700.jpg" width="700" height="933" alt="A folding attic ladder coming down in a laundry" loading="lazy" decoding="async"></picture><figcaption>Laundry ladder<span>Pull-down access next to the washer</span></figcaption></figure>
-      <figure><picture><source type="image/avif" srcset="assets/img/work-hatch-400.avif 400w, assets/img/work-hatch-500.avif 500w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><source type="image/webp" srcset="assets/img/work-hatch-400.webp 400w, assets/img/work-hatch-500.webp 500w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><img src="assets/img/work-hatch-500.jpg" width="500" height="667" alt="Looking down through an attic hatch at a folding ladder" loading="lazy" decoding="async"></picture><figcaption>Through the hatch<span>Ladder framed into the new floor</span></figcaption></figure>
-      <figure><picture><source type="image/avif" srcset="assets/img/work-deck-400.avif 400w, assets/img/work-deck-700.avif 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><source type="image/webp" srcset="assets/img/work-deck-400.webp 400w, assets/img/work-deck-700.webp 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><img src="assets/img/work-deck-700.jpg" width="700" height="933" alt="A framed storage deck over the ceiling joists" loading="lazy" decoding="async"></picture><figcaption>Storage deck<span>Boxed in with treated timber</span></figcaption></figure>
-      <figure><picture><source type="image/avif" srcset="assets/img/work-boxes-400.avif 400w, assets/img/work-boxes-700.avif 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><source type="image/webp" srcset="assets/img/work-boxes-400.webp 400w, assets/img/work-boxes-700.webp 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><img src="assets/img/work-boxes-700.jpg" width="700" height="933" alt="Boxes, tubs and suitcases stored on an attic floor" loading="lazy" decoding="async"></picture><figcaption>Packed and organised<span>Out of the garage, into the roof</span></figcaption></figure>
-      <figure><picture><source type="image/avif" srcset="assets/img/work-garage-400.avif 400w, assets/img/work-garage-700.avif 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><source type="image/webp" srcset="assets/img/work-garage-400.webp 400w, assets/img/work-garage-700.webp 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><img src="assets/img/work-garage-700.jpg" width="700" height="933" alt="A pull-down ladder in a garage with brick walls" loading="lazy" decoding="async"></picture><figcaption>Garage ladder<span>Straight up to the storage floor</span></figcaption></figure>
-      <figure><picture><source type="image/avif" srcset="assets/img/work-floor-400.avif 400w, assets/img/work-floor-700.avif 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><source type="image/webp" srcset="assets/img/work-floor-400.webp 400w, assets/img/work-floor-700.webp 700w" sizes="(min-width: 1200px) 310px, (min-width: 885px) 26vw, 230px"><img src="assets/img/work-floor-700.jpg" width="700" height="933" alt="A wide new storage floor lit by a work light" loading="lazy" decoding="async"></picture><figcaption>Open-plan floor<span>Room for years of storage</span></figcaption></figure>
-    </div>
-    <div class="wrap work-foot">
-      <a class="text-link" href="https://www.facebook.com/profile.php?id=61562459426494" target="_blank" rel="noopener">See more on Facebook <svg class="icon" aria-hidden="true"><use href="#i-arrow-ur"></use></svg></a>
+      <div class="wrap work-foot" aria-hidden="true">
+        <div class="work-progress"><span data-work-bar></span></div>
+      </div>
     </div>
   </section>
   <!-- /Recent work -->
