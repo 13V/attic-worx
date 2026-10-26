@@ -183,7 +183,8 @@ p { text-wrap: pretty; }
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   min-height: 48px; padding: 0 22px;
   border: 1.5px solid transparent; border-radius: 999px;
-  font-weight: 700; font-size: 1rem; line-height: 1; text-decoration: none; white-space: nowrap;
+  font-weight: 700; font-size: 1rem; line-height: 1; text-decoration: none;
+  text-align: center; text-wrap: balance; /* one line wherever it fits; wraps rather than run off a narrow screen at large text sizes */
   cursor: pointer;
   transition: background-color .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
 }
@@ -220,6 +221,8 @@ p { text-wrap: pretty; }
   transform: translateY(calc(-100% - 2px));
   transition: transform 280ms var(--ease-in), background-color .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease);
 }
+/* Solid once scrolled (main.js). Without JS it never is, so a noscript rule in <head> gives it the roof's
+   colour throughout, and its white text stays readable over the white bands. */
 .site-header.is-scrolled {
   background: rgba(255, 255, 255, 0.94);
   color: var(--ink);
@@ -227,7 +230,11 @@ p { text-wrap: pretty; }
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
 }
-.header-inner { height: 100%; display: flex; align-items: center; gap: 28px; }
+.header-inner {
+  --hdr-gap: 28px;
+  height: 100%; display: flex; align-items: center; gap: var(--hdr-gap);
+  container: hdr / inline-size; /* the row's own width, for the text-size switches below */
+}
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
 .brand-mark { width: 38px; height: 38px; }
 .brand-word { width: 150px; height: auto; fill: currentColor; }
@@ -253,7 +260,13 @@ p { text-wrap: pretty; }
   background: transparent; align-items: center; justify-content: center; cursor: pointer;
 }
 .menu-btn .icon { width: 20px; height: 20px; }
-.call-btn { display: none; }
+.call-btn {
+  display: none; margin-left: auto;
+  width: 44px; height: 44px; border-radius: 999px; align-items: center; justify-content: center;
+  background: var(--mint); color: var(--roof);
+}
+.site-header.is-scrolled .call-btn { background: var(--teal); color: var(--white); }
+.call-btn + .menu-btn { margin-left: calc(12px - var(--hdr-gap)); } /* the two round buttons sit 12px apart */
 
 .mobile-menu {
   /* popover */
@@ -285,23 +298,29 @@ p { text-wrap: pretty; }
   background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
 }
 
+/* The row gives way in two steps: first the phone number's digits go, then the nav and the buttons
+   make room for the call and menu buttons. By screen width, and also by the room the row's content
+   needs, which grows with the text size (a visitor's own larger text included): the container queries
+   measure the row in px + rem and land on the same widths at the default size (1060px and 960px
+   screens), so at 200% text the header is the menu at every width instead of running off the side. */
 @media (max-width: 1060px) {
+  .nav { gap: 18px; }
+  .phone-link span { display: none; }
+}
+@container hdr (max-width: calc(439px + 33.9rem)) {
   .nav { gap: 18px; }
   .phone-link span { display: none; }
 }
 @media (max-width: 960px) {
   .nav, .header-cta { display: none; }
-  .menu-btn { display: inline-flex; }
-  .call-btn {
-    display: inline-flex; margin-left: auto;
-    width: 44px; height: 44px; border-radius: 999px; align-items: center; justify-content: center;
-    background: var(--mint); color: var(--roof);
-  }
-  .site-header.is-scrolled .call-btn { background: var(--teal); color: var(--white); }
-  .call-btn + .menu-btn { margin-left: 0; }
-  .header-inner { gap: 12px; }
+  .menu-btn, .call-btn { display: inline-flex; }
+  .header-inner { --hdr-gap: 12px; }
   .brand-word { width: 132px; }
   .brand-mark { width: 34px; height: 34px; }
+}
+@container hdr (max-width: calc(450px + 27.1rem)) {
+  .nav, .header-cta { display: none; }
+  .menu-btn, .call-btn { display: inline-flex; }
 }
 
 /* ---------- Hero ---------- */
@@ -737,6 +756,12 @@ select.input {
   .action-bar.is-visible { transform: none; }
   .action-bar .btn { min-height: 50px; }
   .site-footer { padding-bottom: calc(32px + 72px + env(safe-area-inset-bottom, 0px)); }
+  /* A control that takes focus (or a scrollIntoView) is brought into view above the bar, not behind it:
+     landscape phones have little height to spare */
+  html { scroll-padding-bottom: calc(72px + 12px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 360px) {
+  .action-bar .btn { padding-inline: 16px; } /* keeps "Get my free quote" on one line on the narrowest phones */
 }
 
 
@@ -931,7 +956,7 @@ select.input {
   /* Final call to action: the ladder mark drifts up as you scroll past; its rungs light up once,
      bottom to top, as it comes in, then settle back into the mark (one silhouette at rest) */
   @supports (animation-timeline: view()) {
-    .cta-mark { animation: aw-drift linear both; animation-timeline: view(); animation-range: cover; }
+    .cta-mark { animation: aw-drift linear both; animation-timeline: view(block 0px); animation-range: cover; } /* (no inset: the page's scroll-padding isn't the screen) */
   }
   html.js .cta-mark.is-in:not(.is-instant) .cta-rungs path {
     animation: aw-rung 1600ms var(--ease-out) calc(var(--d, 0ms) + 350ms + var(--k, 0) * 150ms) both;
@@ -1376,7 +1401,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
    away, car in, roller door down), which is what shows at rest: without JS, with reduced motion, or where
    pow() is missing. Then the captions are a plain numbered list under the picture.
 
-   Pinned (html.js, motion welcome, pow() supported): a tall track with a sticky stage. main.js eases
+   Pinned (scripting on, motion welcome, pow() supported): a tall track with a sticky stage. main.js eases
    one number, --p (0 -> 1), and marks the current caption (data-beat); it writes --p on each moving part
    only while that part moves (see below). Every pose below is computed from --p, Engel Build's way: each moving part (.m) has a window [--a, --a + --l] and its
    progress --bs-t; its eased distance still to go is a power of (1 - t): (1-t)^3 settles (cubic out),
@@ -1451,17 +1476,20 @@ html.js .room-handoff-nojs { visibility: hidden; }
 
 /* ---------- Pinned: the story plays as you scroll ---------- */
 /* (screens under 500px tall, a phone on its side, keep the picture and the list: a pinned stage there would
-   leave the drawing a sliver) */
-@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+   leave the drawing a sliver)
+   The pinned layout keys on (scripting: enabled), not html.js, so the page has its full length from the
+   first frame: a link to a section further down lands without the track growing under it when main.js
+   runs. Until main.js marks a step the stage shows the finished picture and the last caption. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
 @supports (width: calc(pow(2, 2) * 1px)) and (width: 1cqw) {
-  html.js .build { padding-bottom: 0; }
-  html.js .bs { position: relative; height: 470vh; margin-top: clamp(24px, 4vw, 48px); }
-  html.js .bs-stage {
+  :root .build { padding-bottom: 0; }
+  :root .bs { position: relative; height: 470vh; margin-top: clamp(24px, 4vw, 48px); }
+  :root .bs-stage {
     position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0;
     display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 0; overflow: hidden;
     --bar: 0px;
   }
-  html.js .bs-scene { aspect-ratio: auto; border-radius: 0; background: none; container-type: size; }
+  :root .bs-scene { aspect-ratio: auto; border-radius: 0; background: none; container-type: size; }
   /* Wide stages: the drawing is as large as fits (--bs-s: px per unit of the 1300 x 720 viewBox), sat on the
      scene's foot and centred on what matters, the car on the driveway (from -190 units, left of the
      viewBox) to the gutter (1285). Where that doesn't fit across, a drawing fitted to the height gives up
@@ -1470,7 +1498,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
      The header: while it shows, if it would cover the roof's ridge, the picture steps down out from under
      it, in step with it (only short screens need this; the bottom of the drawing is just earth). The ridge
      sits 585 units above the drawing's foot. */
-  html.js .bs-svg {
+  :root .bs-svg {
     --bs-s: min(100cqw / 1300, max(100cqw / 1475, 0.93 * 100cqh / 720), 100cqh / 720);
     inset: auto; left: 50%; bottom: 0; width: calc(1300 * var(--bs-s)); height: calc(720 * var(--bs-s)); overflow: visible;
     --bs-hk: 0;
@@ -1479,62 +1507,62 @@ html.js .room-handoff-nojs { visibility: hidden; }
       calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 585 * var(--bs-s))));
     transition: --bs-hk 280ms var(--ease-in);
   }
-  html.js.hdr-on .bs-svg { --bs-hk: 1; transition: --bs-hk 450ms var(--ease-out); }
+  :root.hdr-on .bs-svg { --bs-hk: 1; transition: --bs-hk 450ms var(--ease-out); }
 
   /* The rail: one segment per step, filling as the step plays */
-  html.js .bs-rail {
+  :root .bs-rail {
     display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;
     width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto; padding-top: 14px;
   }
-  html.js .bs-rail i { position: relative; height: 2px; background: rgba(143, 214, 204, 0.18); overflow: hidden; }
-  html.js .bs-rail i::after {
+  :root .bs-rail i { position: relative; height: 2px; background: rgba(143, 214, 204, 0.18); overflow: hidden; }
+  :root .bs-rail i::after {
     content: ""; position: absolute; inset: 0; background: var(--mint); transform-origin: 0 50%;
     transform: scaleX(clamp(0, (var(--p) - var(--at)) / (var(--to) - var(--at)), 1));
   }
 
   /* Wide screens: the steps in a row under the picture; the current one lit, its line underneath */
-  html.js .bs-caps {
+  :root .bs-caps {
     position: relative; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 8px;
     width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto;
     padding: 12px 0 calc(78px + var(--bar)); min-height: 0;
   }
-  html.js .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.62; transition: opacity var(--t-out) var(--ease-in); }
-  html.js .bs-cap::before { margin-bottom: 4px; }
-  html.js .bs-cap h3 { font-size: 0.98rem; }
-  html.js .bs-cap p, html.js .bs-cap .btn {
+  :root .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.62; transition: opacity var(--t-out) var(--ease-in); }
+  :root .bs-cap::before { margin-bottom: 4px; }
+  :root .bs-cap h3 { font-size: 0.98rem; }
+  :root .bs-cap p, :root .bs-cap .btn {
     position: absolute; left: 0; top: 74px; margin: 0;
     opacity: 0; translate: 0 6px; pointer-events: none;
     transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out);
   }
   /* (the button stays focusable while its step is off: focusing it jumps to the end, see main.js) */
-  html.js .bs-cap p { visibility: hidden; }
-  html.js .bs-cap p { width: min(58%, 40em); font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
-  html.js .bs-cap .btn { left: auto; right: 0; top: 66px; }
-  html.js .bs-cap.is-on { opacity: 1; transition: opacity var(--t-ui) var(--ease-out); }
-  html.js .bs-cap.is-on p, html.js .bs-cap.is-on .btn, html.js .bs-cap .btn:focus-visible {
+  :root .bs-cap p { visibility: hidden; }
+  :root .bs-cap p { width: min(58%, 40em); font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
+  :root .bs-cap .btn { left: auto; right: 0; top: 66px; }
+  :root .bs-cap.is-on { opacity: 1; transition: opacity var(--t-ui) var(--ease-out); }
+  :root .bs-cap.is-on p, :root .bs-cap.is-on .btn, :root .bs-cap .btn:focus-visible {
     opacity: 1; translate: none; visibility: visible; pointer-events: auto;
     transition: opacity var(--t-text) var(--ease-out) 80ms, translate var(--t-text) var(--ease-out) 80ms, visibility 0s;
   }
   /* until main.js marks a step (or if it never runs), the last one shows */
-  html.js .bs-stage:not([data-beat]) .bs-cap:last-child { opacity: 1; }
-  html.js .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; visibility: visible; pointer-events: auto; }
+  :root .bs-stage:not([data-beat]) .bs-cap:last-child { opacity: 1; }
+  :root .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; visibility: visible; pointer-events: auto; }
 
   /* Narrower screens: one step at a time in a panel, above the action bar on phones */
   @media (max-width: 1099px) {
-    html.js .bs-caps { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px 0 calc(18px + var(--bar)); }
-    html.js .bs-cap { grid-area: 1 / 1; opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out); }
-    html.js .bs-cap:not(.is-on):not(:last-child) { visibility: hidden; }
-    html.js .bs-cap.is-on, html.js .bs-stage:not([data-beat]) .bs-cap:last-child, html.js .bs-cap:focus-within { opacity: 1; translate: none; visibility: visible; pointer-events: auto; transition: opacity var(--t-ui) var(--ease-out), translate var(--t-ui) var(--ease-out), visibility 0s; }
-    html.js .bs-cap::before { display: inline; margin-right: 10px; }
-    html.js .bs-cap h3 { display: inline; font-size: 1.0625rem; }
-    html.js .bs-cap p, html.js .bs-cap .btn { position: static; translate: none; }
-    html.js .bs-cap p { width: auto; margin-top: 4px; font-size: 0.95rem; line-height: 1.45; }
-    html.js .bs-cap .btn { margin-top: 12px; min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
+    :root .bs-caps { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px 0 calc(18px + var(--bar)); }
+    :root .bs-cap { grid-area: 1 / 1; opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out); }
+    :root .bs-cap:not(.is-on):not(:last-child) { visibility: hidden; }
+    :root .bs-cap.is-on, :root .bs-stage:not([data-beat]) .bs-cap:last-child, :root .bs-cap:focus-within { opacity: 1; translate: none; visibility: visible; pointer-events: auto; transition: opacity var(--t-ui) var(--ease-out), translate var(--t-ui) var(--ease-out), visibility 0s; }
+    :root .bs-cap::before { display: inline; margin-right: 10px; }
+    :root .bs-cap h3 { display: inline; font-size: 1.0625rem; }
+    :root .bs-cap p, :root .bs-cap .btn { position: static; translate: none; }
+    :root .bs-cap p { width: auto; margin-top: 4px; font-size: 0.95rem; line-height: 1.45; }
+    :root .bs-cap .btn { margin-top: 12px; min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
   }
   @media (max-width: 960px) {
-    html.js .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
+    :root .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
     /* the action bar's own "Get my free quote" sits just under the last step here: one is enough */
-    html.js .bs-cap .btn { display: none; }
+    :root .bs-cap .btn { display: none; }
   }
   /* Phones and any portrait stage (tablets held upright, tall windows): a shorter track, and a camera on
      the garage column that looks out to the car at the start and the end (--cx: the point of the drawing,
@@ -1542,9 +1570,9 @@ html.js .room-handoff-nojs { visibility: hidden; }
      paints past its own box (the sky, the street and the car run on), so it reaches the edges at every
      camera position; the scene clips. */
   @media (max-width: 760px), (max-aspect-ratio: 1/1) {
-    html.js .bs { height: 375vh; }
-    html.js .bs-scene { container-type: size; }
-    html.js .bs-svg {
+    :root .bs { height: 375vh; }
+    :root .bs-scene { container-type: size; }
+    :root .bs-svg {
       /* sized so a phone's width shows 5.4 m of the house; on a taller stage it fills the height */
       left: 50%; right: auto; top: auto; bottom: 0; overflow: visible;
       height: min(100cqh, 133.3cqw); width: calc(min(100cqh, 133.3cqw) * 1300 / 720);
@@ -1558,22 +1586,22 @@ html.js .room-handoff-nojs { visibility: hidden; }
   }
 
   /* ----- The poses ----- */
-  html.js .bs .m { --bs-t: clamp(0, (var(--p) - var(--a)) / var(--l), 1); }
+  :root .bs .m { --bs-t: clamp(0, (var(--p) - var(--a)) / var(--l), 1); }
 
   /* Dusk: the roof is dark, bay by bay the work light reaches in */
-  html.js .bs-dark { opacity: pow(1 - var(--bs-t), 1.6); }
+  :root .bs-dark { opacity: pow(1 - var(--bs-t), 1.6); }
   /* The work light: off until its beat, then a quick, soft flicker (the site's lights-on rhythm) */
-  html.js .bs-lit { opacity: 0; }
-  html.js .bs-stage:not([data-beat="0"]) .bs-lit { opacity: 1; animation: bs-flicker 1.1s steps(1, end) both; }
+  :root .bs-lit { opacity: 0; }
+  :root .bs-stage:not([data-beat="0"]) .bs-lit { opacity: 1; animation: bs-flicker 1.1s steps(1, end) both; }
 
   /* H2 battens are lowered on, from the hatch outwards */
-  html.js .bs-batten {
+  :root .bs-batten {
     --bs-e: pow(1 - var(--bs-t), 3);
     translate: 0 calc(var(--bs-e) * -30px);
     opacity: min(1, var(--bs-t) * 5);
   }
   /* Sheets are laid from the far end back to the hatch; each lands flat */
-  html.js .bs-sheet {
+  :root .bs-sheet {
     --bs-e: pow(1 - var(--bs-t), 3);
     translate: 0 calc(var(--bs-e) * -24px);
     opacity: min(1, var(--bs-t) * 4);
@@ -1581,23 +1609,23 @@ html.js .room-handoff-nojs { visibility: hidden; }
 
   /* The ladder: the lid swings down about its hinge, then the sections unfold in turn; at the end they
      fold away in reverse. --r is the closed angle; the open pose is the drawing. */
-  html.js .bs-fold {
+  :root .bs-fold {
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
     --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
     --bs-f: clamp(0, (var(--p) - var(--c)) / var(--m), 1);
     rotate: calc(var(--r) * 1deg * min(1, var(--bs-e) + var(--bs-f) * var(--bs-f) * (3 - 2 * var(--bs-f))));
   }
-  html.js .bs-s1 { opacity: calc(clamp(0, (var(--p) - var(--a) + 0.004) * 400, 1) - clamp(0, (var(--p) - var(--c) - var(--m) - 0.004) * 400, 1)); }
+  :root .bs-s1 { opacity: calc(clamp(0, (var(--p) - var(--a) + 0.004) * 400, 1) - clamp(0, (var(--p) - var(--c) - var(--m) - 0.004) * 400, 1)); }
   /* The old step ladder under the manhole folds, and is carried to the wall (lifted a little on the way) */
-  html.js .bs-step, html.js .bs-step-rear { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); }
-  html.js .bs-step-rear { --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t))); rotate: calc(var(--r) * var(--bs-e) * 1deg); }
-  html.js .bs-step {
+  :root .bs-step, :root .bs-step-rear { transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px); }
+  :root .bs-step-rear { --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t))); rotate: calc(var(--r) * var(--bs-e) * 1deg); }
+  :root .bs-step {
     --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
     translate: calc(var(--dx) * var(--bs-e) * 1px) calc((var(--dy) * var(--bs-e) - 14 * sin(var(--bs-t) * 180deg)) * 1px);
     rotate: calc(var(--r) * var(--bs-e) * 1deg);
   }
   /* Light falls through the open hatch while the lid is down */
-  html.js .bs-spill { opacity: calc(pow(var(--bs-t), 2) - clamp(0, (var(--p) - var(--b)) / var(--k), 1)); }
+  :root .bs-spill { opacity: calc(pow(var(--bs-t), 2) - clamp(0, (var(--p) - var(--b)) / var(--k), 1)); }
 
   /* The things: each trip is the same path for both copies of a load (walk | climb | rise | set, the
      window's fractions --s0..--s3, waypoints --x/--y/--k relative to the copy's own spot). The garage copy
@@ -1605,7 +1633,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
      set down in its row. Each is clipped to its own side of the ceiling's cut line (bs-below / bs-above), so
      the hand-over hides inside the cut ceiling: no fade. Segments one and two are smoothsteps, the set-down
      settles (cubic out). */
-  html.js :is(.bs-pick, .bs-load) {
+  :root :is(.bs-pick, .bs-load) {
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
     --bs-u1: clamp(0, (var(--bs-t) - var(--s0, 0)) / (var(--s1) - var(--s0, 0)), 1);
     --bs-u2: clamp(0, (var(--bs-t) - var(--s1)) / (var(--s2) - var(--s1)), 1);
@@ -1619,29 +1647,29 @@ html.js .room-handoff-nojs { visibility: hidden; }
     scale: calc(var(--k0, 1) + (var(--k1) - var(--k0, 1)) * var(--bs-e1) + (var(--k2) - var(--k1)) * var(--bs-e2) + (var(--k3, 1) - var(--k2)) * var(--bs-e3));
   }
   /* the garage copy is gone once it's through the ceiling; the roof copy is there from the climb on */
-  html.js .bs-pick { opacity: clamp(0, (var(--s3) - var(--bs-t)) * 10000, 1); }
-  html.js .bs-load { opacity: clamp(0, (var(--bs-t) - var(--s0)) * 10000 + 1, 1); }
+  :root .bs-pick { opacity: clamp(0, (var(--s3) - var(--bs-t)) * 10000, 1); }
+  :root .bs-load { opacity: clamp(0, (var(--bs-t) - var(--s0)) * 10000 + 1, 1); }
   /* a load's contact shadow goes as it's lifted, and comes as it's set down */
-  html.js .bs-pick .bs-shade { opacity: calc(1 - min(1, (var(--p) - var(--a)) / var(--l) * 8)); }
-  html.js .bs-load .bs-shade { opacity: clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1); }
+  :root .bs-pick .bs-shade { opacity: calc(1 - min(1, (var(--p) - var(--a)) / var(--l) * 8)); }
+  :root .bs-load .bs-shade { opacity: clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1); }
 
   /* The car rolls in. Every plane of it moves by an exact affine map, linear in the distance still to go
      (worked out per plane by the generator: the near side just translates; the planes on top also shear,
      because their far edges are smaller; the nose shows only while the car is left of the eye). */
-  html.js .bs-car {
+  :root .bs-car {
     --bs-e: calc(1 - pow(var(--bs-t), 2) * (3 - 2 * var(--bs-t)));
     transform-box: view-box; transform-origin: 0 0;
     transform: matrix(calc(1 + var(--mx) * var(--bs-e)), 0, calc(var(--my) * var(--bs-e)), 1, calc(var(--m0) * var(--bs-e)), 0);
   }
-  html.js .bs-nose { opacity: clamp(0, (var(--bs-e) - var(--nv)) * 300, 1); }
-  html.js .bs-wheel {
+  :root .bs-nose { opacity: clamp(0, (var(--bs-e) - var(--nv)) * 300, 1); }
+  :root .bs-wheel {
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) calc(var(--oy) * 1px);
     /* (--a, --l: the drive's window, from the car's side) */
     rotate: calc(var(--rot) * (1 - pow(clamp(0, (var(--p) - var(--a)) / var(--l), 1), 2) * (3 - 2 * clamp(0, (var(--p) - var(--a)) / var(--l), 1))) * 1deg);
   }
   /* Headlights: on as it starts to roll, off once it's in; the beam shortens towards the wall */
-  html.js .bs-beam { opacity: calc(var(--bs-t) - clamp(0, (var(--p) - var(--b)) / var(--m), 1)); }
-  html.js .bs-beam[style*="--ra"] {
+  :root .bs-beam { opacity: calc(var(--bs-t) - clamp(0, (var(--p) - var(--b)) / var(--m), 1)); }
+  :root .bs-beam[style*="--ra"] {
     --bs-f: calc(pow(clamp(0, (var(--p) - var(--ra)) / var(--rl), 1), 2) * (3 - 2 * clamp(0, (var(--p) - var(--ra)) / var(--rl), 1)));
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) 0;
     scale: calc(1 - (1 - var(--w)) * var(--bs-f)) 1;
@@ -1650,18 +1678,18 @@ html.js .room-handoff-nojs { visibility: hidden; }
      half way through: timed, so the finished picture lands within about 1.5 s whatever the scroll speed,
      and back the other way (quicker) when scrolling up. The door is a curtain rolled up into its drum: on
      its plane a rise is a vertical shear (--b0, --f0), so --bs-dn eases one number. */
-  html.js .bs-door {
+  :root .bs-door {
     --bs-dn: 0;
     transform-box: view-box; transform-origin: 0 0;
     transform: matrix(1, calc(var(--b0) * (1 - var(--bs-dn))), 0, 1, 0, calc(var(--f0) * (1 - var(--bs-dn))));
     transition: --bs-dn 760ms var(--ease-io);
   }
-  html.js .bs-stage[data-shut] .bs-door { --bs-dn: 1; transition: --bs-dn 1100ms cubic-bezier(0.35, 0, 0.15, 1); }
-  html.js .bs-dusk { opacity: 1; transition: opacity var(--t-ui) var(--ease-in); }
-  html.js :is(.bs-tube, .bs-rim) { opacity: 0; transition: opacity var(--t-ui) var(--ease-in); }
-  html.js .bs-stage[data-shut] .bs-dusk { opacity: 0; transition: opacity 1000ms var(--ease-out) 500ms; }
-  html.js .bs-stage[data-shut] .bs-tube { opacity: 1; transition: opacity 1000ms var(--ease-out) 500ms; }
-  html.js .bs-stage[data-shut] .bs-rim { opacity: 0.8; transition: opacity 1000ms var(--ease-out) 600ms; }
+  :root .bs-stage[data-shut] .bs-door { --bs-dn: 1; transition: --bs-dn 1100ms cubic-bezier(0.35, 0, 0.15, 1); }
+  :root .bs-dusk { opacity: 1; transition: opacity var(--t-ui) var(--ease-in); }
+  :root :is(.bs-tube, .bs-rim) { opacity: 0; transition: opacity var(--t-ui) var(--ease-in); }
+  :root .bs-stage[data-shut] .bs-dusk { opacity: 0; transition: opacity 1000ms var(--ease-out) 500ms; }
+  :root .bs-stage[data-shut] .bs-tube { opacity: 1; transition: opacity 1000ms var(--ease-out) 500ms; }
+  :root .bs-stage[data-shut] .bs-rim { opacity: 0.8; transition: opacity 1000ms var(--ease-out) 600ms; }
 }
 }
 /* At rest the garage light is on and the dusk has gone from the garage */

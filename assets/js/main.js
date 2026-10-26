@@ -208,6 +208,14 @@
   if (header) {
     var lastY = window.scrollY;
     var hidden = false;
+    // An in-page link's glide is the page moving, not the visitor reading on: the header stays while it
+    // runs (the section lands under it, in the room scroll-padding-top keeps). The glide counts as over
+    // once the page has been still for a quarter of a second.
+    var glideUntil = 0;
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (a && a.getAttribute('href').length > 1) glideUntil = performance.now() + 600;
+    });
     var setHidden = function (hide) {
       if (hide === hidden) return;
       hidden = hide;
@@ -222,8 +230,11 @@
       // Before load, a move is the browser's own (a shared link's #section, a restored position), not
       // the visitor reading on: the header stays.
       var arriving = !root.classList.contains('is-loaded');
+      var now = performance.now();
+      var gliding = now < glideUntil;
+      if (gliding && (down || up)) glideUntil = now + 250;
       if (y < 120 || up || menuOpen() || header.contains(document.activeElement) || !motionOK()) hide = false;
-      else if (down && !arriving) hide = true;
+      else if (down && !arriving && !gliding) hide = true;
       if (down || up) lastY = y;
       return function () {
         header.classList.toggle('is-scrolled', y > 24);
@@ -330,7 +341,13 @@
       bars.forEach(function (b, i) { b.classList.toggle('is-done', i < n); });
       if (label) label.textContent = 'Step ' + n + ' of ' + steps.length;
       if (focus) {
-        var first = $('input:not([type=hidden]), select, textarea', steps[n - 1]);
+        // The step's first control a visitor can reach (step 2's storage question is hidden unless
+        // storage is ticked); in a radio group, the option already chosen (the room visualiser may have
+        // picked the size), as Tab would
+        var first = $$('input:not([type=hidden]), select, textarea', steps[n - 1]).filter(function (el) {
+          return !el.closest('[hidden]');
+        })[0];
+        if (first && first.type === 'radio') first = $('input[name="' + first.name + '"]:checked', steps[n - 1]) || first;
         if (first) first.focus({ preventScroll: true });
       }
     };
@@ -522,14 +539,17 @@
       anim.playbackRate = spinRate;
       if (spinRate !== 1 && spinLive) { spinning = true; raf(spin); }
     };
+    // (An observer can deliver more than one entry for its target at once: the last one is current.)
     new IntersectionObserver(function (entries) {
-      spinLive = entries[0].isIntersecting;
-      if (spinLive) return;
-      // Out of sight: back to the resting speed, unseen
+      spinLive = entries[entries.length - 1].isIntersecting;
       var anim = vanes.getAnimations()[0];
+      if (!anim) return;
+      if (spinLive) { anim.play(); return; }
+      // Out of sight: back to the resting speed and stopped, so it costs nothing (it picks up where it was)
       boost = 0;
       spinRate = 1;
-      if (anim) anim.playbackRate = 1;
+      anim.playbackRate = 1;
+      anim.pause();
     }).observe(ventCard);
     onScrollFrame(function () {
       var now = performance.now();
@@ -564,7 +584,7 @@
     };
     update();
     new IntersectionObserver(function (entries) {
-      formVisible = entries[0].isIntersecting;
+      formVisible = entries[entries.length - 1].isIntersecting;
       update();
     }, { threshold: 0.2 }).observe(card);
     var heroCta = $('.hero-actions');
@@ -573,7 +593,7 @@
       // edge, so a sliver of them at the foot of the first screen leaves the bar up.
       var barH = Math.max(80, Math.ceil(bar.getBoundingClientRect().height));
       new IntersectionObserver(function (entries) {
-        heroVisible = entries[0].isIntersecting;
+        heroVisible = entries[entries.length - 1].isIntersecting;
         update();
       }, { rootMargin: '0px 0px -' + barH + 'px 0px' }).observe(heroCta);
     } else {
@@ -608,7 +628,8 @@
   var at = caps.map(function (c) { return parseFloat(c.getAttribute('data-at')) || 0; });
   var supported = !!(window.CSS && CSS.supports && CSS.supports('width', 'calc(pow(2, 2) * 1px)') && CSS.supports('width', '1cqw'));
   var tall = window.matchMedia('(min-height: 500px)');
-  var pinned = function () { return supported && tall.matches && AW.motionOK(); };
+  var scripting = window.matchMedia('(scripting: enabled)'); // as the CSS asks (false where it's unknown)
+  var pinned = function () { return supported && scripting.matches && tall.matches && AW.motionOK(); };
 
   // The current step: the last one whose start --p has reached; and whether the door is down yet
   var beat = -1;
@@ -688,7 +709,7 @@
   var snap = true; // arriving (load, a jump, coming back on screen): no catching up
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (entries) {
-      live = entries[0].isIntersecting;
+      live = entries[entries.length - 1].isIntersecting;
       if (live) { snap = true; window.dispatchEvent(new Event('scroll')); }
     }, { rootMargin: '25% 0px' }).observe(track);
   }
@@ -1576,7 +1597,7 @@
       valueEl.textContent = v;
     }
     if (boxesEl) boxesEl.textContent = n;
-    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'Ticks Attic storage and “' + z.label + '” in the quote form.';
+    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'We’ll tick Attic storage and “' + z.label + '” in the form for you.';
     sec.classList.toggle('is-kyle', kyle); // shows "The size of the floor Kyle M had put in above his garage." 
     input.setAttribute('aria-valuetext', v + ' square metres, room for about ' + n + ' archive boxes' + (kyle ? ', the size of Kyle M’s floor' : ''));
     if (range) range.style.setProperty('--f', ((v - MIN) / (MAX - MIN)).toFixed(4));
@@ -1660,7 +1681,7 @@
       sec.classList.add('is-dark');
       paint(0, 0);
       waiting = new IntersectionObserver(function (entries) {
-        if (!entries[0].isIntersecting) return;
+        if (!entries[entries.length - 1].isIntersecting) return;
         lightsOn();
         setTimeout(function () { if (!touched) paint(Number(input.value), 1400); }, motionOK() ? 520 : 0);
       }, { threshold: 0.4 });
