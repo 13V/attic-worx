@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="assets/css/fx-results.css">
 <link rel="stylesheet" href="assets/css/fx-work.css">
 <noscript><style>.qf-step[hidden] { display: grid !important; } .action-bar { transform: none; }</style></noscript>
+<noscript><style>.results-body { display: block; } .rx-tabs { display: none; } .rx-stage { gap: 48px; } .rx-panel, .rx-panel[hidden] { display: flex !important; flex-direction: column; } .rx-cap { display: block; order: -1; margin: 0 0 14px; color: rgba(255,255,255,.66); } .rx-cap strong { display: block; color: #fff; font-size: 1.05rem; } @media (min-width: 1000px) { .rx-stage { gap: 64px; } .rx-panel, .rx-panel[hidden] { display: grid !important; grid-template-columns: minmax(220px, .3fr) minmax(0, 1fr); column-gap: clamp(36px, 4.5vw, 72px); align-items: start; } .rx-cap { margin: 0; padding-top: 4px; line-height: 1.45; } .rx-cap strong { margin-bottom: 4px; } }</style></noscript>
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="32x32">
@@ -814,42 +815,62 @@
   <!-- /How it works -->
 
   <!-- Before & after -->
-  <section class="band band-dark" id="results" aria-labelledby="results-title">
-    <div class="wrap results-grid">
-      <div class="results-copy">
+  <!-- A still pair per job (never a drag slider): the before sits muted, the after lit. As the pair
+       scrolls in, a work light passes once from the before to the after (fx-results.css/.js). -->
+  <section class="band band-dark results" id="results" aria-labelledby="results-title">
+    <div class="wrap">
+      <div class="section-head section-head-split results-head">
         <p class="eyebrow">Before &amp; after</p>
         <h2 class="display h2" id="results-title" data-split>Same roof. A whole new room.</h2>
-        <p class="lede">Real Adelaide jobs. Drag the handle to see how a dusty roof cavity becomes a floor you can walk on.</p>
-        <div class="ba-tabs" role="tablist" aria-label="Choose a job">
-          <button class="ba-tab" type="button" role="tab" id="ba-tab-1" aria-controls="ba-panel-1" aria-selected="true"><span class="ba-tab-num">1</span><strong>Open storage floor</strong><small>Loose insulation to a wide, level deck</small></button>
-          <button class="ba-tab" type="button" role="tab" id="ba-tab-2" aria-controls="ba-panel-2" aria-selected="false" tabindex="-1"><span class="ba-tab-num">2</span><strong>Truss walkway</strong><small>A long floor run down the middle of the roof</small></button>
-          <button class="ba-tab" type="button" role="tab" id="ba-tab-3" aria-controls="ba-panel-3" aria-selected="false" tabindex="-1"><span class="ba-tab-num">3</span><strong>Storage deck</strong><small>Open joists to a framed, boxed-in platform</small></button>
-        </div>
+        <p class="lede">Real Adelaide jobs. See how a dusty roof cavity becomes a floor you can walk on.</p>
       </div>
-
-      <div>
-        <div class="ba" id="ba-panel-1" role="tabpanel" aria-labelledby="ba-tab-1">
-          <div class="ba-after"><picture><source type="image/avif" srcset="assets/img/ba1-after-480.avif 480w, assets/img/ba1-after-800.avif 800w, assets/img/ba1-after-1200.avif 1200w" sizes="(min-width: 861px) 46vw, 100vw"><source type="image/webp" srcset="assets/img/ba1-after-480.webp 480w, assets/img/ba1-after-800.webp 800w, assets/img/ba1-after-1200.webp 1200w" sizes="(min-width: 861px) 46vw, 100vw"><img src="assets/img/ba1-after-800.jpg" width="800" height="1000" alt="After: a large, level storage floor across the roof space" loading="lazy" decoding="async"></picture></div>
-          <div class="ba-before"><picture><source type="image/avif" srcset="assets/img/ba1-before-480.avif 480w, assets/img/ba1-before-800.avif 800w, assets/img/ba1-before-1200.avif 1200w" sizes="(min-width: 861px) 46vw, 100vw"><source type="image/webp" srcset="assets/img/ba1-before-480.webp 480w, assets/img/ba1-before-800.webp 800w, assets/img/ba1-before-1200.webp 1200w" sizes="(min-width: 861px) 46vw, 100vw"><img src="assets/img/ba1-before-800.jpg" width="800" height="1000" alt="Before: loose insulation over open ceiling joists" loading="lazy" decoding="async"></picture></div>
-          <span class="photo-tag">Before</span><span class="photo-tag photo-tag-after">After</span>
-          <span class="ba-line"></span><span class="ba-handle"><svg class="icon" aria-hidden="true"><use href="#i-lr"></use></svg></span>
-          <input class="ba-range" type="range" min="0" max="100" value="50" aria-label="Before and after comparison. Use arrow keys to move the divider." id="ba-range-1">
+      <div class="results-body">
+        <div class="rx-tabs" role="tablist" aria-label="Choose a job">
+          <button class="rx-tab" type="button" role="tab" id="rx-tab-1" aria-controls="rx-panel-1" aria-selected="true"><span class="rx-tab-num" aria-hidden="true">01</span><strong>Open storage floor</strong><small>Loose insulation to a wide, level deck</small></button>
+          <button class="rx-tab" type="button" role="tab" id="rx-tab-2" aria-controls="rx-panel-2" aria-selected="false" tabindex="-1"><span class="rx-tab-num" aria-hidden="true">02</span><strong>Truss walkway</strong><small>A long floor run down the middle of the roof</small></button>
+          <button class="rx-tab" type="button" role="tab" id="rx-tab-3" aria-controls="rx-panel-3" aria-selected="false" tabindex="-1"><span class="rx-tab-num" aria-hidden="true">03</span><strong>Storage deck</strong><small>Open joists to a framed, boxed-in platform</small></button>
         </div>
-        <div class="ba" id="ba-panel-2" role="tabpanel" aria-labelledby="ba-tab-2" hidden>
-          <div class="ba-after"><picture><source type="image/avif" srcset="assets/img/ba2-after-480.avif 480w, assets/img/ba2-after-800.avif 800w, assets/img/ba2-after-1200.avif 1200w" sizes="(min-width: 861px) 46vw, 100vw"><source type="image/webp" srcset="assets/img/ba2-after-480.webp 480w, assets/img/ba2-after-800.webp 800w, assets/img/ba2-after-1200.webp 1200w" sizes="(min-width: 861px) 46vw, 100vw"><img src="assets/img/ba2-after-800.jpg" width="800" height="1000" alt="After: a particleboard walkway running under A-frame trusses" loading="lazy" decoding="async"></picture></div>
-          <div class="ba-before"><picture><source type="image/avif" srcset="assets/img/ba2-before-480.avif 480w, assets/img/ba2-before-800.avif 800w, assets/img/ba2-before-1200.avif 1200w" sizes="(min-width: 861px) 46vw, 100vw"><source type="image/webp" srcset="assets/img/ba2-before-480.webp 480w, assets/img/ba2-before-800.webp 800w, assets/img/ba2-before-1200.webp 1200w" sizes="(min-width: 861px) 46vw, 100vw"><img src="assets/img/ba2-before-800.jpg" width="800" height="1000" alt="Before: insulation and wiring between the joists under the trusses" loading="lazy" decoding="async"></picture></div>
-          <span class="photo-tag">Before</span><span class="photo-tag photo-tag-after">After</span>
-          <span class="ba-line"></span><span class="ba-handle"><svg class="icon" aria-hidden="true"><use href="#i-lr"></use></svg></span>
-          <input class="ba-range" type="range" min="0" max="100" value="50" aria-label="Before and after comparison. Use arrow keys to move the divider." id="ba-range-2">
+        <div class="rx-stage">
+          <div class="rx-panel" id="rx-panel-1" role="tabpanel" aria-labelledby="rx-tab-1" tabindex="0">
+            <div class="rx-pair">
+              <figure class="rx-shot rx-before">
+                <div class="rx-photo"><picture><source type="image/avif" srcset="assets/img/ba1-before-480.avif 480w, assets/img/ba1-before-800.avif 800w, assets/img/ba1-before-1200.avif 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><source type="image/webp" srcset="assets/img/ba1-before-480.webp 480w, assets/img/ba1-before-800.webp 800w, assets/img/ba1-before-1200.webp 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><img src="assets/img/ba1-before-800.jpg" width="800" height="1000" alt="Before: loose insulation over open ceiling joists" loading="lazy" decoding="async"></picture><span class="rx-band" aria-hidden="true"></span></div>
+                <figcaption class="photo-tag">Before</figcaption>
+              </figure>
+              <figure class="rx-shot rx-after">
+                <div class="rx-photo"><picture><source type="image/avif" srcset="assets/img/ba1-after-480.avif 480w, assets/img/ba1-after-800.avif 800w, assets/img/ba1-after-1200.avif 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><source type="image/webp" srcset="assets/img/ba1-after-480.webp 480w, assets/img/ba1-after-800.webp 800w, assets/img/ba1-after-1200.webp 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><img src="assets/img/ba1-after-800.jpg" width="800" height="1000" alt="After: a large, level storage floor across the roof space" loading="lazy" decoding="async"></picture><span class="rx-band" aria-hidden="true"></span></div>
+                <figcaption class="photo-tag photo-tag-after">After</figcaption>
+              </figure>
+            </div>
+            <p class="rx-cap"><strong>01 Open storage floor.</strong> <span>Loose insulation to a wide, level deck.</span></p>
+          </div>
+          <div class="rx-panel" id="rx-panel-2" role="tabpanel" aria-labelledby="rx-tab-2" tabindex="0" hidden>
+            <div class="rx-pair">
+              <figure class="rx-shot rx-before">
+                <div class="rx-photo"><picture><source type="image/avif" srcset="assets/img/ba2-before-480.avif 480w, assets/img/ba2-before-800.avif 800w, assets/img/ba2-before-1200.avif 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><source type="image/webp" srcset="assets/img/ba2-before-480.webp 480w, assets/img/ba2-before-800.webp 800w, assets/img/ba2-before-1200.webp 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><img src="assets/img/ba2-before-800.jpg" width="800" height="1000" alt="Before: insulation and wiring between the joists under the trusses" loading="lazy" decoding="async"></picture><span class="rx-band" aria-hidden="true"></span></div>
+                <figcaption class="photo-tag">Before</figcaption>
+              </figure>
+              <figure class="rx-shot rx-after">
+                <div class="rx-photo"><picture><source type="image/avif" srcset="assets/img/ba2-after-480.avif 480w, assets/img/ba2-after-800.avif 800w, assets/img/ba2-after-1200.avif 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><source type="image/webp" srcset="assets/img/ba2-after-480.webp 480w, assets/img/ba2-after-800.webp 800w, assets/img/ba2-after-1200.webp 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><img src="assets/img/ba2-after-800.jpg" width="800" height="1000" alt="After: a particleboard walkway running under A-frame trusses" loading="lazy" decoding="async"></picture><span class="rx-band" aria-hidden="true"></span></div>
+                <figcaption class="photo-tag photo-tag-after">After</figcaption>
+              </figure>
+            </div>
+            <p class="rx-cap"><strong>02 Truss walkway.</strong> <span>A long floor run down the middle of the roof.</span></p>
+          </div>
+          <div class="rx-panel" id="rx-panel-3" role="tabpanel" aria-labelledby="rx-tab-3" tabindex="0" hidden>
+            <div class="rx-pair">
+              <figure class="rx-shot rx-before">
+                <div class="rx-photo"><picture><source type="image/avif" srcset="assets/img/ba3-before-480.avif 480w, assets/img/ba3-before-800.avif 800w, assets/img/ba3-before-1200.avif 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><source type="image/webp" srcset="assets/img/ba3-before-480.webp 480w, assets/img/ba3-before-800.webp 800w, assets/img/ba3-before-1200.webp 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><img src="assets/img/ba3-before-800.jpg" width="800" height="1000" alt="Before: bare joists and old insulation in the roof cavity" loading="lazy" decoding="async"></picture><span class="rx-band" aria-hidden="true"></span></div>
+                <figcaption class="photo-tag">Before</figcaption>
+              </figure>
+              <figure class="rx-shot rx-after">
+                <div class="rx-photo"><picture><source type="image/avif" srcset="assets/img/ba3-after-480.avif 480w, assets/img/ba3-after-800.avif 800w, assets/img/ba3-after-1200.avif 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><source type="image/webp" srcset="assets/img/ba3-after-480.webp 480w, assets/img/ba3-after-800.webp 800w, assets/img/ba3-after-1200.webp 1200w" sizes="(min-width: 1320px) 444px, (min-width: 1000px) 34vw, 46vw"><img src="assets/img/ba3-after-800.jpg" width="800" height="1000" alt="After: a framed storage deck built over the joists" loading="lazy" decoding="async"></picture><span class="rx-band" aria-hidden="true"></span></div>
+                <figcaption class="photo-tag photo-tag-after">After</figcaption>
+              </figure>
+            </div>
+            <p class="rx-cap"><strong>03 Storage deck.</strong> <span>Open joists to a framed, boxed-in platform.</span></p>
+          </div>
         </div>
-        <div class="ba" id="ba-panel-3" role="tabpanel" aria-labelledby="ba-tab-3" hidden>
-          <div class="ba-after"><picture><source type="image/avif" srcset="assets/img/ba3-after-480.avif 480w, assets/img/ba3-after-800.avif 800w, assets/img/ba3-after-1200.avif 1200w" sizes="(min-width: 861px) 46vw, 100vw"><source type="image/webp" srcset="assets/img/ba3-after-480.webp 480w, assets/img/ba3-after-800.webp 800w, assets/img/ba3-after-1200.webp 1200w" sizes="(min-width: 861px) 46vw, 100vw"><img src="assets/img/ba3-after-800.jpg" width="800" height="1000" alt="After: a framed storage deck built over the joists" loading="lazy" decoding="async"></picture></div>
-          <div class="ba-before"><picture><source type="image/avif" srcset="assets/img/ba3-before-480.avif 480w, assets/img/ba3-before-800.avif 800w, assets/img/ba3-before-1200.avif 1200w" sizes="(min-width: 861px) 46vw, 100vw"><source type="image/webp" srcset="assets/img/ba3-before-480.webp 480w, assets/img/ba3-before-800.webp 800w, assets/img/ba3-before-1200.webp 1200w" sizes="(min-width: 861px) 46vw, 100vw"><img src="assets/img/ba3-before-800.jpg" width="800" height="1000" alt="Before: bare joists and old insulation in the roof cavity" loading="lazy" decoding="async"></picture></div>
-          <span class="photo-tag">Before</span><span class="photo-tag photo-tag-after">After</span>
-          <span class="ba-line"></span><span class="ba-handle"><svg class="icon" aria-hidden="true"><use href="#i-lr"></use></svg></span>
-          <input class="ba-range" type="range" min="0" max="100" value="50" aria-label="Before and after comparison. Use arrow keys to move the divider." id="ba-range-3">
-        </div>
-        <p class="ba-hint"><svg class="icon" aria-hidden="true"><use href="#i-lr"></use></svg>Drag to compare</p>
       </div>
     </div>
   </section>

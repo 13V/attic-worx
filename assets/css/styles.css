@@ -606,71 +606,7 @@ select.input {
 /* ---------- Roof build (3D section skeleton; fx-build.css takes it from here) ---------- */
 .build-head { display: grid; gap: 18px; justify-items: start; }
 
-/* ---------- Before & after ---------- */
-.results-grid {
-  display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
-  gap: clamp(36px, 6vw, 96px); align-items: center;
-}
-.results-copy { display: grid; gap: 22px; }
-.ba-tabs { display: grid; gap: 8px; margin-top: 6px; }
-.ba-tab {
-  display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; align-items: center; text-align: left;
-  padding: 14px 16px; border-radius: 14px; border: 1px solid var(--roof-line);
-  background: transparent; color: var(--white); cursor: pointer;
-  transition: background-color .2s var(--ease), border-color .2s var(--ease);
-}
-.ba-tab:hover { border-color: rgba(143, 214, 204, .4); }
-.ba-tab[aria-selected="true"] { background: var(--roof-2); border-color: var(--mint); }
-.ba-tab-num {
-  grid-row: 1 / 3; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
-  border: 1.5px solid rgba(143, 214, 204, .5); color: var(--mint); font-weight: 700; font-size: .85rem;
-}
-.ba-tab[aria-selected="true"] .ba-tab-num { background: var(--mint); color: var(--roof); border-color: var(--mint); }
-.ba-tab strong { font-size: 1rem; }
-.ba-tab small { color: rgba(255,255,255,.62); font-size: .88rem; }
-
-.ba {
-  --pos: 50%;
-  position: relative; overflow: hidden; border-radius: var(--r-card);
-  aspect-ratio: 4 / 5; max-height: 760px; width: 100%; margin-inline: auto;
-  background: var(--roof-2); touch-action: pan-y;
-  user-select: none; -webkit-user-select: none;
-}
-.ba-after, .ba-before, .ba picture, .ba img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ba img { object-fit: cover; }
-.ba-before { clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
-.ba-line {
-  position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; translate: -1px 0;
-  background: var(--white); pointer-events: none;
-}
-.ba-handle {
-  position: absolute; top: 50%; left: var(--pos); translate: -50% -50%;
-  width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--white); color: var(--teal); box-shadow: 0 8px 28px rgba(0,0,0,.35); pointer-events: none;
-}
-.ba-handle .icon { width: 24px; height: 24px; }
-.ba-range {
-  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize;
-  -webkit-appearance: none; appearance: none; background: transparent;
-}
-.ba-range::-webkit-slider-thumb { -webkit-appearance: none; width: 54px; height: 100vh; }
-.ba-range::-moz-range-thumb { width: 54px; height: 100vh; border: 0; }
-.ba:has(.ba-range:focus-visible) .ba-handle { outline: 3px solid var(--mint); outline-offset: 3px; }
-.ba .photo-tag { top: 14px; left: 14px; z-index: 1; }
-.ba .photo-tag-after { left: auto; right: 14px; }
-.ba-hint {
-  display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px;
-  color: rgba(255,255,255,.62); font-size: .88rem;
-}
-.ba-hint .icon { width: 16px; height: 16px; }
-@media (max-width: 860px) {
-  .results-grid { grid-template-columns: minmax(0, 1fr); }
-  .ba-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ba-tab { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 12px 8px; }
-  .ba-tab-num { grid-row: auto; }
-  .ba-tab small { display: none; }
-  .ba-tab strong { font-size: .88rem; line-height: 1.2; }
-}
+/* ---------- Before & after: fx-results.css ---------- */
 
 /* ---------- How it works ---------- */
 .how-grid {
