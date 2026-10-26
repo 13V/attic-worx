@@ -1,6 +1,6 @@
 /* Attic Worx: site script. No dependencies.
    1. The motion engine (window.AW): scroll jobs, reveals, word splitting. The fx-*.js files use it.
-   2. The page: header, menu, quote form, service links, before/after, recent work, action bar.
+   2. The page: header, menu, quote form, service links, recent work, action bar.
    Everything degrades: without this file every section shows at rest and the form shows all three steps. */
 (function () {
   'use strict';
@@ -539,34 +539,7 @@
     });
   }
 
-  /* ---------- Before & after sliders ---------- */
-  $$('.ba').forEach(function (ba) {
-    var range = $('.ba-range', ba);
-    if (!range) return;
-    var set = function () { ba.style.setProperty('--pos', range.value + '%'); };
-    range.addEventListener('input', set);
-    set();
-  });
-  var tabs = $$('.ba-tab');
-  var selectTab = function (tab, focus) {
-    tabs.forEach(function (t) {
-      var on = t === tab;
-      t.setAttribute('aria-selected', on ? 'true' : 'false');
-      t.tabIndex = on ? 0 : -1;
-      var panel = document.getElementById(t.getAttribute('aria-controls'));
-      if (panel) panel.hidden = !on;
-    });
-    if (focus) tab.focus();
-  };
-  tabs.forEach(function (tab, i) {
-    tab.addEventListener('click', function () { selectTab(tab, false); });
-    tab.addEventListener('keydown', function (e) {
-      var next = null;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = tabs[(i + 1) % tabs.length];
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = tabs[(i - 1 + tabs.length) % tabs.length];
-      if (next) { e.preventDefault(); selectTab(next, true); }
-    });
-  });
+  /* (Before & after: fx-results.js) */
 
   /* ---------- Recent work scroller buttons ---------- */
   var track = $('[data-track]');
