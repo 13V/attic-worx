@@ -587,15 +587,14 @@
 })();
 
 /* ==================== Roof build scene: "Boxes up. Car in." (#build) ==================== */
-/* Uses window.AW (above). It eases one number, --p (0 -> 1), towards the scroll position so a wheel's notches don't jump the
-   story, and marks the current step (data-beat on the stage, .is-on on its caption). --p goes on the stage
+/* Uses window.AW (above). It eases one number, --p (0 -> 1), towards the scroll position so a wheel's
+   notches don't jump the story, and marks the current step (data-beat on the stage, .is-on on its caption). --p goes on the stage
    (the rail), on each moving part while it moves, and on portrait stages on the svg as --bs-cam (the
    phone camera) while that moves.
    It also marks the end (data-shut, once --p passes the svg's data-shut): the roller door and the garage
    light are timed transitions from there. styles.css does the rest. It only works while the CSS pins the
    stage (JS, motion welcome, a screen at least 500px tall, pow() and container units supported; read
-   live); otherwise the finished picture shows. ?bs-p=0.42 in the address holds the story at that point
-   (for reviews and screenshots; drop it at consolidation if you like). */
+   live); otherwise the finished picture shows. */
 (function () {
   'use strict';
   var AW = window.AW;
@@ -609,8 +608,6 @@
   var at = caps.map(function (c) { return parseFloat(c.getAttribute('data-at')) || 0; });
   var supported = !!(window.CSS && CSS.supports && CSS.supports('width', 'calc(pow(2, 2) * 1px)') && CSS.supports('width', '1cqw'));
   var tall = window.matchMedia('(min-height: 500px)');
-  var held = /[?&]bs-p=([\d.]+)/.exec(location.search);
-  var fixed = held ? AW.clamp(parseFloat(held[1]), 0, 1) : null;
   var pinned = function () { return supported && tall.matches && AW.motionOK(); };
 
   // The current step: the last one whose start --p has reached; and whether the door is down yet
@@ -701,11 +698,11 @@
     // read: where the track is, how long the stage stays pinned
     var top = track.getBoundingClientRect().top;
     var travel = track.offsetHeight - stage.offsetHeight;
-    var p = fixed !== null ? fixed : AW.clamp(-top / Math.max(1, travel) / 0.88, 0, 1); // the last 12% holds the end
+    var p = AW.clamp(-top / Math.max(1, travel) / 0.88, 0, 1); // the last 12% holds the end
     return function () {
       // write
       target = p;
-      if (cur === null || snap || fixed !== null) {
+      if (cur === null || snap) {
         snap = false;
         cur = target;
         step();

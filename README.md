@@ -75,7 +75,7 @@ If Google Tag Manager is added later, a successful submission pushes `{ event: "
 | `--ink` | `#0A0C0C` | Wordmark black, body text |
 | `--gold` | `#F2B01E` | Review stars only |
 
-The logo was redrawn as SVG from the original artwork: `assets/img/logo-wordmark.svg` (wordmark) and `assets/img/logo-mark.svg` (teal circle with the ladder "A").
+The logo was redrawn as SVG from the original artwork: `source/logo/logo-wordmark.svg` (wordmark) and `source/logo/logo-mark.svg` (teal circle with the ladder "A").
 
 Font: [Archivo](https://github.com/Omnibus-Type/Archivo) (SIL Open Font License, see `assets/fonts/OFL.txt`), self-hosted as one variable file that covers every weight and width the site uses. Headlines use the condensed width, body text the normal width.
 

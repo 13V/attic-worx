@@ -29,7 +29,6 @@ VARIANTS = [
     ("svc-insulation", "walkway-before",     1 / 1,  0.74, [400, 800]),
     ("story-garage",   "garage-clutter",     1 / 1,  0.50, [480, 800, 1200]),
     ("story-roof",     "storage-boxes",      1 / 1,  0.62, [480, 790]),
-    ("step-ladder",    "ladder-garage",      4 / 5,  0.45, [480, 800]),
     ("work-laundry",   "ladder-laundry",     3 / 4,  0.50, [400, 700, 1000]),
     ("work-hatch",     "hatch-above",        3 / 4,  0.50, [400, 500]),
     ("work-deck",      "deck-after",         3 / 4,  0.55, [400, 700, 1000]),
@@ -39,6 +38,9 @@ VARIANTS = [
 ]
 
 AVIF_Q, WEBP_Q, JPEG_Q = 52, 74, 76
+
+# Variants that need no JPEG of their own: the hero's <img> falls back to hero-wide's JPEG on every screen
+NO_JPEG = {"hero-tall"}
 
 
 def crop_to(im, aspect, focus_y):
@@ -64,6 +66,9 @@ def main():
             r.save(OUT / f"{name}-{w}.avif", "AVIF", quality=AVIF_Q, speed=4)
             r.save(OUT / f"{name}-{w}.webp", "WEBP", quality=WEBP_Q, method=6)
         # one JPEG fallback for browsers without AVIF/WebP, about 800px wide
+        if name in NO_JPEG:
+            print(f"{name}: {im.width}x{im.height} -> {widths}")
+            continue
         fw = widths[0] if widths[0] >= 800 else min(800, im.width, max(widths))
         im.resize((fw, round(fw / aspect)), Image.LANCZOS).save(
             OUT / f"{name}-{fw}.jpg", "JPEG", quality=JPEG_Q, optimize=True, progressive=True)

@@ -319,8 +319,7 @@ p { text-wrap: pretty; }
   /* the roof-space darkness that lifts when the light comes on */
   content: ""; position: absolute; inset: 0; z-index: -2;
   background: #050d0d;
-  opacity: 0;
-  animation: lights-on 1.7s steps(1, end) .15s both;
+  opacity: 0; /* (the flicker: Hero sequence, at the end) */
 }
 .hero::after {
   content: ""; position: absolute; inset: 0; z-index: -1;
@@ -328,14 +327,6 @@ p { text-wrap: pretty; }
     radial-gradient(60% 55% at 72% 38%, rgba(255, 214, 160, 0.12), transparent 70%),
     linear-gradient(90deg, rgba(12, 33, 34, 0.94) 0%, rgba(12, 33, 34, 0.78) 38%, rgba(12, 33, 34, 0.3) 66%, rgba(12, 33, 34, 0.45) 100%),
     linear-gradient(0deg, rgba(12, 33, 34, 0.85) 0%, rgba(12, 33, 34, 0) 32%);
-}
-@keyframes lights-on {
-  0% { opacity: .78; }
-  14% { opacity: .2; }
-  20% { opacity: .62; }
-  27% { opacity: .08; }
-  34% { opacity: .32; }
-  44%, 100% { opacity: 0; }
 }
 .hero-grid {
   display: grid;
@@ -572,10 +563,6 @@ select.input {
   font-size: 0.75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
 }
 .svc .text-link { color: var(--mint); margin-top: 4px; }
-.svc-num {
-  position: absolute; top: clamp(18px, 2vw, 26px); left: clamp(20px, 2.4vw, 30px);
-  font-size: 0.75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.7);
-}
 .vent-art { width: 100%; max-width: 300px; height: auto; margin: 18px auto 0; }
 .vent-stat { display: flex; align-items: baseline; gap: 12px; }
 .vent-stat b { font-stretch: 64%; font-weight: 900; font-size: 4rem; line-height: .8; color: var(--mint); }
@@ -607,49 +594,10 @@ select.input {
   .svc-vent { min-height: 0; }
 }
 
-/* ---------- Roof build: see "Roof build scene" at the end ---------- */
-.build-head { display: grid; gap: 18px; justify-items: start; }
-
-/* ---------- Before & after: see its part at the end ---------- */
-
-/* ---------- How it works ---------- */
-.how-grid {
-  display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: clamp(36px, 6vw, 96px); align-items: start;
-}
-.how-media { position: sticky; top: calc(var(--header-h) + 24px); }
-.how-media img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-card); }
-.how-media figcaption {
-  position: absolute; left: 14px; right: 14px; bottom: 14px;
-  display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px;
-  background: rgba(255,255,255,.94); font-size: .92rem; line-height: 1.35;
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-}
-.how-media figcaption .icon { width: 28px; height: 28px; color: var(--teal); }
-.how-media figcaption strong { display: block; }
-.steps { display: grid; margin-top: clamp(28px, 4vw, 44px); counter-reset: step; }
-.step {
-  display: grid; grid-template-columns: clamp(72px, 9vw, 120px) minmax(0, 1fr); gap: 4px 20px;
-  padding-block: clamp(22px, 3vw, 32px); border-top: 1px solid var(--line);
-}
-.step:last-child { border-bottom: 1px solid var(--line); }
-.step-num {
-  grid-row: 1 / 3;
-  font-stretch: 64%; font-weight: 900; font-size: clamp(3.2rem, 2.4rem + 3vw, 5rem); line-height: .8;
-  color: var(--teal); font-variant-numeric: tabular-nums;
-}
-.step h3 { font-size: var(--step-2); font-weight: 700; line-height: 1.15; }
-.step p { color: var(--ink-2); max-width: 34em; }
+/* ---------- How much room?, Roof build, How it works, Before & after, Recent work ----------
+   Each has its own part at the end of this file. Shared bits they use: */
 .how-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 32px; }
 .how-cta p { color: var(--ink-2); font-size: .95rem; }
-@media (max-width: 860px) {
-  .how-grid { grid-template-columns: minmax(0, 1fr); }
-  .how-media { position: relative; top: 0; order: 2; }
-  .how-media img { aspect-ratio: 4 / 3; }
-}
-
-/* ---------- Recent work ---------- */
-/* (the section's layout and motion: its part at the end) */
 .round-btn {
   width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--white);
   display: grid; place-items: center; cursor: pointer; color: var(--ink);
@@ -1018,10 +966,10 @@ select.input {
   .text-link:hover .icon use[href="#i-arrow-ur"] { animation-name: aw-conveyor-ne; }
 }
 
-/* Reduced motion: everything at rest, nothing waits hidden, the vent and the hero light stay still */
+/* Reduced motion: everything at rest, nothing waits hidden, the vent stays still */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-delay: 0s !important; transition-delay: 0s !important; }
-  .hero::before, .vanes { animation: none; }
+  .vanes { animation: none; }
 }
 
 @keyframes aw-rise { from { transform: translateY(110%); } }
@@ -1112,8 +1060,7 @@ select.input {
   .hero-trace .l-guide { display: none; }
 }
 
-/* No JS, reduced motion: the light is simply on */
-.hero::before { animation: none; }
+/* No JS, reduced motion: the light is simply on (.hero::before rests at opacity 0) */
 
 @media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
   /* Dark roof, then the work light flickers on (the darkness lifts in steps). In the dark the copy needs
