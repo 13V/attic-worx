@@ -634,7 +634,6 @@ select.input {
 }
 .rating-badge > .icon { width: 26px; height: 26px; }
 .rating-badge .stars .icon { width: 15px; height: 15px; }
-.rating-badge small { display: block; font-size: .78rem; color: var(--ink-3); line-height: 1.2; }
 .rating-badge b { display: block; font-size: .92rem; line-height: 1.2; margin-bottom: 3px; }
 .reviews-grid { columns: 3 300px; column-gap: 16px; }
 .review {
