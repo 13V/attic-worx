@@ -35,21 +35,23 @@ const INDEX = path.join(ROOT, 'index.html');
 /* ---------- Timeline (units of --p). The captions' data-at values in index.html must match. ---------- */
 /* Windows below are authored on the real timeline. DRAFT stays as a hook: set it to old beat positions to
    map parts authored on another timeline onto BEATS (piecewise linear), so a beat can be given more or less
-   of the scroll without retiming its parts. Pacing (1440x900, 450vh: about 2960px of scroll per unit of p):
-   no scrubbed move gets less than 0.04 (about 120px, more than a wheel notch); the roller door and the
-   garage light are timed transitions that start when the story reaches them (data-shut), like the flicker. */
+   of the scroll without retiming its parts. Pacing (1440x900, 470vh, the last 12% of the track a hold: about
+   2930px of scroll per unit of p): no scrubbed move gets less than 0.04 (about 120px, more than a wheel
+   notch), and a ladder section's half turn gets 0.05 (the swing is the fastest thing on screen); the roller
+   door and the garage light are timed transitions that start as the car stops (data-shut), like the
+   flicker. */
 export const BEATS = [
   { id: 'dusk', at: 0 },
-  { id: 'light', at: 0.06 },
-  { id: 'frame', at: 0.16 },
-  { id: 'sheets', at: 0.26 },
-  { id: 'ladder', at: 0.4 },
-  { id: 'store', at: 0.53 },
-  { id: 'car', at: 0.77 },
+  { id: 'light', at: 0.055 },
+  { id: 'frame', at: 0.155 },
+  { id: 'sheets', at: 0.252 },
+  { id: 'ladder', at: 0.39 },
+  { id: 'store', at: 0.57 },
+  { id: 'car', at: 0.825 },
 ];
 const REAL = BEATS.map((b) => b.at).concat(1);
 const DRAFT = REAL;
-const SHUT_AT = 0.935;                              // the door comes down, then the garage light settles
+const SHUT_AT = 0.978;                              // the car stops: the door comes down, then the light settles
 function T_(p) {
   for (let i = 0; i < DRAFT.length - 1; i++) {
     if (p <= DRAFT[i + 1] || i === DRAFT.length - 2) return REAL[i] + ((p - DRAFT[i]) * (REAL[i + 1] - REAL[i])) / (DRAFT[i + 1] - DRAFT[i]);
@@ -227,27 +229,30 @@ function item(kind, x, y, z, k = 1) {
 }
 
 /* Loads: what one trip up the ladder carries (a stack, bottom first). g = garage spot [x, z], r = place
-   on the new floor [x, z]. Listed in carrying order: front of the garage first; the floor fills from
-   the far end. */
+   on the new floor [x, z]. Listed in carrying order. The garage empties a row at a time from the front, each
+   row from the load nearest the ladder, so a load walking to the ladder's foot never passes behind or in
+   front of one still waiting. The floor fills a row at a time from the far end, each row from the outside
+   in, so a load set down never crosses one already there. The tall stacks go where the roof is high. */
 const LOADS = [
-  { stack: ['esky'], g: [0.75, 0.42], r: [3.3, 2.9] },
-  { stack: ['upcase'], g: [1.42, 0.38], r: [5.75, 2.9] },
-  { stack: ['tub'], g: [2.12, 0.45], r: [2.55, 2.9] },
+  { stack: ['archive', 'archive'], g: [3.45, 0.4], r: [2.55, 2.9] },
   { stack: ['tealtub', 'tub'], g: [2.85, 0.45], r: [6.55, 2.9] },
-  { stack: ['archive', 'archive'], g: [3.45, 0.4], r: [3.3, 2.25] },
-  { stack: ['tub', 'tub'], g: [0.75, 1.1], r: [5.75, 2.25] },
-  { stack: ['kraft', 'kraftS'], g: [1.48, 1.12], r: [2.55, 2.25] },
-  { stack: ['case', 'archive'], g: [2.3, 1.15], r: [6.55, 2.25] },
-  { stack: ['archive', 'archive'], g: [3.1, 1.12], r: [3.3, 1.6] },
-  { stack: ['kraft', 'kraft', 'kraftS'], g: [0.82, 1.82], r: [5.75, 1.6] },
-  { stack: ['tealtub'], g: [1.7, 1.85], r: [2.55, 1.6] },
-  { stack: ['kraft', 'archive'], g: [2.55, 1.88], r: [6.55, 1.6] },
+  { stack: ['tub'], g: [2.12, 0.45], r: [3.3, 2.9] },
+  { stack: ['upcase'], g: [1.42, 0.38], r: [5.75, 2.9] },
+  { stack: ['esky'], g: [0.75, 0.42], r: [2.55, 2.25] },
+  { stack: ['archive', 'archive'], g: [3.0, 1.5], r: [6.55, 2.25] },
+  { stack: ['case', 'archive'], g: [2.3, 1.48], r: [3.3, 2.25] },
+  { stack: ['kraft', 'kraftS'], g: [1.48, 1.45], r: [5.75, 2.25] },
+  { stack: ['tub', 'tub'], g: [0.75, 1.43], r: [2.55, 1.6] },
+  { stack: ['kraft', 'archive'], g: [2.55, 2.08], r: [6.55, 1.6] },
+  { stack: ['tealtub'], g: [1.7, 2.05], r: [3.3, 1.6] },
+  { stack: ['kraft', 'kraft', 'kraftS'], g: [0.82, 2.02], r: [5.75, 1.6] },
 ];
 const loadH = (L) => L.stack.reduce((s, k) => s + SIZE[k][1], 0);
 const loadW = (L) => Math.max(...L.stack.map((k) => SIZE[k][0]));
 const loadD = (L) => Math.max(...L.stack.map((k) => SIZE[k][2]));
-/* a contact shadow on the floor under a footprint */
-const shade = (x, y, z, w, d, o = 0.3) => pth(rectXZ(x - w / 2 - 0.04, x + w / 2 + 0.04, y + 0.002, z - d / 2 - 0.03, z + d / 2 + 0.05), '#020a0b', { opacity: o, class: 'bs-shade' });
+/* a contact shadow on the floor under a footprint: faint, and only a centimetre or two past the box's edges,
+   so it seats the box without reading as a dark plate (one element: it's restyled while its load moves) */
+const shade = (x, y, z, w, d, o = 0.16) => pth(rectXZ(x - w / 2 - 0.015, x + w / 2 + 0.015, y + 0.002, z - d / 2 - 0.008, z + d / 2 + 0.02), '#020a0b', { 'fill-opacity': o, class: 'bs-shade' });
 function loadSVG(L, x, y0, z, k) {
   let y = y0;
   return L.stack.map((kind) => { const s = item(kind, x, y, z, k); y += SIZE[kind][1]; return s; }).join('');
@@ -468,25 +473,26 @@ function scene(state) {
   const yCut = r1(Praw(0, H.ceil - 0.013, 0)[1]);   // the ceiling's cut line on screen (SVG y): garage below, roof above
   const doorX = G0 + 0.03;                           // the roller door's plane
 
-  add('<defs>'
-    + `<linearGradient id="bs-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c2122"/><stop offset=".55" stop-color="#11292a"/><stop offset="1" stop-color="#1c3a3a"/></linearGradient>`
-    + `<radialGradient id="bs-dusk"><stop offset="0" stop-color="#e3a35e" stop-opacity=".3"/><stop offset=".45" stop-color="#e3a35e" stop-opacity=".08"/><stop offset="1" stop-color="#e3a35e" stop-opacity="0"/></radialGradient>`
-    + `<linearGradient id="bs-ground" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#152e2e"/><stop offset=".7" stop-color="#11292a"/><stop offset="1" stop-color="#1a3838"/></linearGradient>`
-    + `<radialGradient id="bs-glow"><stop offset="0" stop-color="#fff3d6" stop-opacity=".9"/><stop offset=".1" stop-color="${C.amber}" stop-opacity=".5"/><stop offset=".42" stop-color="${C.warm}" stop-opacity=".14"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`
-    + `<linearGradient id="bs-spill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.amber}" stop-opacity=".34"/><stop offset=".6" stop-color="${C.amber}" stop-opacity=".1"/><stop offset="1" stop-color="${C.amber}" stop-opacity=".03"/></linearGradient>`
-    + `<radialGradient id="bs-warm"><stop offset="0" stop-color="#ffd291" stop-opacity=".55"/><stop offset="1" stop-color="#ffd291" stop-opacity="0"/></radialGradient>`
-    + `<linearGradient id="bs-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#051316" stop-opacity=".3"/><stop offset=".35" stop-color="#051316" stop-opacity=".62"/><stop offset="1" stop-color="#051316" stop-opacity=".7"/></linearGradient>`
-    + `<linearGradient id="bs-beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fdf6e3" stop-opacity=".34"/><stop offset=".55" stop-color="#fdf6e3" stop-opacity=".1"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".02"/></linearGradient>`
-    + `<linearGradient id="bs-wash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdf6e3" stop-opacity="0"/><stop offset=".5" stop-color="#fdf6e3" stop-opacity=".22"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".05"/></linearGradient>`
-    + `<linearGradient id="bs-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.mint}" stop-opacity=".2"/><stop offset="1" stop-color="${C.mint}" stop-opacity="0"/></linearGradient>`
+  const defs = [
+    `<linearGradient id="bs-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c2122"/><stop offset=".55" stop-color="#11292a"/><stop offset="1" stop-color="#1c3a3a"/></linearGradient>`,
+    `<radialGradient id="bs-dusk"><stop offset="0" stop-color="#e3a35e" stop-opacity=".3"/><stop offset=".45" stop-color="#e3a35e" stop-opacity=".08"/><stop offset="1" stop-color="#e3a35e" stop-opacity="0"/></radialGradient>`,
+    `<linearGradient id="bs-ground" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#152e2e"/><stop offset=".7" stop-color="#11292a"/><stop offset="1" stop-color="#1a3838"/></linearGradient>`,
+    `<radialGradient id="bs-warm"><stop offset="0" stop-color="#ffd291" stop-opacity=".55"/><stop offset="1" stop-color="#ffd291" stop-opacity="0"/></radialGradient>`,
+    `<radialGradient id="bs-glow"><stop offset="0" stop-color="#fff3d6" stop-opacity=".9"/><stop offset=".1" stop-color="${C.amber}" stop-opacity=".5"/><stop offset=".42" stop-color="${C.warm}" stop-opacity=".14"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></radialGradient>`,
+    `<linearGradient id="bs-spill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.amber}" stop-opacity=".34"/><stop offset=".6" stop-color="${C.amber}" stop-opacity=".1"/><stop offset="1" stop-color="${C.amber}" stop-opacity=".03"/></linearGradient>`,
+    `<linearGradient id="bs-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#051316" stop-opacity=".3"/><stop offset=".35" stop-color="#051316" stop-opacity=".62"/><stop offset="1" stop-color="#051316" stop-opacity=".7"/></linearGradient>`,
+    `<linearGradient id="bs-beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fdf6e3" stop-opacity=".34"/><stop offset=".55" stop-color="#fdf6e3" stop-opacity=".1"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".02"/></linearGradient>`,
+    `<linearGradient id="bs-wash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdf6e3" stop-opacity="0"/><stop offset=".5" stop-color="#fdf6e3" stop-opacity=".22"/><stop offset="1" stop-color="#fdf6e3" stop-opacity=".05"/></linearGradient>`,
+    `<linearGradient id="bs-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.mint}" stop-opacity=".2"/><stop offset="1" stop-color="${C.mint}" stop-opacity="0"/></linearGradient>`,
     // the car's near side: lit along the shoulder by the dusk sky, darker down to the sills
-    + `<linearGradient id="bs-carside" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mul(C.car, 1.0)}"/><stop offset=".4" stop-color="${mul(C.car, 0.9)}"/><stop offset=".44" stop-color="${mul(C.car, 0.78)}"/><stop offset="1" stop-color="${mul(C.car, 0.5)}"/></linearGradient>`
-    + `<linearGradient id="bs-hole" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#170f08" stop-opacity=".25"/><stop offset="1" stop-color="#0b0806" stop-opacity=".85"/></linearGradient>`
+    `<linearGradient id="bs-carside" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mul(C.car, 1.0)}"/><stop offset=".4" stop-color="${mul(C.car, 0.9)}"/><stop offset=".44" stop-color="${mul(C.car, 0.78)}"/><stop offset="1" stop-color="${mul(C.car, 0.5)}"/></linearGradient>`,
+    `<linearGradient id="bs-hole" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#170f08" stop-opacity=".25"/><stop offset="1" stop-color="#0b0806" stop-opacity=".85"/></linearGradient>`,
     // the carry: a load is the garage copy below the ceiling's cut line and the roof copy above it
-    + `<clipPath id="bs-below"><rect x="-1600" y="${yCut}" width="${r1(VBW + 3200)}" height="${r1(VBH + 400 - yCut)}"/></clipPath>`
-    + `<clipPath id="bs-above"><rect x="-1600" y="-400" width="${r1(VBW + 3200)}" height="${r1(yCut + 400)}"/></clipPath>`
-    + `<clipPath id="bs-doorway"><path d="${rectYZ(doorX, 0, DR.h, DR.z0, DR.z1)}"/></clipPath>`
-    + '</defs>');
+    `<clipPath id="bs-below"><rect x="-1600" y="${yCut}" width="${r1(VBW + 3200)}" height="${r1(VBH + 400 - yCut)}"/></clipPath>`,
+    `<clipPath id="bs-above"><rect x="-1600" y="-400" width="${r1(VBW + 3200)}" height="${r1(yCut + 400)}"/></clipPath>`,
+    `<clipPath id="bs-doorway"><path d="${rectYZ(doorX, 0, DR.h, DR.z0, DR.z1)}"/></clipPath>`,
+  ];
+  add('<defs>' + defs.join('') + '</defs>');
 
   /* ----- Outside: sky, dusk, ground, the street ----- */
   const hz = P(0, CAM.vy, 1e6)[1];
@@ -642,24 +648,27 @@ function scene(state) {
   for (let i = 0; i < bays; i++) {
     const z = i * H.gap;
     const ring = pth(Apath(z) + Apath(z + H.gap), '#030c0d', { 'fill-rule': 'evenodd', opacity: 0.78 });
-    if (fin) add(part('bs-dark', { a: 0.066 + i * 0.0048, l: 0.034 }, ring));
+    if (fin) add(part('bs-dark', { a: 0.061 + i * 0.0046, l: 0.034 }, ring));
     else if (!L) add(ring);
   }
   if (fin || !L) {
     const core = pth(Apath(RZ), '#030c0d', { opacity: 0.6 });
-    add(fin ? part('bs-dark', { a: 0.124, l: 0.034 }, core) : core);
+    add(fin ? part('bs-dark', { a: 0.118, l: 0.034 }, core) : core);
   }
 
   /* ----- The work light ----- */
   {
     const lp = P(LAMP.x, LAMP.y, LAMP.z), s = sOf(LAMP.z) * U;
     const glow = el('ellipse', { cx: lp[0], cy: lp[1], rx: r1(3.8 * s), ry: r1(2.4 * s), fill: 'url(#bs-glow)' });
+    // off, the fitting is a dim shape in the dark (its orange housing barely there); on, the housing shows
+    // in its own light, with the glow and the lit face: the flicker is the first light in the roof
+    const housing = rectXY(LAMP.x - 0.11, LAMP.x + 0.11, LAMP.y - 0.075, LAMP.y + 0.075, LAMP.z);
+    const inner = pth(rectXY(LAMP.x - 0.09, LAMP.x + 0.09, LAMP.y - 0.065, LAMP.y + 0.045, LAMP.z), '#171513');
     const body = pth(line([P(LAMP.x, yU(LAMP.x) - 0.02, LAMP.z), P(LAMP.x, LAMP.y + 0.07, LAMP.z)]), 'none', { stroke: '#171615', 'stroke-width': 1.4 })
-      + pth(rectXY(LAMP.x - 0.11, LAMP.x + 0.11, LAMP.y - 0.075, LAMP.y + 0.075, LAMP.z), '#e07b2c')
-      + pth(rectXY(LAMP.x - 0.09, LAMP.x + 0.09, LAMP.y - 0.065, LAMP.y + 0.045, LAMP.z), '#24221f');
-    const face = pth(rectXY(LAMP.x - 0.075, LAMP.x + 0.075, LAMP.y - 0.06, LAMP.y - 0.01, LAMP.z), '#fff6e2');
-    if (fin) add(el('g', { class: 'bs-lamp bs-still' }, body + el('g', { class: 'bs-lit' }, glow + face)));
-    else add(body + (L ? glow + face : ''));
+      + pth(housing, '#2c241d') + inner;
+    const lit = pth(housing, '#e07b2c') + inner + pth(rectXY(LAMP.x - 0.075, LAMP.x + 0.075, LAMP.y - 0.06, LAMP.y - 0.01, LAMP.z), '#fff6e2');
+    if (fin) add(el('g', { class: 'bs-lamp bs-still' }, body + el('g', { class: 'bs-lit' }, glow + lit)));
+    else add(body + (L ? glow + lit : ''));
   }
 
   /* ----- The new floor: battens, then the sheets, far row first (the front row comes later) ----- */
@@ -670,13 +679,13 @@ function scene(state) {
     const k = lampK(x, 3, 2);
     const svg = boxSVG(x - 0.0175, x + 0.0175, F.battenB, F.battenT, F.z0, F.z1, mul(C.h2, k));
     const n = bOrder.findIndex((b) => b.i === i);
-    if (fin) add(part('bs-batten', { a: 0.166 + n * 0.0072, l: 0.032 }, leaves(svg)));
+    if (fin) add(part('bs-batten', { a: 0.16 + n * 0.0068, l: 0.032 }, leaves(svg)));
     else if (state.framing) add(svg);
   });
   {
     // trimmers round the hatch and the far rim
     const trims = [boxSVG(3.95, 5.15, F.battenB, F.battenT, 0.6, 0.635, mul(C.h2, 0.74)), boxSVG(3.95, 5.15, F.battenB, F.battenT, 1.165, 1.2, mul(C.h2, 0.7)), boxSVG(F.x0, F.x1, F.battenB, F.battenT, F.z1 - 0.035, F.z1, mul(C.h2, 0.62))];
-    if (fin) add(part('bs-batten', { a: 0.228, l: 0.028 }, leaves(trims.join(''))));
+    if (fin) add(part('bs-batten', { a: 0.222, l: 0.028 }, leaves(trims.join(''))));
     else if (state.framing) add(trims.join(''));
   }
   // 2400 x 600 sheets, joints staggered: even rows a full sheet between two halves, odd rows two full sheets
@@ -688,7 +697,7 @@ function scene(state) {
     const pieces = z0 < HATCH.z1 && z1 > HATCH.z0 ? [[F.x0, HATCH.x0], [HATCH.x1, F.x1]] : r % 2 ? [[F.x0, 4.55], [4.55, F.x1]] : [[F.x0, 3.35], [3.35, 5.75], [5.75, F.x1]];
     for (const [x0, x1] of pieces) sheets.push({ r, x0, x1, z0, z1 });
   }
-  const sheetA = (j) => 0.265 + j * 0.0056;
+  const sheetA = (j) => 0.256 + j * 0.0054;
   const frontRow = [];
   sheets.forEach((sh, j) => {
     const k = lampK((sh.x0 + sh.x1) / 2, 3, (sh.z0 + sh.z1) / 2);
@@ -707,7 +716,7 @@ function scene(state) {
     // while the lid is down the hatch reads as an opening: the lining falls into shadow, a hinge arm shows
     const hole = pth(rectXY(HATCH.x0 + 0.012, HATCH.x1 - 0.012, H.ceil, F.top - 0.035, HATCH.z1 - 0.003), 'url(#bs-hole)')
       + pth(poly([P(4.9, H.ceil + 0.04, 1.12), P(4.94, H.ceil + 0.04, 1.12), P(4.8, F.top - 0.04, 1.12), P(4.76, F.top - 0.04, 1.12)]), '#9aa4a2');
-    if (fin) add(part('bs-spill', { a: 0.452, l: 0.03, b: 0.808, k: 0.022 }, leaves(hole)));
+    if (fin) add(part('bs-spill', { a: 0.442, l: 0.03, b: 0.871, k: 0.028 }, leaves(hole)));
     else if (state.ladder) add(hole);
   }
 
@@ -720,21 +729,147 @@ function scene(state) {
      front row hide the load as it passes through: no cross-fade, no double image, no swap to see. */
   const ZR = 0.9;
   const ladderX = (y) => { const a = (LADDER.angle * Math.PI) / 180; return LADDER.hx + (-0.06 + (y - LADDER.hy) * Math.cos(a)) / Math.sin(a); };
-  const route = (Ld) => { const w = loadW(Ld), ct = ladderX(2.56) - w / 2; return [[ladderX(0.42) - w / 2, 0.42, ZR], [ct, 2.56, ZR], [ct, 3.06, ZR]]; };
-  const SEG = [0, 0.26, 0.62, 0.74, 1];               // walk | climb | rise | set, fractions of a trip
-  const tripA = (i) => 0.532 + i * 0.0143, TRIP = 0.08;
+  const route = (Ld) => {
+    const w = loadW(Ld), ct = ladderX(2.56) - w / 2;
+    return [[ladderX(0.42) - w / 2, 0.42, ZR], [ct, 2.56, ZR], [ct, 3.06, ZR]];
+  };
+  /* A trip: walk | climb | rise | set. The ladder and the hatch take one load at a time, so the climbs are
+     spaced evenly (STAG apart, with a breath between rows); the walk before each takes as long as it is
+     (a step from beside the ladder, a few seconds across the garage), so every load walks at much the same
+     pace. The generator's check below confirms no two loads ever meet. */
+  const E = (k, d) => +(process.env['BS_' + k] || d);
+  // (BS_* in the environment override these, to try other timings against the check)
+  const CARRY0 = E('C0', 0.57), CLIMB = E('CLIMB', 0.028), RISE = E('RISE', 0.005), SET = E('SET', 0.02);
+  const STAG = E('STAG', 0.016), GAP = E('GAP', 0.003), G3 = E('G3', 0.004), W0 = E('W0', 0.008), WK = E('WK', 0.0055);
+  const walkOf = (Ld) => { const f = route(Ld)[0]; return W0 + WK * Math.hypot(f[0] - Ld.g[0], f[2] - Ld.g[1]); };
+  const climbAt = (i) => CARRY0 + walkOf(LOADS[0]) + i * STAG + GAP * ((i >= 5) + (i >= 9)) + G3 * (i >= 11);
+  const tripOf = (i) => {
+    const wk = walkOf(LOADS[i]), l = wk + CLIMB + RISE + SET;
+    return { a: climbAt(i) - wk, l, seg: [0, wk / l, (wk + CLIMB) / l, (wk + CLIMB + RISE) / l, 1] };
+  };
   const origin = (x, y, z) => { const p = Praw(x, y, z); return [r1(p[0]), r1(p[1])]; };
   const rel = (W, o, s0) => { const p = Praw(W[0], W[1], W[2]); return [r1(p[0] - o[0]), r1(p[1] - o[1]), r3(sOf(W[2]) / s0)]; };
   const way = (prefix, W) => Object.fromEntries(W.flatMap((w, i) => [[`x${prefix[i]}`, w[0]], [`y${prefix[i]}`, w[1]], [`k${prefix[i]}`, w[2]]]));
   const garageSpots = LOADS.map((Ld, i) => ({ i, x: Ld.g[0], z: Ld.g[1] }));
   const roofSpots = LOADS.map((Ld, i) => ({ i, x: Ld.r[0], z: Ld.r[1] }));
   const check = {};
+  /* The carry's paint order. Each copy is painted in one place in the DOM, but it moves in depth, so the
+     order is worked out over the whole carry: at each moment, any two copies of the same side (garage or roof)
+     that overlap on screen must be painted far one first, judged in 3D by a plane that separates their
+     boxes. The orders that satisfy every moment are sorted out (topologically, ties in the plain
+     far-to-near order); the generator stops if there is none, or if two loads would pass through each
+     other where it shows. */
+  const carry = (kind) => LOADS.map((Ld, i) => {
+    const [x, z] = kind === 'pick' ? Ld.g : Ld.r, y = kind === 'pick' ? 0 : F.top;
+    const o = origin(x, y, z), W = route(Ld).map((w) => rel(w, o, sOf(z)));
+    const w = loadW(Ld), h = loadH(Ld), d = loadD(Ld);
+    const corners = [];
+    for (const cx of [x - w / 2, x + w / 2]) for (const cy of [y, y + h]) for (const cz of [z - d / 2, z + d / 2]) corners.push(Praw(cx, cy, cz));
+    return {
+      i, x, y, z, w, h, d, o, corners, a: tripOf(i).a, l: tripOf(i).l,
+      seg: kind === 'pick' ? tripOf(i).seg.slice(0, 4) : tripOf(i).seg.slice(1),
+      way: kind === 'pick' ? [[0, 0, 1], ...W] : [...W, [0, 0, 1]],
+      shows: (t) => (kind === 'pick' ? t < tripOf(i).seg[3] : t >= tripOf(i).seg[1]),
+      below: kind === 'pick',
+    };
+  });
+  const cl01 = (v) => Math.min(1, Math.max(0, v)), sm = (u) => u * u * (3 - 2 * u);
+  function poseAt(c, p) {
+    const t = cl01((p - c.a) / c.l), [s0, s1, s2, s3] = c.seg, [w0, w1, w2, w3] = c.way;
+    const e1 = sm(cl01((t - s0) / (s1 - s0))), e2 = sm(cl01((t - s1) / (s2 - s1))), e3 = 1 - Math.pow(1 - cl01((t - s2) / (s3 - s2)), 3);
+    const v = (n) => w0[n] + (w1[n] - w0[n]) * e1 + (w2[n] - w1[n]) * e2 + (w3[n] - w2[n]) * e3;
+    const tx = v(0), ty = v(1), k = v(2);
+    // on screen: the drawing at its spot, scaled about its origin and moved
+    const pts = c.corners.map(([X, Y]) => [c.o[0] + tx + k * (X - c.o[0]), c.o[1] + ty + k * (Y - c.o[1])]);
+    // in 3D: where that puts the box (its depth from the scale, its spot from the origin's new place)
+    const sN = k * sOf(c.z), zc = CAM.f / sN - CAM.f;
+    const xc = CAM.vx + ((c.o[0] + tx) / U + FRAME.x0 - CAM.vx) / sN, yc = CAM.vy + (FRAME.y1 - (c.o[1] + ty) / U - CAM.vy) / sN;
+    const box = { x0: xc - c.w / 2, x1: xc + c.w / 2, y0: yc, y1: yc + c.h, z0: zc - c.d / 2, z1: zc + c.d / 2 };
+    return { t, moving: t > 0 && t < 1, shows: c.shows(t), hull: hull(pts), box };
+  }
+  function hull(pts) {
+    const q = pts.slice().sort((A, B) => A[0] - B[0] || A[1] - B[1]);
+    const cr = (O, A, B) => (A[0] - O[0]) * (B[1] - O[1]) - (A[1] - O[1]) * (B[0] - O[0]);
+    const lo = [], up = [];
+    for (const P_ of q) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], P_) <= 0) lo.pop(); lo.push(P_); }
+    for (const P_ of q.slice().reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], P_) <= 0) up.pop(); up.push(P_); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  // the area two convex outlines share, on one side of the ceiling's cut line
+  function shared(A, B, below) {
+    const clip = (poly_, inside, cut) => {
+      const out_ = [];
+      for (let n = 0; n < poly_.length; n++) {
+        const P_ = poly_[n], Q = poly_[(n + 1) % poly_.length], ip = inside(P_), iq = inside(Q);
+        if (ip) out_.push(P_);
+        if (ip !== iq) out_.push(cut(P_, Q));
+      }
+      return out_;
+    };
+    let r = A;
+    for (let n = 0; n < B.length && r.length; n++) {
+      const E0 = B[n], E1 = B[(n + 1) % B.length];
+      const side = (P_) => (E1[0] - E0[0]) * (P_[1] - E0[1]) - (E1[1] - E0[1]) * (P_[0] - E0[0]);
+      const sgn = side(B[(n + 2) % B.length]) > 0 ? 1 : -1;
+      r = clip(r, (P_) => side(P_) * sgn >= 0, (P_, Q) => { const a_ = side(P_), b_ = side(Q), t = a_ / (a_ - b_); return [P_[0] + (Q[0] - P_[0]) * t, P_[1] + (Q[1] - P_[1]) * t]; });
+    }
+    // what shows: the garage below the ceiling's cut line; in the roof, above the far edge of the floor's
+    // front row (it, the floor's edge and the cut are painted over the loads)
+    const yL = below ? yCut : Praw(H.ridge, F.top, F.z0 + F.row)[1];
+    if (r.length) r = clip(r, (P_) => (below ? P_[1] >= yL : P_[1] <= yL), (P_, Q) => { const t = (yL - P_[1]) / (Q[1] - P_[1]); return [P_[0] + (Q[0] - P_[0]) * t, yL]; });
+    let ar = 0;
+    for (let n = 0; n < r.length; n++) { const P_ = r[n], Q = r[(n + 1) % r.length]; ar += P_[0] * Q[1] - Q[0] * P_[1]; }
+    return Math.abs(ar) / 2;
+  }
+  // which of two boxes can hide the other: 'A', 'B', null (neither), 'X' (they intersect)
+  function nearer(A, B) {
+    const e = 0.004, eye = { x: CAM.vx, y: CAM.vy };
+    if (A.z1 <= B.z0 + e) return 'A';
+    if (B.z1 <= A.z0 + e) return 'B';
+    for (const ax of ['x', 'y']) {
+      const a0 = A[ax + '0'], a1 = A[ax + '1'], b0 = B[ax + '0'], b1 = B[ax + '1'];
+      if (a1 <= b0 + e) return eye[ax] > b0 ? 'B' : eye[ax] < a1 ? 'A' : null;
+      if (b1 <= a0 + e) return eye[ax] > a0 ? 'A' : eye[ax] < b1 ? 'B' : null;
+    }
+    return 'X';
+  }
+  function carryOrder(kind) {
+    const cs = carry(kind), n = cs.length, after = cs.map(() => new Set()), clash = [];
+    const plain = paintOrder(cs.map((c) => ({ i: c.i, x: c.x, z: c.z }))).map((sp) => sp.i);
+    for (let p = 0.56; p <= 0.84; p += 0.00025) {
+      const ps = cs.map((c) => poseAt(c, p));
+      for (let a_ = 0; a_ < n; a_++) for (let b_ = a_ + 1; b_ < n; b_++) {
+        const A = ps[a_], B = ps[b_];
+        if (!A.shows || !B.shows || shared(A.hull, B.hull, cs[a_].below) < 2) continue;
+        const f = nearer(A.box, B.box);
+        if (f === 'A') after[a_].add(b_);
+        else if (f === 'B') after[b_].add(a_);
+        else if (f === 'X' && (A.moving || B.moving)) {
+          const pen = Math.min(...['x', 'y', 'z'].map((ax) => Math.min(A.box[ax + '1'], B.box[ax + '1']) - Math.max(A.box[ax + '0'], B.box[ax + '0'])));
+          clash.push({ txt: `${kind} ${a_} and ${b_} at p ${p.toFixed(4)} (${(pen * 100).toFixed(1)} cm deep, t ${A.t.toFixed(2)}/${B.t.toFixed(2)})`, pen });
+        }
+      }
+    }
+    if (process.env.BS_CLASH) clash.forEach((c) => console.log(c.txt));
+    const deep = clash.filter((c) => c.pen > 0.02);
+    if (deep.length) throw new Error(`the carry: loads pass through each other where it shows (${deep.slice(0, 6).map((c) => c.txt).join('; ')}${deep.length > 6 ? '; ...' : ''})`);
+    // painted far first: everything a copy must be painted after comes before it; ties in the plain order
+    const order = [], done = new Set();
+    while (order.length < n) {
+      const next = plain.find((i) => !done.has(i) && [...after[i]].every((j) => done.has(j)));
+      if (next === undefined) throw new Error(`the carry: no paint order works for the ${kind} copies`);
+      order.push(next); done.add(next);
+    }
+    return order;
+  }
+  const garageOrder = fin ? carryOrder('pick') : paintOrder(garageSpots).map((sp) => sp.i);
+  const roofOrder = fin ? carryOrder('load') : paintOrder(roofSpots).map((sp) => sp.i);
   /* ----- The car: on the driveway at dusk, in the garage at the end ----- */
   if (!fin) add(state.car === 'in' ? carStill(CAR.inX, CAR.inZ) : state.car === 'out' ? carStill(CAR.outX, CAR.inZ) : carStill(+state.car, CAR.inZ));
   else {
     const c = carParts(CAR.inX, CAR.inZ);
     const dX = CAR.outX - CAR.inX;                           // the drive in, backwards (m)
-    const roll = { a: 0.835, l: 0.085 };
+    const roll = { a: 0.905, l: 0.08 };
     const r5 = (v) => Math.round(v * 1e5) / 1e5;
     const mv = (v) => { const m = carMotion(v, CAR.inZ); return { mx: r5(m.mx * dX), my: r5(m.my * dX), m0: r1(m.m0 * dX) }; };
     add(part('bs-car', { ...roll, ...mv(c.shadow.v) }, pth(c.faceD(c.shadow), c.shadow.fill, { opacity: 0.38 })));
@@ -768,8 +903,8 @@ function scene(state) {
     if (fin) {
       const startTop = [4.05 + L * Math.sin(tiltStart), L * Math.cos(tiltStart)];
       const sp = Praw(startTop[0], startTop[1], (zN + zF) / 2), ep = Praw(top[0], top[1], (zN + zF) / 2);
-      const rearPart = part('bs-step-rear', { a: 0.402, l: 0.016, ox: hp[0], oy: hp[1], r: -(12.5 + 12.5 + 1.6) }, leaves(rear));
-      add(part('bs-step', { a: 0.41, l: 0.04, ox: hp[0], oy: hp[1], dx: r1(sp[0] - ep[0]), dy: r1(sp[1] - ep[1]), r: 1.6 }, rearPart + leaves(front)));
+      const rearPart = part('bs-step-rear', { a: 0.392, l: 0.016, ox: hp[0], oy: hp[1], r: -(12.5 + 12.5 + 1.6) }, leaves(rear));
+      add(part('bs-step', { a: 0.4, l: 0.04, ox: hp[0], oy: hp[1], dx: r1(sp[0] - ep[0]), dy: r1(sp[1] - ep[1]), r: 1.6 }, rearPart + leaves(front)));
     } else if (state.ladder || state.things === 'roof') add(rear + front);
     else add(stepOpen());
   }
@@ -789,24 +924,25 @@ function scene(state) {
     const clampX = (p) => [Math.min(p[0], H.garage1), p[1], p[2]];
     const shaft = pth(poly([P(HATCH.x0, H.ceil, HATCH.z0), P(HATCH.x1, H.ceil, HATCH.z0), P(...clampX(b)), P(...a)]), 'url(#bs-spill)');
     const patch = pth(poly([P(...a), P(...clampX(b)), P(...clampX(c)), P(...d)]), C.amber, { opacity: 0.12 });
-    if (fin) add(part('bs-spill', { a: 0.452, l: 0.03, b: 0.808, k: 0.022 }, leaves(patch + shaft)));
+    if (fin) add(part('bs-spill', { a: 0.442, l: 0.03, b: 0.871, k: 0.028 }, leaves(patch + shaft)));
     else if (state.ladder) add(patch + shaft);
   }
 
   /* ----- The stored things in the garage (dim, at dusk): walked to the ladder and carried up it ----- */
   if (fin || state.things === 'garage') {
     const picks = [];
-    for (const sp of paintOrder(garageSpots)) {
+    for (const sp of garageOrder.map((i) => garageSpots[i])) {
       const Ld = LOADS[sp.i];
       // drawn over the garage's dusk and the light from the hatch (so a load on the ladder stays solid), with
       // the dusk's darkness at its spot (bs-dark, left to right across the garage) baked into its colours
       const f = (Praw(sp.x, 0.3, sp.z)[0] / U + FRAME.x0) / (H.garage1 - H.garage0);
       const dusk = f < 0.35 ? 0.3 + (0.32 * f) / 0.35 : 0.62 + (0.08 * (f - 0.35)) / 0.65;
-      const svg = shade(sp.x, 0, sp.z, loadW(Ld), loadD(Ld), 0.32) + leaves(loadSVG(Ld, sp.x, 0, sp.z, 0.95 * (1 - dusk)));
+      const svg = shade(sp.x, 0, sp.z, loadW(Ld), loadD(Ld), 0.16) + leaves(loadSVG(Ld, sp.x, 0, sp.z, 0.95 * (1 - dusk)));
       if (!fin) { add(svg); continue; }
       const o = origin(sp.x, 0, sp.z), W = route(Ld).map((w) => rel(w, o, sOf(sp.z)));
       check[sp.i] = { g: W.slice(0, 2).map((w) => [w[0] + o[0], w[1] + o[1], w[2] * sOf(sp.z)]) };
-      picks.push(part('bs-pick', { a: tripA(sp.i), l: TRIP, s1: SEG[1], s2: SEG[2], s3: SEG[3], ...way('123', W), ox: o[0], oy: o[1] }, svg));
+      const tr = tripOf(sp.i);
+      picks.push(part('bs-pick', { a: tr.a, l: tr.l, s1: tr.seg[1], s2: tr.seg[2], s3: tr.seg[3], ...way('123', W), ox: o[0], oy: o[1] }, svg));
     }
     if (fin) add(el('g', { class: 'bs-clip', 'clip-path': 'url(#bs-below)' }, picks.join('')));
   }
@@ -819,9 +955,11 @@ function scene(state) {
     if (fin) {
       // nested: the lid and section 1 swing about the hatch hinge, 2 about the end of 1, 3 about the end of 2
       const h0 = hinge(0), h1 = hinge(1), h2 = hinge(2);
-      const s3 = part('bs-fold bs-s3', { a: 0.5, l: 0.025, c: 0.772, m: 0.02, ox: h2[0], oy: h2[1], r: -178 }, leaves(secs[2].svg));
-      const s2 = part('bs-fold bs-s2', { a: 0.48, l: 0.025, c: 0.79, m: 0.02, ox: h1[0], oy: h1[1], r: 178 }, leaves(secs[1].svg) + s3);
-      add(part('bs-fold bs-s1', { a: 0.452, l: 0.034, c: 0.808, m: 0.024, ox: h0[0], oy: h0[1], r: LADDER.angle }, leaves(secs[0].svg) + s2));
+      // each half turn gets 0.05 of the story (about 145px at 1440x900): a calm pull, not a flick; the next
+      // section starts as the last one settles. Folding away, each gets 0.03.
+      const s3 = part('bs-fold bs-s3', { a: 0.52, l: 0.048, c: 0.825, m: 0.03, ox: h2[0], oy: h2[1], r: -178 }, leaves(secs[2].svg));
+      const s2 = part('bs-fold bs-s2', { a: 0.476, l: 0.05, c: 0.848, m: 0.03, ox: h1[0], oy: h1[1], r: 178 }, leaves(secs[1].svg) + s3);
+      add(part('bs-fold bs-s1', { a: 0.442, l: 0.04, c: 0.871, m: 0.03, ox: h0[0], oy: h0[1], r: LADDER.angle }, leaves(secs[0].svg) + s2));
     } else if (state.ladder) add(secs.map((s) => s.svg).join(''));
   }
 
@@ -833,8 +971,8 @@ function scene(state) {
     const wall = pth(rectYZ(H.garage1 - 0.005, 0.15, 1.25, hz + 0.15, hz + 1.5), 'url(#bs-wash)', { opacity: 0.5 });
     const wx = Praw(H.garage1, 0.6, hz + 0.5)[0];
     if (fin) {
-      add(part('bs-beam', { a: 0.828, l: 0.008, b: 0.921, m: 0.012, ra: 0.835, rl: 0.085, ox: r1(wx), w: r3((H.garage1 - (CAR.inX + CAR.len)) / (H.garage1 - hx)) }, beam));
-      add(part('bs-beam', { a: 0.828, l: 0.008, b: 0.921, m: 0.012 }, wall));
+      add(part('bs-beam', { a: 0.898, l: 0.008, b: 0.986, m: 0.008, ra: 0.905, rl: 0.08, ox: r1(wx), w: r3((H.garage1 - (CAR.inX + CAR.len)) / (H.garage1 - hx)) }, beam));
+      add(part('bs-beam', { a: 0.898, l: 0.008, b: 0.986, m: 0.008 }, wall));
     }
   }
 
@@ -850,10 +988,10 @@ function scene(state) {
   /* ----- The stored things on the new floor (lit): up through the hatch, set down in their rows ----- */
   if (fin || state.things === 'roof') {
     const lits = [];
-    for (const sp of paintOrder(roofSpots)) {
+    for (const sp of roofOrder.map((i) => roofSpots[i])) {
       const Ld = LOADS[sp.i];
       const k = lampK(sp.x, 3.4, sp.z);
-      const svg = shade(sp.x, F.top, sp.z, loadW(Ld), loadD(Ld), 0.22) + leaves(loadSVG(Ld, sp.x, F.top, sp.z, k));
+      const svg = shade(sp.x, F.top, sp.z, loadW(Ld), loadD(Ld), 0.11) + leaves(loadSVG(Ld, sp.x, F.top, sp.z, k));
       if (!fin) { add(svg); continue; }
       const o = origin(sp.x, F.top, sp.z), W = route(Ld).map((w) => rel(w, o, sOf(sp.z)));
       // the climb must line up with the garage copy's: same screen points, same size
@@ -861,7 +999,8 @@ function scene(state) {
         const g = check[sp.i].g[n], dx = w[0] + o[0] - g[0], dy = w[1] + o[1] - g[1], ks = w[2] * sOf(sp.z) / g[2] - 1;
         if (Math.abs(dx) > 0.15 || Math.abs(dy) > 0.15 || Math.abs(ks) > 0.004) throw new Error(`load ${sp.i}: the two copies part on the ladder (${dx}, ${dy}, ${ks})`);
       });
-      lits.push(part('bs-load', { a: tripA(sp.i), l: TRIP, s0: SEG[1], s1: SEG[2], s2: SEG[3], ...way('012', W), ox: o[0], oy: o[1] }, svg));
+      const tr = tripOf(sp.i);
+      lits.push(part('bs-load', { a: tr.a, l: tr.l, s0: tr.seg[1], s1: tr.seg[2], s2: tr.seg[3], ...way('012', W), ox: o[0], oy: o[1] }, svg));
     }
     if (fin) add(el('g', { class: 'bs-clip', 'clip-path': 'url(#bs-above)' }, lits.join('')));
   }
@@ -930,7 +1069,7 @@ if (args.includes('--concept')) {
   const body = scene(STATES.final);
   // the portrait camera: from the car and the door to the garage column as the light comes on, and back a
   // little as the ladder folds away, ready for the car
-  const [ca, cl] = win(0.025, 0.07), [cb, cm] = win(0.8, 0.06);
+  const [ca, cl] = win(0.025, 0.07), [cb, cm] = win(0.843, 0.062);
   const svg = `<svg class="bs-svg" viewBox="0 0 ${r1(VBW)} ${r1(VBH)}" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false" data-shut="${SHUT_AT}" style="${vars({ 'cam-a': ca, 'cam-l': cl, 'cam-b': cb, 'cam-m': cm })}">\n${body}\n</svg>`;
   const html = readFileSync(INDEX, 'utf8');
   const re = /(<!-- scene:start -->)[\s\S]*?(<!-- scene:end -->)/;

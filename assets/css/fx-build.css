@@ -83,20 +83,28 @@
 @media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
 @supports (width: calc(pow(2, 2) * 1px)) and (width: 1cqw) {
   html.js .build { padding-bottom: 0; }
-  html.js .bs { position: relative; height: 450vh; margin-top: clamp(24px, 4vw, 48px); }
+  html.js .bs { position: relative; height: 470vh; margin-top: clamp(24px, 4vw, 48px); }
   html.js .bs-stage {
     position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0;
     display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 0; overflow: hidden;
     --bar: 0px;
   }
   html.js .bs-scene { aspect-ratio: auto; border-radius: 0; background: none; container-type: size; }
-  html.js .bs-svg { inset: 0; }
-  /* The header: while it shows, if it would cover the roof's ridge, the picture steps down out from under
+  /* Wide stages: the drawing is as large as fits (--bs-s: px per unit of the 1300 x 720 viewBox), sat on the
+     scene's foot and centred on what matters, the car on the driveway (from -190 units, left of the
+     viewBox) to the gutter (1285). Where that doesn't fit across, a drawing fitted to the height gives up
+     to 7% of its size, then keeps the gutter at the right edge and shows as much of the car as it can. The
+     svg paints past its box (the sky and the street run on) and the scene clips.
+     The header: while it shows, if it would cover the roof's ridge, the picture steps down out from under
      it, in step with it (only short screens need this; the bottom of the drawing is just earth). The ridge
-     sits 585/720 of the drawing's height above its foot; the drawing is fitted (meet) to the scene's box. */
+     sits 585 units above the drawing's foot. */
   html.js .bs-svg {
+    --bs-s: min(100cqw / 1300, max(100cqw / 1475, 0.93 * 100cqh / 720), 100cqh / 720);
+    inset: auto; left: 50%; bottom: 0; width: calc(1300 * var(--bs-s)); height: calc(720 * var(--bs-s)); overflow: visible;
     --bs-hk: 0;
-    translate: 0 calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 585 * min(100cqw / 1300, 100cqh / 720))));
+    translate:
+      calc(-50% + 650 * var(--bs-s) - clamp(547.5 * var(--bs-s), 1285 * var(--bs-s) - 50cqw, 650 * var(--bs-s)))
+      calc(var(--bs-hk) * max(0px, var(--header-h) + 16px - (100cqh - 585 * var(--bs-s))));
     transition: --bs-hk 280ms var(--ease-in);
   }
   html.js.hdr-on .bs-svg { --bs-hk: 1; transition: --bs-hk 450ms var(--ease-out); }
@@ -153,16 +161,20 @@
   }
   @media (max-width: 960px) {
     html.js .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
+    /* the action bar's own "Get my free quote" sits just under the last step here: one is enough */
+    html.js .bs-cap .btn { display: none; }
   }
   /* Phones and any portrait stage (tablets held upright, tall windows): a shorter track, and a camera on
      the garage column that looks out to the car at the start and the end (--cx: the point of the drawing,
-     as a fraction of its width, at the middle of the screen). The drawing fills the stage's height. */
+     as a fraction of its width, at the middle of the screen). The drawing fills the stage's height, and
+     paints past its own box (the sky, the street and the car run on), so it reaches the edges at every
+     camera position; the scene clips. */
   @media (max-width: 760px), (max-aspect-ratio: 1/1) {
-    html.js .bs { height: 360vh; }
+    html.js .bs { height: 375vh; }
     html.js .bs-scene { container-type: size; }
     html.js .bs-svg {
       /* sized so a phone's width shows 5.4 m of the house; on a taller stage it fills the height */
-      left: 50%; right: auto; top: auto; bottom: 0;
+      left: 50%; right: auto; top: auto; bottom: 0; overflow: visible;
       height: min(100cqh, 133.3cqw); width: calc(min(100cqh, 133.3cqw) * 1300 / 720);
       /* (registered, not inherited: a camera move restyles the svg alone) */
       --bs-c1: clamp(0, (var(--bs-cam) - var(--cam-a)) / var(--cam-l), 1);
@@ -237,8 +249,9 @@
   /* the garage copy is gone once it's through the ceiling; the roof copy is there from the climb on */
   html.js .bs-pick { opacity: clamp(0, (var(--s3) - var(--bs-t)) * 10000, 1); }
   html.js .bs-load { opacity: clamp(0, (var(--bs-t) - var(--s0)) * 10000 + 1, 1); }
-  html.js .bs-pick .bs-shade { opacity: calc(0.32 * (1 - min(1, (var(--p) - var(--a)) / var(--l) * 8))); }
-  html.js .bs-load .bs-shade { opacity: calc(0.22 * clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1)); }
+  /* a load's contact shadow goes as it's lifted, and comes as it's set down */
+  html.js .bs-pick .bs-shade { opacity: calc(1 - min(1, (var(--p) - var(--a)) / var(--l) * 8)); }
+  html.js .bs-load .bs-shade { opacity: clamp(0, ((var(--p) - var(--a)) / var(--l) - 0.94) * 16, 1); }
 
   /* The car rolls in. Every plane of it moves by an exact affine map, linear in the distance still to go
      (worked out per plane by the generator: the near side just translates; the planes on top also shear,
@@ -261,21 +274,22 @@
     transform-box: view-box; transform-origin: calc(var(--ox) * 1px) 0;
     scale: calc(1 - (1 - var(--w)) * var(--bs-f)) 1;
   }
-  /* The roller door comes down, then the garage light settles: timed, from when the story reaches them
-     (data-shut on the stage), and back the other way when scrolling up. The door is a curtain rolled up
-     into its drum: on its plane a rise is a vertical shear (--b0, --f0), so --bs-dn eases one number. */
+  /* As the car stops (data-shut on the stage), the roller door comes down and the garage light settles
+     half way through: timed, so the finished picture lands within about 1.5 s whatever the scroll speed,
+     and back the other way (quicker) when scrolling up. The door is a curtain rolled up into its drum: on
+     its plane a rise is a vertical shear (--b0, --f0), so --bs-dn eases one number. */
   html.js .bs-door {
     --bs-dn: 0;
     transform-box: view-box; transform-origin: 0 0;
     transform: matrix(1, calc(var(--b0) * (1 - var(--bs-dn))), 0, 1, 0, calc(var(--f0) * (1 - var(--bs-dn))));
-    transition: --bs-dn 1100ms var(--ease-io);
+    transition: --bs-dn 760ms var(--ease-io);
   }
-  html.js .bs-stage[data-shut] .bs-door { --bs-dn: 1; transition: --bs-dn 1700ms cubic-bezier(0.35, 0, 0.15, 1); }
+  html.js .bs-stage[data-shut] .bs-door { --bs-dn: 1; transition: --bs-dn 1100ms cubic-bezier(0.35, 0, 0.15, 1); }
   html.js .bs-dusk { opacity: 1; transition: opacity var(--t-ui) var(--ease-in); }
   html.js :is(.bs-tube, .bs-rim) { opacity: 0; transition: opacity var(--t-ui) var(--ease-in); }
-  html.js .bs-stage[data-shut] .bs-dusk { opacity: 0; transition: opacity 1200ms var(--ease-out) 1400ms; }
-  html.js .bs-stage[data-shut] .bs-tube { opacity: 1; transition: opacity 1200ms var(--ease-out) 1400ms; }
-  html.js .bs-stage[data-shut] .bs-rim { opacity: 0.8; transition: opacity 1200ms var(--ease-out) 1500ms; }
+  html.js .bs-stage[data-shut] .bs-dusk { opacity: 0; transition: opacity 1000ms var(--ease-out) 500ms; }
+  html.js .bs-stage[data-shut] .bs-tube { opacity: 1; transition: opacity 1000ms var(--ease-out) 500ms; }
+  html.js .bs-stage[data-shut] .bs-rim { opacity: 0.8; transition: opacity 1000ms var(--ease-out) 600ms; }
 }
 }
 /* At rest the garage light is on and the dusk has gone from the garage */

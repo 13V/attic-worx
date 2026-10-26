@@ -1,7 +1,8 @@
 /* fx-build.js: drives "Boxes up. Car in." (#build). Uses window.AW from main.js.
    It eases one number, --p (0 -> 1), towards the scroll position so a wheel's notches don't jump the
    story, and marks the current step (data-beat on the stage, .is-on on its caption). --p goes on the stage
-   (the rail), on the svg as --bs-cam (the phone camera) and on each moving part while it moves.
+   (the rail), on each moving part while it moves, and on portrait stages on the svg as --bs-cam (the
+   phone camera) while that moves.
    It also marks the end (data-shut, once --p passes the svg's data-shut): the roller door and the garage
    light are timed transitions from there. fx-build.css does the rest. It only works while the CSS pins the
    stage (JS, motion welcome, a screen at least 500px tall, pow() and container units supported; read
@@ -13,7 +14,8 @@
   var track = document.querySelector('[data-build]');
   if (!AW || !track) return;
   var stage = track.querySelector('.bs-stage');
-  var svg = track.querySelector('.bs-svg');
+  var svgs = Array.prototype.slice.call(track.querySelectorAll('.bs-svg'));
+  var svg = track.querySelector('.bs-svg[data-shut]') || svgs[0];
   var shutAt = svg ? parseFloat(svg.getAttribute('data-shut')) || 2 : 2;
   var caps = Array.prototype.slice.call(track.querySelectorAll('.bs-cap'));
   var at = caps.map(function (c) { return parseFloat(c.getAttribute('data-at')) || 0; });
@@ -48,27 +50,40 @@
   // for the edges that run past them). A part gets --p while the story is inside a window, and once more
   // as it leaves; the rest of the frame it isn't touched, so it isn't restyled.
   var num = function (st, k) { var m = new RegExp('--' + k + ':(-?[\\d.]+)').exec(st); return m ? parseFloat(m[1]) : null; };
-  var parts = svg ? Array.prototype.map.call(svg.querySelectorAll('.m'), function (el) {
-    var st = el.getAttribute('style') || '', w = [];
-    [['a', 'l'], ['b', 'k'], ['b', 'm'], ['c', 'm'], ['ra', 'rl']].forEach(function (k) {
+  var windows = function (st, keys) {
+    var w = [];
+    keys.forEach(function (k) {
       var s = num(st, k[0]), d = num(st, k[1]);
       if (s !== null && d !== null) w.push([s - 0.012, s + d + 0.012]);
     });
-    return { el: el, w: w, at: null };
-  }) : [];
+    return w;
+  };
+  var parts = Array.prototype.map.call(track.querySelectorAll('.bs-svg .m'), function (el) {
+    return { els: [el], prop: '--p', w: windows(el.getAttribute('style') || '', [['a', 'l'], ['b', 'k'], ['b', 'm'], ['c', 'm'], ['ra', 'rl']]), at: null };
+  });
+  // The portrait camera (phones, upright tablets) moves the drawing, in its own two windows; elsewhere it
+  // isn't written at all (a write restyles the svg).
+  var camQ = window.matchMedia('(max-width: 760px), (max-aspect-ratio: 1/1)');
+  var cam = svg ? { els: svgs, prop: '--bs-cam', w: windows(svg.getAttribute('style') || '', [['cam-a', 'cam-l'], ['cam-b', 'cam-m']]), at: null } : null;
+  var onCam = function () { if (cam) cam.at = null; written = ''; };
+  if (camQ.addEventListener) camQ.addEventListener('change', onCam); else if (camQ.addListener) camQ.addListener(onCam);
   var where = function (p, w) {
     var k = '';
     for (var i = 0; i < w.length; i++) k += p <= w[i][0] ? '0' : p >= w[i][1] ? '1' : 'x';
     return k;
   };
+  var touch = function (o, p, v) {
+    var k = where(p, o.w);
+    if (k !== o.at || k.indexOf('x') >= 0) {
+      o.at = k;
+      for (var j = 0; j < o.els.length; j++) o.els[j].style.setProperty(o.prop, v);
+    }
+  };
   var write = function (v) {
     var p = +v;
     stage.style.setProperty('--p', v); // the rail
-    if (svg) svg.style.setProperty('--bs-cam', v); // the phone camera
-    for (var i = 0; i < parts.length; i++) {
-      var o = parts[i], k = where(p, o.w);
-      if (k !== o.at || k.indexOf('x') >= 0) { o.at = k; o.el.style.setProperty('--p', v); }
-    }
+    if (cam && camQ.matches) touch(cam, p, v);
+    for (var i = 0; i < parts.length; i++) touch(parts[i], p, v);
   };
   var step = function () {
     var d = target - cur;
@@ -98,7 +113,7 @@
     // read: where the track is, how long the stage stays pinned
     var top = track.getBoundingClientRect().top;
     var travel = track.offsetHeight - stage.offsetHeight;
-    var p = fixed !== null ? fixed : AW.clamp(-top / Math.max(1, travel) / 0.94, 0, 1); // the end holds a moment
+    var p = fixed !== null ? fixed : AW.clamp(-top / Math.max(1, travel) / 0.88, 0, 1); // the last 12% holds the end
     return function () {
       // write
       target = p;
