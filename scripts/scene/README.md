@@ -82,8 +82,9 @@ The beats (`BEATS`) must match the captions' `data-at` in `index.html`; the gene
 
 ## Changing it
 
-Edit the dimensions, colours (`C`), loads (`LOADS`) or windows in the script, run it, and check the
-contact sheets (see the scene notes). Keep the inline SVG under ~70 KB (it's ~62 KB, ~16 KB gzipped) and
+Edit the dimensions, colours (`C`), loads (`LOADS`) or windows in the script, run it, and scroll
+through `#build` in a browser at a wide size and a phone size (the `--concept` stills show what each beat
+should look like). Keep the inline SVG under ~70 KB (it's ~62 KB, ~16 KB gzipped) and
 the moving parts under ~250 (90). Pacing: the track is 470vh (375vh on portrait stages) and its last 12% holds
 the finished picture, so a unit of `--p` is about 2930px of scroll at 1440 × 900. Keep every scrubbed move
 at 0.04 or more, and a ladder section's half turn at about 0.05.
