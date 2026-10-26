@@ -4,8 +4,9 @@
    is lit by a warm work light from above. As the pair scrolls in, the light passes once from the before
    to the after: a soft warm band sweeps across (transform only) and the after's shadow leaves with it.
    Switching jobs: the old pair leaves fast, the new one arrives under a plate that lifts while the
-   photos settle, then the light passes again, gently. fx-results.js runs the tabs and the triggers.
-   Without JS: every pair shows, captioned, one under the other (a noscript rule in <head>). With
+   photos settle (the light passes only once). fx-results.js runs the tabs and the triggers.
+   Without JS: every pair shows, one under the other, its caption above it (beside it, in the tabs' column,
+   from 1000px; a noscript rule in <head>). With
    reduced motion: everything at rest, the tabs swap pairs instantly. */
 
 .results {
@@ -65,10 +66,9 @@
 
 /* ---------- The stage: one pair at a time, every pair in the same cell ---------- */
 .rx-stage { display: grid; }
-/* (A hidden pair keeps its box, unseen, so the stage never changes height and the browser's lazy
-   loading fetches the other jobs' photos as the section comes near.) */
+/* (Every pair has the same box, so a switch never changes the stage's height. A hidden pair isn't
+   rendered, so its photos wait until a visitor reaches for the tabs: fx-results.js.) */
 html.js .rx-panel { grid-area: 1 / 1; }
-html.js .rx-panel[hidden] { display: block !important; visibility: hidden; }
 .rx-panel { position: relative; border-radius: calc(var(--r-img) + 6px); }
 .rx-panel:focus-visible { outline-offset: 6px; border-radius: calc(var(--r-img) + 6px); }
 
@@ -182,14 +182,15 @@ html.js .rx-panel[hidden] { display: block !important; visibility: hidden; }
     animation: rx-tag-on 700ms var(--ease-out) 1400ms both;
   }
 
-  /* Switching jobs: the old pair leaves fast... */
+  /* Switching jobs: the old pair leaves fast (its caption at once, so two never overlap on a phone)... */
   .rx-panel.is-leaving { z-index: 1; animation: rx-leave 180ms var(--ease-in) both; }
-  /* ...the new one arrives: plates lift, photos settle, tags follow, then the light passes again, gently */
+  .rx-panel.is-leaving .rx-cap { opacity: 0; }
+  /* ...the new one arrives: plates lift, photos settle, tags and caption follow. The plates are the
+     transition: the light passed once, and the after the visitor just picked arrives lit. */
   .rx-panel.is-arriving .rx-shot::before { animation: rx-plate 680ms var(--ease-io) var(--pd) both; }
   .rx-panel.is-arriving .rx-photo img { animation: rx-settle 1150ms var(--ease-out) var(--pd) both; }
   .rx-panel.is-arriving .photo-tag { animation: rx-tag-in 480ms var(--ease-out) calc(var(--pd) + 480ms) both; }
-  .rx-panel.is-arriving .rx-band { opacity: 0.75; animation: rx-sweep 1600ms var(--rx-travel) 360ms both; }
-  .rx-panel.is-arriving .rx-after .rx-photo::before { opacity: 0.55; animation: rx-unveil 1600ms var(--rx-travel) 360ms both; }
+  .rx-panel.is-arriving .rx-cap { animation: rx-tag-in 360ms var(--ease-out) 180ms both; }
   /* Held at their first frame until the new photos are decoded */
   .rx-panel.is-pending *, .rx-panel.is-pending *::before, .rx-panel.is-pending *::after { animation-play-state: paused !important; }
 }
