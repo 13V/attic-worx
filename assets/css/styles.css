@@ -1202,6 +1202,12 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 .room-pic { grid-column: 1 / 9; margin: 0; }
 .room-panel { grid-column: 9 / -1; }
 .room-svg { display: block; width: 100%; height: auto; }
+@media (min-width: 1001px) and (max-width: 1199px) {
+  /* small laptops, tablets on their side: a column more for the panel, so the size labels and the
+     button keep to one line */
+  .room-pic { grid-column: 1 / 8; }
+  .room-panel { grid-column: 8 / -1; }
+}
 @media (max-width: 1000px) {
   .room-head { grid-template-columns: minmax(0, 1fr); }
   .room-pic { grid-column: 1 / -1; width: 100%; max-width: 700px; justify-self: center; }

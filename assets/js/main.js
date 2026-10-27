@@ -1707,11 +1707,13 @@ window.AW.section(function () {
     return Math.round(raw / 5) * 5;
   };
   // The quote form's storage sizes (radios name="size") and the slider values that fall in each.
-  // 12 m² goes with "12 m² or more", the option that names it outright.
+  // 12 m² goes with "12 m² or more", the option that names it outright. label is the radio's value;
+  // show is the same words for the hand-off line, a size never split across lines (a word joiner after
+  // the en dash, a no-break space before m²).
   var ZONES = [
     { id: 'size-s', max: 5, label: 'A small area for boxes' },
-    { id: 'size-m', max: 11, label: 'About 6–12 m²' },
-    { id: 'size-l', max: Infinity, label: '12 m² or more' }
+    { id: 'size-m', max: 11, label: 'About 6–12 m²', show: 'About 6–\u206012\u00a0m²' },
+    { id: 'size-l', max: Infinity, label: '12 m² or more', show: '12\u00a0m² or more' }
   ];
   var zoneOf = function (v) {
     for (var i = 0; i < ZONES.length; i++) if (v <= ZONES[i].max) return ZONES[i];
@@ -1753,7 +1755,7 @@ window.AW.section(function () {
       valueEl.textContent = v;
     }
     if (boxesEl) boxesEl.textContent = n;
-    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'We’ll tick Attic storage and “' + z.label + '” in the form for you.';
+    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'We’ll tick Attic storage and “' + (z.show || z.label) + '” in the form for you.';
     sec.classList.toggle('is-kyle', kyle); // shows "The size of the floor Kyle M had put in above his garage." 
     input.setAttribute('aria-valuetext', v + ' square metres, room for about ' + n + ' archive boxes' + (kyle ? ', the size of Kyle M’s floor' : ''));
     if (range) range.style.setProperty('--f', ((v - MIN) / (MAX - MIN)).toFixed(4));
