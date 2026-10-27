@@ -219,9 +219,9 @@
 
       <!-- Quote form -->
       <div class="quote-card" id="quote">
-        <form class="quote-form" id="quote-form" data-endpoint="" novalidate>
+        <form class="quote-form" id="quote-form" data-endpoint="" novalidate aria-labelledby="qf-title">
           <div class="qf-head" data-qf-head>
-            <p class="qf-title">Get a free quote</p>
+            <h2 class="qf-title" id="qf-title">Get a free quote</h2>
             <p class="qf-sub">No home visit needed. Takes about a minute.</p>
             <div class="qf-progress" aria-hidden="true"><span class="is-done"></span><span></span><span></span></div>
             <p class="qf-step-label" data-step-label aria-live="polite">Step 1 of 3</p>
@@ -236,7 +236,7 @@
               <label class="tile"><input type="checkbox" name="services" value="Whirlybird or SolarKing vent" id="svc-vent"><svg class="icon" aria-hidden="true"><use href="#i-wind"></use></svg><svg class="tile-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" pathLength="1"/></svg><span class="tile-name">Roof vents<span class="tile-note">Whirlybird, SolarKing</span></span></label>
               <label class="tile"><input type="checkbox" name="services" value="Ceiling insulation" id="svc-insulation"><svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg><svg class="tile-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" pathLength="1"/></svg><span class="tile-name">Insulation<span class="tile-note">R4.0 or R5.0 batts</span></span></label>
             </div>
-            <p class="qf-error" data-error hidden>Choose at least one option to continue.</p>
+            <p class="qf-error" id="qf-err-1" role="alert" data-error hidden>Choose at least one option to continue.</p>
             <button class="btn btn-primary btn-lg btn-block" type="button" data-next>Next <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
           </fieldset>
 
@@ -274,7 +274,7 @@
                 </select>
               </div>
             </div>
-            <p class="qf-error" data-error hidden>Add your suburb so we can price it.</p>
+            <p class="qf-error" id="qf-err-2" role="alert" data-error hidden>Add your suburb so we can price it.</p>
             <div class="qf-actions">
               <button class="btn btn-ghost btn-lg" type="button" data-back aria-label="Back"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
               <button class="btn btn-primary btn-lg" type="button" data-next>Next <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
@@ -302,7 +302,7 @@
               <textarea class="input" id="notes" name="notes" rows="2" placeholder="Roof type, what you'd like to store, best time to call"></textarea>
             </div>
             <div class="qf-trap" aria-hidden="true"><label for="company">Company</label><input type="text" id="company" name="company" tabindex="-1" autocomplete="off"></div>
-            <p class="qf-error" data-error hidden>Add your name and a mobile number we can reach.</p>
+            <p class="qf-error" id="qf-err-3" role="alert" data-error hidden>Add your name and a mobile number we can reach.</p>
             <div class="qf-actions">
               <button class="btn btn-ghost btn-lg" type="button" data-back aria-label="Back"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
               <button class="btn btn-primary btn-lg" type="submit" data-submit>Get my free quote</button>

@@ -27,7 +27,7 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 The form needs somewhere to send leads. Open `index.html`, find `id="quote-form"`, and paste your endpoint into `data-endpoint`:
 
 ```html
-<form class="quote-form" id="quote-form" data-endpoint="https://your-endpoint-here" novalidate>
+<form class="quote-form" id="quote-form" data-endpoint="https://your-endpoint-here" novalidate aria-labelledby="qf-title">
 ```
 
 Any service that accepts a JSON `POST` works: a GoHighLevel / LeadConnector inbound webhook, Zapier or Make, Formspree, or your own endpoint. The form sends:
@@ -48,7 +48,7 @@ Any service that accepts a JSON `POST` works: a GoHighLevel / LeadConnector inbo
 }
 ```
 
-While `data-endpoint` is empty, the form still shows its thank-you screen (so the flow can be reviewed) but **nothing is sent**, and the browser console shows a warning. If the endpoint returns an error, the visitor sees a message with the phone number.
+While `data-endpoint` is empty, the form still shows its thank-you screen (so the flow can be reviewed) but **nothing is sent**, and the browser console shows a warning. The exception is the live domain (`atticworx.com.au` and its subdomains): there an empty endpoint shows the "That didn’t send" message with the phone number instead, so a visitor is never thanked for a lead that went nowhere. If the endpoint returns an error, the visitor sees the same message.
 
 ### 2. Tracking (optional)
 

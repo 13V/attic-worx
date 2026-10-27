@@ -309,9 +309,31 @@
     var storageOnly = $('[data-storage-only]', form);
     var current = 1;
 
-    var showError = function (step, show) {
+    // Each step's message is a role="alert" (announced as it shows, or when its text changes). The HTML text
+    // is the step's own; a bad email or a failed send says something else, so it's kept to go back to.
+    $$('[data-error]', form).forEach(function (err) { err.setAttribute('data-msg', err.textContent); });
+    var showError = function (step, show, msg) {
       var err = $('[data-error]', step);
-      if (err) err.hidden = !show;
+      if (!err) return;
+      if (show) err.textContent = msg || err.getAttribute('data-msg');
+      err.hidden = !show;
+      // While it shows, the fields it's about carry it as their description, so a screen reader landing on
+      // one hears why (no field marked: the step's group). Not set in the HTML: a field pointing at a hidden
+      // message would still have it read out.
+      $$('[aria-describedby="' + err.id + '"]', form).forEach(function (el) { el.removeAttribute('aria-describedby'); });
+      if (show) {
+        var about = $$('[aria-invalid="true"]', step);
+        (about.length ? about : [step]).forEach(function (el) { el.setAttribute('aria-describedby', err.id); });
+      }
+    };
+
+    // On a phone the card is taller than the screen, and by the time a visitor taps Next or Send (often with
+    // the keyboard up) its top can be well above it: the new step's title, or the thank-you, would open out of
+    // sight. The card's top comes back under the header first (where it's already in view, nothing moves).
+    var showTop = function () {
+      var line = parseFloat(getComputedStyle(root).scrollPaddingTop) || 0;
+      var top = card ? card.getBoundingClientRect().top : 0;
+      if (top < line - 1) window.scrollTo({ top: window.scrollY + top - line, behavior: motionOK() ? 'smooth' : 'auto' });
     };
 
     // Changing step: the old step leaves fast (it lies over the new one for a moment, inert), the new
@@ -374,6 +396,7 @@
           return !el.closest('[hidden]');
         })[0];
         if (first && first.type === 'radio') first = $('input[name="' + first.name + '"]:checked', steps[n - 1]) || first;
+        showTop();
         if (first) first.focus({ preventScroll: true });
       }
     };
@@ -381,6 +404,7 @@
     var validate = function (n) {
       var step = steps[n - 1];
       var ok = true;
+      var msg = null; // the step's own message
       if (n === 1) {
         ok = $$('input[name="services"]:checked', form).length > 0;
       } else {
@@ -391,14 +415,17 @@
           if (!valid) ok = false;
         });
         var email = $('input[type=email]', step);
-        if (email && email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-          email.setAttribute('aria-invalid', 'true');
-          ok = false;
+        if (email) {
+          var badEmail = !!email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+          email.setAttribute('aria-invalid', badEmail ? 'true' : 'false');
+          if (badEmail && ok) msg = 'Check your email address, or leave it blank.'; // only the email is wrong
+          if (badEmail) ok = false;
         }
       }
-      showError(step, !ok);
+      showError(step, !ok, msg);
       if (!ok) {
-        var bad = $('[aria-invalid="true"]', step);
+        // the first thing to fix (step 1: the first tile)
+        var bad = $('[aria-invalid="true"]', step) || (n === 1 && $('input', step));
         if (bad) bad.focus();
       }
       return ok;
@@ -418,8 +445,10 @@
       if (e.target.name === 'services') showError(step, false);
     });
     form.addEventListener('input', function (e) {
-      if (e.target.getAttribute('aria-invalid') === 'true' && e.target.value.trim()) {
+      // fixed, or (an optional field) emptied
+      if (e.target.getAttribute('aria-invalid') === 'true' && (e.target.value.trim() || !e.target.required)) {
         e.target.setAttribute('aria-invalid', 'false');
+        e.target.removeAttribute('aria-describedby');
       }
       var step = e.target.closest('.qf-step');
       if (step && !$('[aria-invalid="true"]', step)) {
@@ -427,9 +456,10 @@
         if (!missing) showError(step, false);
       }
     });
-    // Enter in a text field moves to the next step instead of submitting early
+    // Enter in a text field moves to the next step instead of submitting early (a button or link does its
+    // own job: Back goes back)
     form.addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA' || e.target.type === 'submit') return;
+      if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA' || e.target.closest('button, a')) return;
       if (current < steps.length) {
         e.preventDefault();
         if (validate(current)) goToStep(current + 1, true);
@@ -466,21 +496,22 @@
         swap(steps[current - 1], done, 1, false);
         steps.forEach(function (s) { if (!s.classList.contains('qf-leaving')) s.hidden = true; });
         if (head) head.hidden = true;
+        showTop();
         done.focus({ preventScroll: true });
         if (window.dataLayer) window.dataLayer.push({ event: 'quote_submitted', services: payload.services });
       };
       var fail = function () {
         submit.disabled = false;
         submit.textContent = 'Get my free quote';
-        var err = $('[data-error]', steps[steps.length - 1]);
-        err.textContent = 'That didn’t send. Please try again, or call us on 0434 083 530.';
-        err.hidden = false;
+        submit.focus(); // (disabled while sending, it had lost focus); then the message is announced
+        showError(steps[steps.length - 1], true, 'That didn’t send. Please try again, or call us on 0434 083 530.');
       };
 
       if (!endpoint) {
-        // No form endpoint set yet (see README). Show the thank-you state so the flow can be reviewed.
+        // No form endpoint set yet (see README). Show the thank-you state so the flow can be reviewed, except
+        // on the live domain: there nothing was sent, so the visitor gets the phone number instead.
         if (window.console) console.warn('Attic Worx quote form: set data-endpoint on #quote-form to receive leads.');
-        finish();
+        if (/(^|\.)atticworx\.com\.au$/.test(window.location.hostname)) fail(); else finish();
         return;
       }
 

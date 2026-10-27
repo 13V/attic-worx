@@ -491,6 +491,16 @@ select.input {
   .qf-row { grid-template-columns: minmax(0, 1fr); }
   .tile { min-height: 84px; padding: 12px; }
 }
+/* Contrast themes drop the chips' fill and colour: the chosen one is marked in Highlight */
+@media (forced-colors: active) {
+  .chip input:checked + span { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
+}
+/* Without :has() (Firefox before 121) a tile can't show it's ticked or focused: the real checkbox shows in
+   the corner instead (the whole tile still ticks it) */
+@supports not selector(:has(a)) {
+  .tile input { opacity: 1; inset: 12px 12px auto auto; width: 20px; height: 20px; accent-color: var(--teal); }
+  .tile::after, .tile-check { display: none; }
+}
 
 /* ---------- Trust strip ---------- */
 .trust { border-bottom: 1px solid var(--line); background: var(--white); }
