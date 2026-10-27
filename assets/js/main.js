@@ -928,10 +928,13 @@ window.AW.section(function () {
   var fills = []; // each line's fill, as last written
   var first = true;
 
+  var near = false; // the section is close enough to the screen for the job to work
+
   var job = function () {
     var vh = window.innerHeight;
     var box = sec.getBoundingClientRect();
-    if (!first && (box.bottom < -vh || box.top > vh * 2)) return; // far off screen: nothing changes
+    near = box.bottom >= -vh && box.top <= vh * 2;
+    if (!first && !near) return; // far off screen: nothing changes
     var mark = vh * 0.56;
     var centres = nodes.map(function (n) {
       var r = n.getBoundingClientRect();
@@ -997,6 +1000,28 @@ window.AW.section(function () {
   if (write) write();
   AW.raf(function () { AW.raf(function () { sec.classList.remove('is-still'); }); });
   AW.onScrollFrame(job);
+
+  // Once the page has been still for 160 ms (a link's glide has landed, or the reader has stopped with the
+  // heading mid-screen), less of the stage is enough: a third of it, or a quarter of the screen's height.
+  // The line above alone wants three quarters of the stage on a 1080p screen, so a reader who stopped
+  // there would look at an empty grid. (Before & after waits the same way.)
+  if (stage) {
+    var stillTimer = 0;
+    var onStill = function () {
+      var p = panels[shown - 1];
+      if (!near || !p || p.classList.contains('is-armed')) return;
+      var vh = window.innerHeight;
+      var st = stage.getBoundingClientRect();
+      var vis = Math.min(st.bottom, vh) - Math.max(st.top, 0);
+      if (!st.height || vis <= 0 || vis < Math.min(st.height / 3, vh * 0.25)) return;
+      p.classList.add('is-armed');
+      if (!AW.motionOK()) p.classList.add('is-instant');
+    };
+    window.addEventListener('scroll', function () {
+      clearTimeout(stillTimer);
+      stillTimer = setTimeout(onStill, 160);
+    }, { passive: true });
+  }
 });
 
 /* ==================== Before & after (#results) ==================== */
