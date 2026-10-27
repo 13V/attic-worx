@@ -622,8 +622,16 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
   border: 1.5px dashed #b8c7c4; border-radius: 10px;
   font-size: 0.78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2);
 }
-.spec-line span { display: inline-flex; align-items: center; gap: 8px; }
-.spec-line span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+/* the dot sits beside an item's first line when it wraps (half the 1.6 line, less half the dot) */
+.spec-line span { display: inline-flex; align-items: flex-start; gap: 8px; }
+.spec-line span::before { content: ""; flex: none; width: 6px; height: 6px; margin-top: calc(0.8em - 3px); border-radius: 50%; background: var(--teal); }
+/* Where all four don't fit on one row, two by two (not three and one left alone); a list on small tablets */
+@media (min-width: 720px) and (max-width: 1291px) {
+  .spec-line { display: grid; grid-template-columns: repeat(2, max-content); justify-content: space-between; }
+}
+@media (max-width: 719px) {
+  .spec-line { flex-direction: column; }
+}
 
 @media (max-width: 1000px) {
   .svc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; }
