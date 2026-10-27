@@ -574,37 +574,68 @@
     });
   });
 
-  /* ---------- Whirlybird: spins faster while the page scrolls, then eases back ---------- */
-  // The vanes' CSS animation is the spin; scroll speed only changes its playbackRate. Still with
-  // reduced motion (the animation only exists without it), and idle while the card is off screen.
+  /* ---------- Whirlybird: spins with the breeze, faster while the page scrolls, then winds down ---------- */
+  // The vanes' CSS animation is the spin; scroll speed only changes its playbackRate. It turns as the card
+  // comes into view and while the page moves, and a few seconds after the page goes still it coasts to a
+  // stop, as a whirlybird does when the breeze drops: nothing moves on its own for long (WCAG 2.2.2); a
+  // scroll starts it again. Still with reduced motion (the animation only exists without it), and stopped
+  // while the card is off screen.
   var vanes = $('.vanes');
   var ventCard = vanes && vanes.closest('.svc');
   if (vanes && ventCard && vanes.getAnimations && 'IntersectionObserver' in window) {
     var spinLive = false;
     var spinRate = 1;
+    var idle = 1; // the speed it settles to: 1 while there's a breeze, 0 once it has dropped
     var boost = 0;
     var sy = startY;
     var st = performance.now();
     var spinning = false;
+    var STILL_MS = 4500;
+    var lastGust = 0;
+    var calm = 0;
+    var stopped = false;
     var spin = function () {
       spinning = false;
       var anim = vanes.getAnimations()[0];
       if (!anim) return;
       boost *= 0.93; // the push fades...
-      spinRate += (1 + boost - spinRate) * 0.12; // ...and the vanes follow it softly
-      if (boost < 0.01 && Math.abs(spinRate - 1) < 0.01) spinRate = 1;
+      spinRate += (idle + boost - spinRate) * (idle ? 0.12 : 0.04); // ...and the vanes follow it softly (and coast down slowly)
+      if (boost < 0.01 && Math.abs(spinRate - idle) < 0.01) spinRate = idle;
       anim.playbackRate = spinRate;
-      if (spinRate !== 1 && spinLive) { spinning = true; raf(spin); }
+      if (!spinRate) { anim.pause(); stopped = true; } // wound down: stopped where it is
+      else if (spinRate !== idle && spinLive) { spinning = true; raf(spin); }
+    };
+    var kick = function () { if (!spinning) { spinning = true; raf(spin); } };
+    // the breeze drops once the page has been still for STILL_MS
+    var settle = function () {
+      var wait = lastGust + STILL_MS - performance.now();
+      if (wait > 20) { calm = setTimeout(settle, wait); return; }
+      calm = 0;
+      idle = 0;
+      kick();
+    };
+    var gust = function () {
+      lastGust = performance.now();
+      if (!calm) calm = setTimeout(settle, STILL_MS);
+      idle = 1;
+      if (stopped) {
+        stopped = false;
+        var anim = vanes.getAnimations()[0];
+        if (anim) anim.play();
+      }
+      if (boost > 0.05 || spinRate !== idle) kick();
     };
     // (An observer can deliver more than one entry for its target at once: the last one is current.)
     new IntersectionObserver(function (entries) {
       spinLive = entries[entries.length - 1].isIntersecting;
       var anim = vanes.getAnimations()[0];
       if (!anim) return;
-      if (spinLive) { anim.play(); return; }
+      if (spinLive) { anim.play(); stopped = false; gust(); return; }
       // Out of sight: back to the resting speed and stopped, so it costs nothing (it picks up where it was)
+      clearTimeout(calm);
+      calm = 0;
       boost = 0;
-      spinRate = 1;
+      spinRate = idle = 1;
       anim.playbackRate = 1;
       anim.pause();
     }).observe(ventCard);
@@ -616,8 +647,12 @@
       st = now;
       if (!spinLive || !motionOK()) return;
       boost = Math.max(boost, Math.min(4, v * 2.2));
-      if (!spinning && boost > 0.05) { spinning = true; raf(spin); }
+      gust();
     });
+    // Motion allowed again mid-visit: a new animation starts at speed 1, so it gets the same few seconds
+    var rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var onRm = function () { if (spinLive && motionOK()) { spinRate = 1; gust(); } };
+    if (rm.addEventListener) rm.addEventListener('change', onRm); else if (rm.addListener) rm.addListener(onRm);
   }
 
   /* ---------- Mobile action bar: rises once the hero buttons are gone, steps aside for the form ----------

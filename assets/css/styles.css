@@ -604,7 +604,8 @@ select.input {
 .vent-stat { display: flex; align-items: baseline; gap: 12px; }
 .vent-stat b { font-stretch: 64%; font-weight: 900; font-size: 4rem; line-height: .8; color: var(--mint); }
 .vent-stat span { font-size: 0.85rem; color: rgba(255,255,255,.72); line-height: 1.3; }
-.vanes { animation: vanes-spin .7s linear infinite; } /* main.js speeds it up with scroll */
+.vanes { animation: vanes-spin .7s linear 8; } /* (no JS: a few seconds, then still) */
+html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up with scroll and lets it wind down when the page is still */
 @keyframes vanes-spin { to { transform: translateX(10px); } }
 
 .spec-line {
