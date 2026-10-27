@@ -11,7 +11,7 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 1. **Hero with a 3-step quote form.** It opens dark, as in a roof: mint lines trace the photo's real edges (the walkway, the trusses, the hatch), then the work light flickers on and the lines fade. Visitors pick services as tiles, answer two quick questions about their home, then leave a name and mobile. Each service card further down has a "Price my…" link that ticks that service in the form and scrolls back to it.
 2. **Trust strip:** same-day installs, priced online, no council approval, no space no charge.
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review. Its first paragraph is the page's one "statement": its words darken as you read down.
-4. **Services bento:** storage floors, ladders, roof ventilation (the whirlybird spins faster while you scroll), insulation.
+4. **Services bento:** storage floors, ladders, roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation.
 5. **How much room?** (`#room`): a slider sizes a storage floor from 2 to 20 m², the picture lays the sheets and fills them with boxes, tubs and gear, and a rough figure says how many archive boxes fit. "Price a floor this size" ticks Attic storage and the matching size in the quote form, then takes you there. At 12 m² it notes that's the size of Kyle M's floor.
 6. **The install: "Boxes up. Car in."** (`#build`): a cutaway of a house at dusk. On screens with motion the picture stays put while you scroll and the job plays out in seven steps: the full garage, the light goes on, H2 framing, 19mm particleboard, the pull-down ladder, everything goes up, the car's back in.
 7. **How it works** (`#how`): three steps. The line through them is a folding attic ladder that swings down as each step lights. Wide screens have a sticky panel beside the steps showing each step's drawing; narrower screens show each drawing under its step.
@@ -77,7 +77,7 @@ If Google Tag Manager (or anything else that sets up `window.dataLayer`) is adde
 
 ### Motion
 
-Motion is a small system. The idea is "drawn, then lit, then built": lines draw, the work light comes on, timber goes down. Nothing bounces, nothing loops except the whirlybird, and nothing follows the cursor.
+Motion is a small system. The idea is "drawn, then lit, then built": lines draw, the work light comes on, timber goes down. Nothing bounces, nothing loops (the whirlybird spins while the page moves and winds down a few seconds after it stops), and nothing follows the cursor.
 
 The engine is the first part of `main.js`, exposed as `window.AW`:
 
