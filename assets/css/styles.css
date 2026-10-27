@@ -754,10 +754,11 @@ select.input {
   }
   .action-bar.is-visible { transform: none; }
   .action-bar .btn { min-height: 50px; }
-  .site-footer { padding-bottom: calc(32px + 72px + env(safe-area-inset-bottom, 0px)); }
+  /* (--bar-h: the bar's measured height, set by main.js; it grows with large text, when its buttons wrap) */
+  .site-footer { padding-bottom: calc(32px + max(var(--bar-h, 0px), 72px + env(safe-area-inset-bottom, 0px))); }
   /* A control that takes focus (or a scrollIntoView) is brought into view above the bar, not behind it:
      landscape phones have little height to spare */
-  html { scroll-padding-bottom: calc(72px + 12px + env(safe-area-inset-bottom, 0px)); }
+  html { scroll-padding-bottom: calc(max(var(--bar-h, 0px), 72px + env(safe-area-inset-bottom, 0px)) + 12px); }
 }
 @media (max-width: 360px) {
   .action-bar .btn { padding-inline: 16px; } /* keeps "Get my free quote" on one line on the narrowest phones */
@@ -1523,35 +1524,37 @@ html.js .room-handoff-nojs { visibility: hidden; }
   :root .bs-caps {
     position: relative; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 8px;
     width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto;
-    padding: 12px 0 calc(78px + var(--bar)); min-height: 0;
+    padding: 12px 0 calc(var(--bs-cap-pad, 78px) + var(--bar)); min-height: 0;
   }
   :root .bs-cap { padding: 0; border: 0; grid-column: auto; opacity: 0.62; transition: opacity var(--t-out) var(--ease-in); }
   :root .bs-cap::before { margin-bottom: 4px; }
-  :root .bs-cap h3 { font-size: 0.98rem; }
+  :root .bs-cap h3 { font-size: 0.98rem; overflow-wrap: break-word; } /* (a long word in large text: broken, not run into the next title) */
+  /* The steps that aren't playing are only transparent, never visibility: hidden or display: none: a screen
+     reader reads all seven as a list (the drawing itself is aria-hidden), the way it reads the at-rest list.
+     (The button stays focusable while its step is off: focusing it jumps to the end, see main.js.) */
   :root .bs-cap p, :root .bs-cap .btn {
-    position: absolute; left: 0; top: 74px; margin: 0;
+    position: absolute; left: 0; top: var(--bs-cap-top, 74px); margin: 0;
     opacity: 0; translate: 0 6px; pointer-events: none;
-    transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out);
+    transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in);
   }
-  /* (the button stays focusable while its step is off: focusing it jumps to the end, see main.js) */
-  :root .bs-cap p { visibility: hidden; }
   :root .bs-cap p { width: min(58%, 40em); font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
-  :root .bs-cap .btn { left: auto; right: 0; top: 66px; }
+  /* (--bs-cap-top, --bs-cap-pad: main.js measures the tallest step title and paragraph, so large text or
+     wider text spacing never prints a paragraph over the titles) */
+  :root .bs-cap .btn { left: auto; right: 0; top: calc(var(--bs-cap-top, 74px) - 8px); }
   :root .bs-cap.is-on { opacity: 1; transition: opacity var(--t-ui) var(--ease-out); }
   :root .bs-cap.is-on p, :root .bs-cap.is-on .btn, :root .bs-cap .btn:focus-visible {
-    opacity: 1; translate: none; visibility: visible; pointer-events: auto;
-    transition: opacity var(--t-text) var(--ease-out) 80ms, translate var(--t-text) var(--ease-out) 80ms, visibility 0s;
+    opacity: 1; translate: none; pointer-events: auto;
+    transition: opacity var(--t-text) var(--ease-out) 80ms, translate var(--t-text) var(--ease-out) 80ms;
   }
   /* until main.js marks a step (or if it never runs), the last one shows */
   :root .bs-stage:not([data-beat]) .bs-cap:last-child { opacity: 1; }
-  :root .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; visibility: visible; pointer-events: auto; }
+  :root .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; pointer-events: auto; }
 
   /* Narrower screens: one step at a time in a panel, above the action bar on phones */
   @media (max-width: 1099px) {
     :root .bs-caps { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px 0 calc(18px + var(--bar)); }
-    :root .bs-cap { grid-area: 1 / 1; opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in), visibility 0s linear var(--t-out); }
-    :root .bs-cap:not(.is-on):not(:last-child) { visibility: hidden; }
-    :root .bs-cap.is-on, :root .bs-stage:not([data-beat]) .bs-cap:last-child, :root .bs-cap:focus-within { opacity: 1; translate: none; visibility: visible; pointer-events: auto; transition: opacity var(--t-ui) var(--ease-out), translate var(--t-ui) var(--ease-out), visibility 0s; }
+    :root .bs-cap { grid-area: 1 / 1; opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in); }
+    :root .bs-cap.is-on, :root .bs-stage:not([data-beat]) .bs-cap:last-child, :root .bs-cap:focus-within { opacity: 1; translate: none; pointer-events: auto; transition: opacity var(--t-ui) var(--ease-out), translate var(--t-ui) var(--ease-out); }
     :root .bs-cap::before { display: inline; margin-right: 10px; }
     :root .bs-cap h3 { display: inline; font-size: 1.0625rem; }
     :root .bs-cap p, :root .bs-cap .btn { position: static; translate: none; }
@@ -1559,7 +1562,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
     :root .bs-cap .btn { margin-top: 12px; min-height: 44px; padding: 0 18px; font-size: 0.9375rem; }
   }
   @media (max-width: 960px) {
-    :root .bs-stage { --bar: calc(71px + env(safe-area-inset-bottom, 0px)); }
+    :root .bs-stage { --bar: max(var(--bar-h, 0px), 71px + env(safe-area-inset-bottom, 0px)); }
     /* the action bar's own "Get my free quote" sits just under the last step here: one is enough */
     :root .bs-cap .btn { display: none; }
   }

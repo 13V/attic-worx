@@ -587,6 +587,17 @@
      It's hidden by default in CSS (so it never shows at first paint, then drops away) and .is-visible
      brings it up. Without JS a noscript rule shows it. */
   var bar = $('[data-action-bar]');
+  // Its height, for what has to clear it (the build scene's caption, the footer, scroll-padding): with large
+  // text its buttons wrap and it grows past the 71px the CSS assumes. Only written when it changes.
+  if (bar && 'ResizeObserver' in window) {
+    var barSize = -1;
+    new ResizeObserver(function () {
+      var h = bar.offsetHeight;
+      if (h === barSize) return;
+      barSize = h;
+      root.style.setProperty('--bar-h', h + 'px');
+    }).observe(bar);
+  }
   if (bar && !(card && 'IntersectionObserver' in window)) bar.classList.add('is-visible'); // nothing to step aside for
   if (bar && card && 'IntersectionObserver' in window) {
     var heroVisible = true;
@@ -734,12 +745,18 @@ window.AW.section(function () {
     }, { rootMargin: '25% 0px' }).observe(track);
   }
 
+  // Where the reader is in the track as of the last frame: [fraction of its travel, its top on the page, its
+  // travel] (see the resize listener below)
+  var place = null;
+
   AW.onScrollFrame(function () {
-    if (!live || !pinned()) return;
+    if (!live || !pinned()) { place = null; return; }
     // read: where the track is, how long the stage stays pinned
     var top = track.getBoundingClientRect().top;
     var travel = track.offsetHeight - stage.offsetHeight;
-    var p = AW.clamp(-top / Math.max(1, travel) / 0.88, 0, 1); // the last 12% holds the end
+    var f = -top / Math.max(1, travel);
+    place = f > 0 && f < 1 ? [f, window.scrollY + top, travel] : null;
+    var p = AW.clamp(f / 0.88, 0, 1); // the last 12% holds the end
     return function () {
       // write
       target = p;
@@ -753,6 +770,20 @@ window.AW.section(function () {
     };
   });
 
+  // A resize mid-story (a desktop window resized, DevTools opened) changes the track's length (it's 470vh)
+  // and often what's above it: the reader stays at the same point of the story, not wherever the old scroll
+  // position now falls. Only when the track itself moved or changed length, so a phone's address bar
+  // showing or hiding (neither changes) never pulls a fling back.
+  window.addEventListener('resize', function () {
+    if (!place || !pinned()) return;
+    var top = track.getBoundingClientRect().top + window.scrollY;
+    var travel = track.offsetHeight - stage.offsetHeight;
+    if (Math.abs(top - place[1]) < 1 && Math.abs(travel - place[2]) < 1) return;
+    place = [place[0], top, travel];
+    snap = true;
+    window.scrollTo({ top: Math.round(top + place[0] * travel), behavior: 'instant' });
+  });
+
   // Keyboard: the last step's button lives in the pinned stage. Tabbing to it while another step shows
   // jumps to the end of the story, where it's on screen and lit.
   stage.addEventListener('focusin', function () {
@@ -762,6 +793,38 @@ window.AW.section(function () {
     snap = true;
     window.scrollTo({ top: y, behavior: 'instant' });
   });
+
+  // Wide screens: the step titles sit in a row and each step's paragraph (and the last one's button) shows
+  // under them. Where they start and how much room they need is measured (the tallest title, the tallest
+  // paragraph), so large text or wider text spacing never prints a paragraph over the titles. At default
+  // text this gives the CSS fallbacks (74px, 78px). It runs only when a size changes, never per frame.
+  var row = track.querySelector('.bs-caps');
+  var texts = Array.prototype.slice.call(track.querySelectorAll('.bs-cap p, .bs-cap .btn'));
+  if (row && texts.length && 'ResizeObserver' in window) {
+    var fit = '';
+    var measure = function () {
+      var k = '';
+      if (getComputedStyle(texts[0]).position === 'absolute') { // the row layout (not the panel or the list)
+        var rowTop = row.getBoundingClientRect().top;
+        var titles = 0, para = 0, btn = 0;
+        caps.forEach(function (c) { titles = Math.max(titles, c.getBoundingClientRect().bottom - rowTop); });
+        texts.forEach(function (t) {
+          var h = t.getBoundingClientRect().height;
+          if (t.tagName === 'P') para = Math.max(para, h); else btn = Math.max(btn, h);
+        });
+        var top = Math.ceil(titles + 18);
+        k = top + 'px,' + Math.ceil(Math.max(18 + para, 10 + btn) + 11) + 'px';
+      }
+      if (k === fit) return;
+      fit = k;
+      var v = k.split(',');
+      if (k) { row.style.setProperty('--bs-cap-top', v[0]); row.style.setProperty('--bs-cap-pad', v[1]); }
+      else { row.style.removeProperty('--bs-cap-top'); row.style.removeProperty('--bs-cap-pad'); }
+    };
+    var ro = new ResizeObserver(measure);
+    ro.observe(row);
+    texts.forEach(function (t) { ro.observe(t); });
+  }
 });
 
 /* ==================== How it works (#how) ==================== */
