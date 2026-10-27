@@ -504,7 +504,7 @@
         submit.disabled = false;
         submit.textContent = 'Get my free quote';
         submit.focus(); // (disabled while sending, it had lost focus); then the message is announced
-        showError(steps[steps.length - 1], true, 'That didn’t send. Please try again, or call us on 0434 083 530.');
+        showError(steps[steps.length - 1], true, "That didn't send. Please try again, or call us on 0434 083 530.");
       };
 
       if (!endpoint) {
@@ -1780,9 +1780,9 @@ window.AW.section(function () {
       valueEl.textContent = v;
     }
     if (boxesEl) boxesEl.textContent = n;
-    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : 'We’ll tick Attic storage and “' + (z.show || z.label) + '” in the form for you.';
+    if (handoff) handoff.textContent = sent() ? 'Your quote request has been sent.' : "We'll tick Attic storage and “" + (z.show || z.label) + '” in the form for you.';
     sec.classList.toggle('is-kyle', kyle); // shows "The size of the floor Kyle M had put in above his garage." 
-    input.setAttribute('aria-valuetext', v + ' square metres, room for about ' + n + ' archive boxes' + (kyle ? ', the size of Kyle M’s floor' : ''));
+    input.setAttribute('aria-valuetext', v + ' square metres, room for about ' + n + ' archive boxes' + (kyle ? ", the size of Kyle M's floor" : ''));
     if (range) range.style.setProperty('--f', ((v - MIN) / (MAX - MIN)).toFixed(4));
     zones.forEach(function (s) { s.classList.toggle('is-on', s.getAttribute('data-zone') === z.id); });
   };
