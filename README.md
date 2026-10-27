@@ -162,14 +162,14 @@ Lighthouse 12.8.2, run locally on the full page served with gzip (as a real host
 
 | | Performance | Accessibility | Best practices | SEO | LCP | CLS | TBT | Transferred |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Mobile | 96 | 100 | 100 | 100 | 2.6 s | 0 | 101 ms | 313 KiB, 12 requests |
-| Desktop | 99 | 100 | 100 | 100 | 0.6 s | 0 | 0 ms | 420 KiB, 13 requests |
+| Mobile | 96 | 100 | 100 | 100 | 2.6 s | 0 | 69 ms | 318 KiB, 12 requests |
+| Desktop | 99 | 100 | 100 | 100 | 0.6 s | 0 | 0 ms | 425 KiB, 13 requests |
 
-Mobile scores move a few points from run to run. Before the motion work the page scored 99 (mobile) and 100 (desktop); the difference is mostly the hero's opening, which starts dark and lights up (it lowers Speed Index), and the larger HTML and stylesheet.
+Mobile scores move a few points from run to run (a busy machine can drop a single run much lower). Before the motion work the page scored 99 (mobile) and 100 (desktop); the difference is mostly the hero's opening, which starts dark and lights up (it lowers Speed Index), and the larger HTML and stylesheet.
 
 What keeps it fast:
 
-- No frameworks. One stylesheet (about 37 KB compressed), one deferred script (about 26 KB compressed) and one font file (preloaded).
+- No frameworks. One stylesheet (about 37 KB compressed), one deferred script (about 29 KB compressed) and one font file (preloaded).
 - The hero photo is preloaded and painted from the first frame, under the darkness. On phones the browser takes the lede as the largest paint, so the lede doesn't animate.
 - Images are AVIF/WebP sized per screen, everything below the hero is lazy-loaded, and every image has fixed dimensions.
 - The page has its full length from the first frame (nothing that changes the layout waits for the script), so nothing jumps, including when a visitor arrives on a link to a section further down.
