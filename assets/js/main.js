@@ -1211,8 +1211,9 @@ window.AW.section(function () {
   var goBtn = endEl && endEl.querySelector('.btn');
   if (!pin || !head || !rail || !track || !strip || !cards.length) return;
 
-  // The run's query: the same as the media block in styles.css (scripting on, wide, motion allowed)
-  var RUN = '(scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference)';
+  // The run's query: the same as the media block in styles.css (scripting on, wide, motion allowed; em, so
+  // larger default text gets the strip)
+  var RUN = '(scripting: enabled) and (min-width: 62.5em) and (min-height: 33.75em) and (prefers-reduced-motion: no-preference)';
   var runMQ = window.matchMedia(RUN);
   var LAND = 0.2; // a card brought into view by keyboard lands this far across the rail
   var DRIFT = 6;  // % of a photo's width it drifts across a screen's width of travel (it rests at scale 1.16)

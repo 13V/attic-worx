@@ -2300,8 +2300,9 @@ html.js .rx-panel { grid-area: 1 / 1; }
    screen: the spacer (::after) gets the travel from the same sizes the track uses (its padding percentages
    resolve against the section's width, the rail's). main.js adds .is-h when it drives the track; until
    then (or if it never loads) the rail simply scrolls sideways. Browsers without the scripting media
-   feature get the strip. Keep this query in step with RUN in main.js. */
-@media (scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference) {
+   feature get the strip. Keep this query in step with RUN in main.js. Its sizes are in em (1000 x 540px at
+   default text) so a visitor who sets a larger default text gets the strip rather than a squeezed run. */
+@media (scripting: enabled) and (min-width: 62.5em) and (min-height: 33.75em) and (prefers-reduced-motion: no-preference) {
   .work {
     --pin-pt: clamp(40px, 6vh, 72px);
     --hdr-step: max(0px, calc(var(--header-h) - var(--pin-pt) + 8px)); /* the heading's step under the header */
@@ -2454,7 +2455,7 @@ html.js .rx-panel { grid-area: 1 / 1; }
   .work.is-live:not(.is-h) .work-end .btn::before { transition: opacity 760ms var(--ease-draw); }
 }
 /* The run: the pool of light on the band, behind the track; main.js moves it (transform only) */
-@media (scripting: enabled) and (min-width: 1000px) and (min-height: 540px) and (prefers-reduced-motion: no-preference) {
+@media (scripting: enabled) and (min-width: 62.5em) and (min-height: 33.75em) and (prefers-reduced-motion: no-preference) {
   .work-rail { position: relative; }
   .work.is-h .work-light {
     /* z-index -1: under everything in the stage (the heading too), over the band */
