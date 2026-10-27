@@ -148,6 +148,10 @@ p { text-wrap: pretty; }
 .band { padding-block: clamp(72px, 9vw, 132px); }
 .band-paper { background: var(--paper); --plate: var(--paper); }
 .band-dark { background: var(--roof); color: var(--white); --plate: var(--roof); --plate-edge: rgba(143, 214, 204, 0.4); }
+/* Each band paints on its own, so a scroll-linked drawing (the build scene, How it works) repaints its band
+   and not the page under it (about 60% less paint per frame there). Every band: containing only the heavy
+   ones gained nothing. Nothing is meant to paint past a band's edge. */
+main > section, .site-footer { contain: paint; }
 
 /* ---------- Type helpers ---------- */
 .display {

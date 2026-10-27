@@ -173,7 +173,7 @@ What keeps it fast:
 - The hero photo is preloaded and painted from the first frame, under the darkness. On phones the browser takes the lede as the largest paint, so the lede doesn't animate.
 - Images are AVIF/WebP sized per screen, everything below the hero is lazy-loaded, and every image has fixed dimensions.
 - The page has its full length from the first frame (nothing that changes the layout waits for the script), so nothing jumps, including when a visitor arrives on a link to a section further down.
-- Only `transform` and `opacity` (and SVG stroke offsets) animate. There's one scroll loop, each section goes idle when it's off screen, and the section scripts start up as separate short tasks.
+- Only `transform` and `opacity` (and SVG stroke offsets) animate. There's one scroll loop, each section goes idle when it's off screen, and the section scripts start up as separate short tasks. Each band paints on its own (`contain: paint`), so a scroll-linked drawing repaints its band, not the whole page.
 
 ## Credits
 
