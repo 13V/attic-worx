@@ -1551,23 +1551,25 @@ html.js .room-handoff-nojs { visibility: hidden; }
   /* The steps that aren't playing are only transparent, never visibility: hidden or display: none: a screen
      reader reads all seven as a list (the drawing itself is aria-hidden), the way it reads the at-rest list.
      (The button stays focusable while its step is off: focusing it jumps to the end, see main.js.) */
+  /* (--bs-cap-top, --bs-cap-pad: main.js measures the tallest step title and paragraph, so large text or
+     wider text spacing never prints a paragraph over the titles. The step down from 74px is a translate,
+     so it never counts as a layout shift.) */
   :root .bs-cap p, :root .bs-cap .btn {
-    position: absolute; left: 0; top: var(--bs-cap-top, 74px); margin: 0;
-    opacity: 0; translate: 0 6px; pointer-events: none;
+    position: absolute; left: 0; top: 74px; margin: 0;
+    --bs-dy: calc(var(--bs-cap-top, 74px) - 74px);
+    opacity: 0; translate: 0 calc(var(--bs-dy) + 6px); pointer-events: none;
     transition: opacity var(--t-out) var(--ease-in), translate var(--t-out) var(--ease-in);
   }
   :root .bs-cap p { width: min(58%, 40em); font-size: 1.02rem; color: rgba(255, 255, 255, 0.84); }
-  /* (--bs-cap-top, --bs-cap-pad: main.js measures the tallest step title and paragraph, so large text or
-     wider text spacing never prints a paragraph over the titles) */
-  :root .bs-cap .btn { left: auto; right: 0; top: calc(var(--bs-cap-top, 74px) - 8px); }
+  :root .bs-cap .btn { left: auto; right: 0; top: 66px; }
   :root .bs-cap.is-on { opacity: 1; transition: opacity var(--t-ui) var(--ease-out); }
   :root .bs-cap.is-on p, :root .bs-cap.is-on .btn, :root .bs-cap .btn:focus-visible {
-    opacity: 1; translate: none; pointer-events: auto;
+    opacity: 1; translate: 0 var(--bs-dy); pointer-events: auto;
     transition: opacity var(--t-text) var(--ease-out) 80ms, translate var(--t-text) var(--ease-out) 80ms;
   }
   /* until main.js marks a step (or if it never runs), the last one shows */
   :root .bs-stage:not([data-beat]) .bs-cap:last-child { opacity: 1; }
-  :root .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: none; pointer-events: auto; }
+  :root .bs-stage:not([data-beat]) .bs-cap:last-child :is(p, .btn) { opacity: 1; translate: 0 var(--bs-dy); pointer-events: auto; }
 
   /* Narrower screens: one step at a time in a panel, above the action bar on phones */
   @media (max-width: 1099px) {
