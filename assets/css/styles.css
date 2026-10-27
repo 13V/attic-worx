@@ -275,7 +275,15 @@ p { text-wrap: pretty; }
   padding: env(safe-area-inset-top, 0px) max(var(--gutter), env(safe-area-inset-right, 0px)) 24px var(--gutter);
   background: var(--roof); color: var(--white);
   box-shadow: var(--shadow-lg);
+  /* Safari takes a closing popover out of the top layer before its fade ends: this keeps the fading panel
+     over the header (50), body::before (60) and the action bar (40) meanwhile (the top layer ignores it) */
+  z-index: 100;
 }
+@supports selector(:popover-open) { .mobile-menu:not(:popover-open) { pointer-events: none; } } /* (fading out) */
+/* Without popovers (iOS 16 and older, Firefox 115 ESR) the panel would sit open at the top of the page, and
+   the button would do nothing: there the page goes without them (the header's call button, its links on
+   wide screens and the action bar stay) */
+@supports not selector(:popover-open) { .mobile-menu, .menu-btn { display: none !important; } }
 .mobile-menu::backdrop { background: rgba(5, 15, 15, 0.5); }
 .mobile-menu-top {
   /* The same row as the header's (height, gutter, logo, button spot), so opening the menu changes

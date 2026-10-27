@@ -282,6 +282,12 @@
         if (spot) setTimeout(function () { focusSpot(spot); }, 0); // after the link's own jump
       });
     });
+    // Tab (or Shift+Tab) out of the open menu closes it, as a tap outside does: the menu covers the page on
+    // phones, so focus would go on behind it, out of sight. (Switching tab or app blurs with nowhere to go:
+    // the menu stays.)
+    menu.addEventListener('focusout', function (e) {
+      if (menuOpen() && e.relatedTarget && !menu.contains(e.relatedTarget)) menu.hidePopover();
+    });
   }
 
   /* ---------- FAQ: the answer's fade is for answers a visitor opens (not the one open at load) ---------- */
