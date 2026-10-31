@@ -769,6 +769,16 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 .review-feature footer, .review-feature footer strong { color: var(--white); }
 .review-feature .avatar { background: rgba(255,255,255,.16); color: var(--white); }
 .reviews-more { margin-top: clamp(20px, 3vw, 32px); }
+.review-src { display: block; font-size: .78rem; color: var(--ink-3); }
+/* The rest of the reviews: a native <details>, so it opens with or without JS */
+.reviews-all { margin-top: clamp(8px, 1.5vw, 16px); }
+.reviews-all > summary {
+  list-style: none; width: fit-content; margin-inline: auto; margin-bottom: 20px;
+  border-color: var(--ink); color: var(--ink);
+}
+.reviews-all > summary::-webkit-details-marker { display: none; }
+.reviews-all > summary:hover { background: var(--ink); color: var(--white); }
+.reviews-all[open] > summary { display: none; }
 @media (max-width: 700px) {
   .reviews-grid {
     columns: auto; display: grid; grid-auto-flow: column; grid-auto-columns: 84%; gap: 12px;
