@@ -13,7 +13,7 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review. Its first paragraph is the page's one "statement": its words darken as you read down.
 4. **Services bento:** storage floors, ladders, roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation.
 5. **How much room?** (`#room`): a slider sizes a storage floor from 2 to 20 m², the picture lays the sheets and fills them with boxes, tubs and gear, and a rough figure says how many archive boxes fit. "Price a floor this size" ticks Attic storage and the matching size in the quote form, then takes you there. At 12 m² it notes that's the size of Kyle M's floor.
-6. **The install: "Boxes up. Car in."** (`#build`): a cutaway of a house at dusk. On screens with motion the picture stays put while you scroll and the job plays out in seven steps: the full garage, the light goes on, H2 framing, 19mm particleboard, the pull-down ladder, everything goes up, the car's back in.
+6. **The install: "Boxes up. Car in."** (`#build`): a cutaway of a house at dusk. On screens with motion the picture stays put while you scroll and the job plays out in seven steps: the full garage, the light goes on, framing timber, 19mm particleboard, the pull-down ladder, everything goes up, the car's back in.
 7. **How it works** (`#how`): three steps. The line through them is a folding attic ladder that swings down as each step lights. Wide screens have a sticky panel beside the steps showing each step's drawing; narrower screens show each drawing under its step.
 8. **Before and after** (`#results`): three real jobs as still pairs (never a drag slider). The before sits muted, the after lit, and a work light passes once from one to the other as the pair scrolls in. Tabs switch jobs.
 9. **Recent work** (`#work`): on wide screens with motion the section holds still while the photos run sideways, and a warm work light travels along them. Elsewhere it's a swipe strip. It opens with a link to the Facebook page and ends with a quote button.
@@ -63,7 +63,7 @@ If Google Tag Manager (or anything else that sets up `window.dataLayer`) is adde
 
 ### 3. Check the details
 
-- Phone: 0434 083 530 (used in `tel:+61434083530` links and the structured data).
+- Phone: 0485 065 143 (used in `tel:+61485065143` links and the structured data).
 - Facebook: `https://www.facebook.com/profile.php?id=61562459426494`.
 - The "90+ five-star reviews" line and all review quotes come from the current site.
 - No email address, street address or ABN is shown, because the current site doesn't publish them. Add them to the footer and the JSON-LD in `<head>` if you want them.
