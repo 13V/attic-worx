@@ -19,8 +19,9 @@
    glowing with the light of the room below. Before the picture first shows, an overlay in roof colour
    (.rm-dark) holds it dark but for the manhole, and the light comes up through the manhole: the dark
    draws back from the hatch (styles.css). The new
-   floor is H2 battens and 2400 × 600 × 19 mm particleboard, laid from the manhole along the ridge
-   (see ORDER). Stored things stand in lanes either side of the 600 mm walkway. Everything is
+   floor is 2400 × 600 × 19 mm particleboard on framing timber, laid from the manhole along the ridge
+   (see ORDER). Stored things stand in two lanes either side of the 600 mm walkway, with the low
+   edges clear. Everything is
    modelled in metres at real sizes, in the garage scene's palette.
 
    The file holds the largest floor (20 m²). Each sheet and each thing is one <use> of a shared shape
@@ -61,7 +62,7 @@ const mix = (a, b, t) => toHex(hex(a).map((v, i) => v + (hex(b)[i] - v) * t));
 const mul = (a, k) => toHex(hex(a).map((v) => v * k));
 const C = {
   cut: '#117e79', roof: '#0c2122', roof2: '#133433',
-  pine: '#d39b5e', h2: '#a3b99b', board: '#d4cbb6', insul: '#dcc68c',
+  pine: '#d39b5e', timber: '#cfa46e', board: '#d4cbb6', insul: '#dcc68c',
   kraft: '#bd915c', band2: '#5f8fb3', tub: '#d3dcd9', lid: '#117e79', tealtub: '#2b8a84',
   suitcase: '#4b7391', esky: '#e2e7e4', eskyLid: '#2f7d95', bag: '#36524e', roll: '#c9945a',
   amber: '#ffcf8a', warm: '#f6b866', mint: '#8fd6cc',
@@ -124,12 +125,13 @@ const SHAPES = {};
 const FOOT = {}; // [along x, along y, height]
 const shape = (id, foot, inner) => { SHAPES[id] = inner; FOOT[id] = foot; };
 
-/* a sheet: particleboard on H2 battens (the front and the right edge show while it's the last one) */
+/* a sheet: particleboard on its timber frame (plain pine; the front and the right edge show while it's
+   the last one) */
 {
   const { w, l, z, t } = F;
   shape('rm-sheet', [w, l, z], [
-    pth(fFront(D, 0, w, 0, z - t, l), mul(C.h2, SH.front)),
-    pth(fSide(D, 0, l, 0, z - t, w), mul(C.h2, SH.side)),
+    pth(fFront(D, 0, w, 0, z - t, l), mul(C.timber, SH.front)),
+    pth(fSide(D, 0, l, 0, z - t, w), mul(C.timber, SH.side)),
     pth(fFront(D, 0, w, z - t, z, l), mul(C.board, 0.84)),
     pth(fSide(D, 0, l, z - t, z, w), mul(C.board, 0.72)),
     pth(fTop(D, 0, w, 0, l, z), mul(C.board, SH.top)),
@@ -236,17 +238,17 @@ shape('rm-tent', [0.24, 0.62, 0.24], roll(0.62, 0.24, '#5e7b5a'));
 shape('rm-mat', [0.2, 0.56, 0.2], roll(0.56, 0.2, C.roll));
 
 /* ---------- Where things go ----------
-   Three lanes either side of the walkway (the outer edge, with the least headroom, stays clear).
-   Each lane runs from the manhole end of the floor inwards and repeats its own pattern. */
+   Two lanes either side of the walkway, a hand's width apart, so every box can be reached and lifted
+   out. Beyond them the floor runs on towards the eaves but stays clear: the roof comes down low there.
+   (The guide's figure counts about a third of the floor as holding boxes, main.js.) Each lane runs from
+   the manhole end of the floor inwards and repeats its own pattern. */
 const LANES = [
-  { x: WALK + 0.04, pat: ['rm-box2', 'rm-box2', 'rm-esky', 'rm-box2', 'rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-case', 'rm-box2', 'rm-box2'] },
-  { x: WALK + 0.49, pat: ['rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-box2'] },
-  { x: WALK + 0.94, pat: ['rm-box2', 'rm-box2', 'rm-box2', 'rm-tent', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-bag', 'rm-box2'] },
-  { x: -(WALK + 0.04), pat: ['rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-bag', 'rm-box2', 'rm-box2', 'rm-tubs', 'rm-box2'] },
-  { x: -(WALK + 0.49), pat: ['rm-box2', 'rm-box2', 'rm-case', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2'] },
-  { x: -(WALK + 0.94), pat: ['rm-box2', 'rm-mat', 'rm-box2', 'rm-box2', 'rm-esky', 'rm-box2', 'rm-box2', 'rm-box2', 'rm-tent'] },
+  { x: WALK + 0.05, pat: ['rm-box2', 'rm-box2', 'rm-esky', 'rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-case', 'rm-box2', 'rm-bag'] },
+  { x: WALK + 0.56, pat: ['rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-tent', 'rm-box2', 'rm-box2', 'rm-tubs', 'rm-box2'] },
+  { x: -(WALK + 0.05), pat: ['rm-box2', 'rm-tubs', 'rm-box2', 'rm-box2', 'rm-bag', 'rm-box2', 'rm-box2', 'rm-tubs', 'rm-box2'] },
+  { x: -(WALK + 0.56), pat: ['rm-box2', 'rm-mat', 'rm-box2', 'rm-case', 'rm-box2', 'rm-box2', 'rm-esky', 'rm-box2', 'rm-tent'] },
 ];
-const GAP = 0.03;
+const GAP = 0.07;
 function planItems() {
   const items = [];
   const yNear = F.runs[0][1], yFar = F.runs[1][0];

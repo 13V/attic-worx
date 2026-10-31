@@ -1716,16 +1716,16 @@ window.AW.section(function () {
   /* ---------- The numbers ----------
      A rough guide, and it says so (the footnote in index.html states the same assumptions):
      - an archive box takes about 420 × 320 mm of floor and stands 260 mm tall; boxes go two high;
-     - about half the floor holds boxes. The rest is the 600 mm walkway from the manhole (about a
-       quarter of a typical floor), the edges where the roof comes down, and the gaps between boxes
-       and around the roof framing.
-     So boxes ≈ 2 × (m² × 0.5) / (0.42 × 0.32), about 7.4 per m², rounded to the nearest 5, so every
-     whole m² changes the figure (by 5 or 10):
-     2 m² → 15, 8 m² → 60, 9 m² → 65, 10 m² → 75, 12 m² → 90, 20 m² → 150.
+     - about a third of the floor holds boxes. The rest is the 600 mm walkway from the manhole (about a
+       quarter of a typical floor), a clear strip along each side where the roof comes down low, room
+       to reach in and lift a box out, and the gaps between boxes and around the roof framing.
+     So boxes ≈ 2 × (m² ÷ 3) / (0.42 × 0.32), about 5 per m², rounded to the nearest 5, so every whole
+     m² changes the figure by 5:
+     2 m² → 10, 4 m² → 20, 8 m² → 40, 12 m² → 60, 16 m² → 80, 20 m² → 100.
      The picture shows a mix (tubs, cases, camping and sports gear stand in for some of the boxes), so
      it holds fewer boxes than the figure; the footnote says so. */
   var BOX_FLOOR = 0.42 * 0.32;
-  var SHARE = 0.5;
+  var SHARE = 1 / 3;
   var HIGH = 2;
   var boxes = function (m2) {
     var raw = (HIGH * m2 * SHARE) / BOX_FLOOR;
