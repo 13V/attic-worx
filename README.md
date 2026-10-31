@@ -10,6 +10,7 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 
 1. **Hero with a 3-step quote form.** It opens dark, as in a roof: mint lines trace the photo's real edges (the walkway, the trusses, the hatch), then the work light flickers on and the lines fade. Visitors pick services as tiles, answer two quick questions about their home, then leave a name and mobile. Each service card further down has a "Price my…" link that ticks that service in the form and scrolls back to it.
 2. **Trust strip:** same-day installs, priced online, no council approval, no space no charge.
+   **Reviews band** under it: the stars, "90+ five-star reviews on Google and Facebook" and a link to the reviews, then a slow line of the real quotes. main.js copies the line from the Reviews section, so it needs no editing of its own. It pauses on hover, on keyboard focus, off screen and with its pause button; with reduced motion or without JavaScript it holds still (without JavaScript the band is just the rating and the link). The hero's review line is a link to the reviews too.
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review. Its first paragraph is the page's one "statement": its words darken as you read down.
 4. **Services bento:** storage floors, ladders, roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation.
 5. **How much room?** (`#room`): a slider sizes a storage floor from 2 to 20 m², the picture lays the floor and fills it with boxes, tubs and gear (two lanes either side of the walkway, the low edges clear), and a rough figure says how many archive boxes fit: about 5 per m² (8 m² → 40, 12 m² → 60, 20 m² → 100), counting about a third of the floor as holding boxes. "Price a floor this size" ticks Attic storage and the matching size in the quote form, then takes you there. At 12 m² it notes that's the size of Kyle M's floor.
@@ -71,9 +72,10 @@ If Google Tag Manager (or anything else that sets up `window.dataLayer`) is adde
 ## Editing
 
 - **Copy** lives in `index.html`. Each section is marked with a comment (`<!-- Services -->`, `<!-- FAQ -->` and so on).
+- **Reviews:** to add one, copy the commented pattern just above `.reviews-grid` in the Reviews section and paste it into the grid (the newest can go first), changing only the quote, the initial and the name. Use real reviews only, word for word. It appears in the grid and, automatically, in the reviews band near the top. If the count changes ("90+"), update it in the hero, the reviews band and the Reviews heading.
 - **FAQ:** if you change a question, update the matching entry in the `FAQPage` JSON-LD in `<head>` so Google sees the same text.
 - **Styles** are all in `assets/css/styles.css`: the tokens at the top (colours, type sizes, spacing, motion), then the base and the sections in page order, then the "Motion" part (the shared primitives below), then one part per animated section, in page order: Hero sequence, How much room?, Roof build scene, How it works, Before & after, Recent work. Each of those is scoped to its own section and comes last on purpose, because it builds on the rules above it.
-- **Behaviour** is all in `assets/js/main.js`: the motion engine first, then the page (header, menu, FAQ, quote form, "Price my…" links, whirlybird, action bar), then one block per animated section (Roof build scene, How it works, Before & after, Recent work, How much room?), each queued with `AW.section`. The hero's sequence is CSS only.
+- **Behaviour** is all in `assets/js/main.js`: the motion engine first, then the page (header, menu, FAQ, quote form, "Price my…" links, whirlybird, action bar), then one block per animated section (Reviews band, Roof build scene, How it works, Before & after, Recent work, How much room?), each queued with `AW.section`. The hero's sequence is CSS only.
 
 ### Motion
 

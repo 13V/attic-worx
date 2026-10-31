@@ -378,8 +378,13 @@ main > section, .site-footer { contain: paint; }
 .hero h1 .hl { color: var(--mint); display: block; }
 .hero .lede { color: rgba(255, 255, 255, 0.82); max-width: 33em; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.proof { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; font-size: 0.95rem; color: rgba(255, 255, 255, 0.8); }
-.proof strong { color: var(--white); }
+.proof {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; width: fit-content;
+  font-size: 1rem; color: rgba(255, 255, 255, 0.82); text-decoration: none; border-radius: 8px;
+}
+.proof strong { color: var(--white); font-size: 1.06rem; }
+.proof .stars .icon { width: 22px; height: 22px; }
+.proof:hover strong { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .stars { display: inline-flex; gap: 2px; color: var(--gold); }
 .stars .icon { width: 18px; height: 18px; }
 .proof-sources { display: inline-flex; gap: 8px; align-items: center; }
@@ -530,6 +535,79 @@ select.input {
 @media (max-width: 980px) { .trust-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) {
   .trust-list { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-block: 22px; }
+}
+
+/* ---------- Reviews band (the proof, early) ----------
+   The rating and a link to the reviews, then a slow line of the real quotes (copied from #reviews by
+   main.js). Its row keeps its height from the first frame wherever scripting is on (layout never waits
+   for the script); without scripting it isn't there. It moves only with motion welcome, and pauses on
+   hover, on focus, off screen and with its button. */
+.proofband { background: var(--white); border-bottom: 1px solid var(--line); }
+.proofband-inner {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
+  gap: 14px clamp(20px, 3vw, 36px); padding-block: 18px;
+}
+.proofband-score {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px;
+  color: var(--ink); text-decoration: none; border-radius: 10px;
+}
+.proofband-score .stars .icon { width: 24px; height: 24px; }
+.proofband-text { font-size: 0.98rem; color: var(--ink-2); }
+.proofband-text strong { color: var(--ink); font-size: 1.12rem; font-weight: 800; }
+.proofband-go { display: inline-flex; align-items: center; gap: 6px; color: var(--teal-deep); font-weight: 700; font-size: 0.92rem; }
+.proofband-go .icon { width: 16px; height: 16px; }
+.proofband-score:hover .proofband-go { text-decoration: underline; text-underline-offset: 4px; }
+.proofband-run, .proofband-pause { display: none; }
+@media (scripting: enabled) {
+  .proofband-run {
+    display: block; height: 1.6rem; overflow: hidden; contain: paint;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
+  }
+}
+.proofband-track { display: flex; width: max-content; list-style: none; margin: 0; padding: 0; }
+.proofband-track li {
+  display: flex; align-items: center; gap: 10px; padding-right: 40px; white-space: nowrap;
+  font-size: 0.95rem; line-height: 1.6rem; color: var(--ink-2);
+}
+.proofband-track .stars .icon { width: 14px; height: 14px; }
+.proofband-track b { color: var(--ink); font-weight: 700; }
+.proofband-pause {
+  position: relative; width: 36px; height: 36px; border-radius: 50%; flex: none; cursor: pointer;
+  border: 1px solid var(--line); background: var(--white); color: var(--teal-deep);
+}
+/* two bars (pause) or a triangle (play), drawn */
+.proofband-pause::before, .proofband-pause::after {
+  content: ""; position: absolute; top: 12px; width: 3px; height: 12px; border-radius: 1px; background: currentColor;
+}
+.proofband-pause::before { left: 13px; }
+.proofband-pause::after { left: 19px; }
+.proofband-pause[aria-pressed="true"]::before {
+  left: 14px; width: 0; height: 0; border-radius: 0; background: none;
+  border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor;
+}
+.proofband-pause[aria-pressed="true"]::after { display: none; }
+.proofband-pause:hover { border-color: var(--teal); }
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .proofband-pause { display: block; }
+  .proofband-pause[hidden] { display: block; visibility: hidden; } /* its place is kept until main.js shows it */
+  html.js .proofband.is-running .proofband-track {
+    animation: aw-proof-run var(--pb-dur, 160s) linear infinite;
+  }
+  html.js .proofband:is(:hover, :focus-within, .is-paused, .is-off) .proofband-track { animation-play-state: paused; }
+}
+@keyframes aw-proof-run { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  /* holding still, it starts at its first quote: only the far end fades */
+  .proofband-run { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 64px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 64px), transparent); }
+}
+@media (max-width: 900px) {
+  .proofband-inner { grid-template-columns: minmax(0, 1fr) auto; padding-block: 16px 14px; }
+  .proofband-run { grid-column: 1 / -1; grid-row: 2; margin-inline: calc(-1 * var(--gutter)); }
+}
+@media (forced-colors: active) {
+  .proofband-pause::before, .proofband-pause::after { background: ButtonText; }
+  .proofband-pause[aria-pressed="true"]::before { background: none; border-color: transparent transparent transparent ButtonText; }
 }
 
 /* ---------- Story (garage) ---------- */
@@ -690,6 +768,7 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 .review-feature blockquote { font-size: 1.3rem; line-height: 1.4; font-weight: 500; }
 .review-feature footer, .review-feature footer strong { color: var(--white); }
 .review-feature .avatar { background: rgba(255,255,255,.16); color: var(--white); }
+.reviews-more { margin-top: clamp(20px, 3vw, 32px); }
 @media (max-width: 700px) {
   .reviews-grid {
     columns: auto; display: grid; grid-auto-flow: column; grid-auto-columns: 84%; gap: 12px;

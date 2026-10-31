@@ -210,11 +210,11 @@
           <a class="btn btn-mint btn-lg" href="#quote" data-quote-link>Get my free quote <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
           <a class="btn btn-outline-light btn-lg" href="tel:+61485065143"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg>0485 065 143</a>
         </div>
-        <div class="proof">
+        <a class="proof" href="#reviews">
           <span class="stars" aria-hidden="true"><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg></span>
           <span><strong>90+ five-star reviews</strong> on</span>
           <span class="proof-sources"><svg class="icon icon-fill" aria-hidden="true"><use href="#i-google"></use></svg>Google <svg class="icon icon-fill" aria-hidden="true"><use href="#i-facebook"></use></svg>Facebook</span>
-        </div>
+        </a>
       </div>
 
       <!-- Quote form -->
@@ -333,6 +333,22 @@
     </ul>
   </section>
   <!-- /Trust strip -->
+
+  <!-- Reviews band: the proof, early on the page. The moving line of quotes is copied by main.js from the
+       Reviews section further down (every .review there), so a review pasted there shows here too. Without
+       JavaScript, or with reduced motion, it holds still; it pauses on hover, on focus and with its button. -->
+  <section class="proofband" aria-label="Customer reviews">
+    <div class="wrap proofband-inner">
+      <a class="proofband-score" href="#reviews">
+        <span class="stars" aria-hidden="true"><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg></span>
+        <span class="proofband-text"><strong>90+ five-star reviews</strong> <span>on Google and Facebook</span></span>
+        <span class="proofband-go">Read them <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
+      </a>
+      <div class="proofband-run" aria-hidden="true"><ul class="proofband-track" data-proof-track></ul></div>
+      <button class="proofband-pause" type="button" aria-pressed="false" hidden><span class="sr-only">Pause the moving reviews</span></button>
+    </div>
+  </section>
+  <!-- /Reviews band -->
 
   <!-- Garage story -->
   <section class="band band-paper story" aria-labelledby="story-title">
@@ -1060,6 +1076,15 @@
         </div>
       </div>
 
+      <!-- To add a review, paste a copy of this pattern into .reviews-grid (the newest can go first) and
+           change only the quote, the initial and the name; use real reviews only, word for word. It shows in
+           the grid and, automatically, in the moving line of quotes near the top of the page.
+        <figure class="review" data-reveal>
+          <span class="stars" role="img" aria-label="5 out of 5 stars">(five copies of: <svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg>)</span>
+          <blockquote>“The review, word for word.”</blockquote>
+          <footer><span class="avatar" aria-hidden="true">A</span><strong>Name as they gave it</strong></footer>
+        </figure>
+      -->
       <div class="reviews-grid">
         <figure class="review review-feature" data-reveal>
           <span class="stars" role="img" aria-label="5 out of 5 stars"><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg><svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg></span>
@@ -1097,6 +1122,7 @@
           <footer><span class="avatar" aria-hidden="true">K</span><strong>Kyle M</strong></footer>
         </figure>
       </div>
+      <p class="reviews-more"><a class="text-link" href="https://www.facebook.com/profile.php?id=61562459426494" target="_blank" rel="noopener">More reviews on our Facebook page <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
     </div>
   </section>
   <!-- /Reviews -->

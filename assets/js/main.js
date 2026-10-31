@@ -2,7 +2,7 @@
    1. The motion engine (window.AW): scroll jobs, reveals, word splitting.
    2. The page: header, menu, FAQ, quote form, service links, whirlybird, action bar.
    3. After that block, one block per animated section, each its own function using window.AW and queued
-      with AW.section, in this order: Roof build scene (#build), How it works (#how), Before & after
+      with AW.section, in this order: Reviews band, Roof build scene (#build), How it works (#how), Before & after
       (#results), Recent work (#work), How much room? (#room). They run right after this file, in order, one
       task each (as separate scripts would, so start-up is a few short tasks rather than one long one), and
       the engine's start-up hold (.aw-still, .is-instant) lasts until they have all run. The hero's
@@ -708,6 +708,68 @@
   var year = $('[data-year]');
   if (year) year.textContent = String(new Date().getFullYear());
 })();
+
+/* ==================== Reviews band (the proof, early) ==================== */
+/* Uses window.AW (above). Copies every review in #reviews (its quote and name) into the band's line, twice,
+   so the line can run on without a seam (CSS moves it by half its width; the whole line is aria-hidden: the
+   reviews themselves are in #reviews). Its pace is set from its width (about 40px a second). It runs only
+   with motion welcome; it pauses on hover and focus (CSS), off screen, and with the button (which says
+   what it does, and is pressed while the line is paused). */
+window.AW.section(function () {
+  'use strict';
+  var AW = window.AW;
+  var band = document.querySelector('.proofband');
+  var track = band && band.querySelector('[data-proof-track]');
+  var btn = band && band.querySelector('.proofband-pause');
+  var reviews = document.querySelectorAll('#reviews .review');
+  if (!AW || !track || !reviews.length) return;
+
+  var star = '<svg class="icon icon-fill" aria-hidden="true"><use href="#i-star"></use></svg>';
+  var stars = '<span class="stars">' + star + star + star + star + star + '</span>';
+  var items = document.createDocumentFragment();
+  Array.prototype.forEach.call(reviews, function (r) {
+    var q = r.querySelector('blockquote');
+    var who = r.querySelector('footer strong');
+    if (!q) return;
+    var li = document.createElement('li');
+    li.innerHTML = stars;
+    var t = document.createElement('span');
+    t.textContent = q.textContent.trim();
+    li.appendChild(t);
+    if (who) { var b = document.createElement('b'); b.textContent = who.textContent.trim(); li.appendChild(b); }
+    items.appendChild(li);
+  });
+  track.appendChild(items);
+  // the second copy, for the seamless loop
+  Array.prototype.slice.call(track.children).forEach(function (li) { track.appendChild(li.cloneNode(true)); });
+
+  var pace = function () { band.style.setProperty('--pb-dur', Math.round(track.scrollWidth / 2 / 40) + 's'); };
+  var start = function () {
+    if (!AW.motionOK()) { band.classList.remove('is-running'); return; }
+    pace();
+    band.classList.add('is-running');
+    if (btn) btn.hidden = false;
+  };
+  start();
+  var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mq.addEventListener) mq.addEventListener('change', start); else if (mq.addListener) mq.addListener(start);
+  if ('ResizeObserver' in window) new ResizeObserver(function () { if (band.classList.contains('is-running')) pace(); }).observe(track);
+
+  if (btn) {
+    var label = btn.querySelector('.sr-only');
+    btn.addEventListener('click', function () {
+      var paused = !band.classList.contains('is-paused');
+      band.classList.toggle('is-paused', paused);
+      btn.setAttribute('aria-pressed', String(paused));
+      if (label) label.textContent = paused ? 'Play the moving reviews' : 'Pause the moving reviews';
+    });
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      band.classList.toggle('is-off', !entries[entries.length - 1].isIntersecting);
+    }).observe(band);
+  }
+});
 
 /* ==================== Roof build scene: "Boxes up. Car in." (#build) ==================== */
 /* Uses window.AW (above). It eases one number, --p (0 -> 1), towards the scroll position so a wheel's
