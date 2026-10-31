@@ -1444,7 +1444,8 @@ html.js .room-handoff-nojs { visibility: hidden; }
 /* The roof-space cutaway. The scene is an inline SVG made by scripts/scene/build-scene.mjs: a single-storey house cut front to back
    at dusk, seen from inside its roof. Its geometry is the finished state (floor down, things up, ladder
    away, car in, roller door down), which is what shows at rest: without JS, with reduced motion, or where
-   pow() is missing. Then the captions are a plain numbered list under the picture.
+   pow() is missing. Then the captions are a plain numbered list under the picture. The story shows what
+   changes (the light, a floor, the ladder, the boxes going up, the car back in), not how a floor is built.
 
    Pinned (scripting on, motion welcome, pow() supported): a tall track with a sticky stage. main.js eases
    one number, --p (0 -> 1), and marks the current caption (data-beat); it writes --p on each moving part
@@ -1498,7 +1499,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
 .bs-nose, .bs-pick { opacity: 0; }
 
 .bs-rail { display: none; }
-.bs-caps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px clamp(20px, 3vw, 40px); counter-reset: bs; }
+.bs-caps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px clamp(20px, 3vw, 40px); counter-reset: bs; }
 .bs-cap { counter-increment: bs; padding-top: 16px; border-top: 1px solid var(--roof-line); }
 .bs-cap::before {
   content: counter(bs, decimal-leading-zero); display: block; margin-bottom: 8px;
@@ -1507,7 +1508,6 @@ html.js .room-handoff-nojs { visibility: hidden; }
 .bs-cap h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.25; text-wrap: balance; }
 .bs-cap p { margin-top: 6px; color: rgba(255, 255, 255, 0.78); font-size: 0.95rem; line-height: 1.5; }
 .bs-cap .btn { margin-top: 16px; }
-.bs-cap:last-child { grid-column: span 2; }
 @media (max-width: 1000px) { .bs-caps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
   /* a phone sees the garage and the roof over it: the same drawing, framed on the garage */
@@ -1516,7 +1516,6 @@ html.js .room-handoff-nojs { visibility: hidden; }
 }
 @media (max-width: 560px) {
   .bs-caps { grid-template-columns: minmax(0, 1fr); gap: 22px; }
-  .bs-cap:last-child { grid-column: auto; }
 }
 
 /* ---------- Pinned: the story plays as you scroll ---------- */
@@ -1528,7 +1527,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
 @supports (width: calc(pow(2, 2) * 1px)) and (width: 1cqw) {
   :root .build { padding-bottom: 0; }
-  :root .bs { position: relative; height: 470vh; margin-top: clamp(24px, 4vw, 48px); }
+  :root .bs { position: relative; height: 430vh; margin-top: clamp(24px, 4vw, 48px); }
   :root .bs-stage {
     position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0;
     display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 0; overflow: hidden;
@@ -1556,7 +1555,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
 
   /* The rail: one segment per step, filling as the step plays */
   :root .bs-rail {
-    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;
     width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto; padding-top: 14px;
   }
   :root .bs-rail i { position: relative; height: 2px; background: rgba(143, 214, 204, 0.18); overflow: hidden; }
@@ -1567,7 +1566,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
 
   /* Wide screens: the steps in a row under the picture; the current one lit, its line underneath */
   :root .bs-caps {
-    position: relative; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0 8px;
+    position: relative; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 8px;
     width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto;
     padding: 12px 0 calc(var(--bs-cap-pad, 78px) + var(--bar)); min-height: 0;
   }
@@ -1575,7 +1574,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
   :root .bs-cap::before { margin-bottom: 4px; }
   :root .bs-cap h3 { font-size: 0.98rem; overflow-wrap: break-word; } /* (a long word in large text: broken, not run into the next title) */
   /* The steps that aren't playing are only transparent, never visibility: hidden or display: none: a screen
-     reader reads all seven as a list (the drawing itself is aria-hidden), the way it reads the at-rest list.
+     reader reads all six as a list (the drawing itself is aria-hidden), the way it reads the at-rest list.
      (The button stays focusable while its step is off: focusing it jumps to the end, see main.js.) */
   /* (--bs-cap-top, --bs-cap-pad: main.js measures the tallest step title and paragraph, so large text or
      wider text spacing never prints a paragraph over the titles. The step down from 74px is a translate,
@@ -1619,7 +1618,7 @@ html.js .room-handoff-nojs { visibility: hidden; }
      paints past its own box (the sky, the street and the car run on), so it reaches the edges at every
      camera position; the scene clips. */
   @media (max-width: 760px), (max-aspect-ratio: 1/1) {
-    :root .bs { height: 375vh; }
+    :root .bs { height: 345vh; }
     :root .bs-scene { container-type: size; }
     :root .bs-svg {
       /* sized so a phone's width shows 5.4 m of the house; on a taller stage it fills the height */
@@ -1643,17 +1642,12 @@ html.js .room-handoff-nojs { visibility: hidden; }
   :root .bs-lit { opacity: 0; }
   :root .bs-stage:not([data-beat="0"]) .bs-lit { opacity: 1; animation: bs-flicker 1.1s steps(1, end) both; }
 
-  /* H2 battens are lowered on, from the hatch outwards */
-  :root .bs-batten {
+  /* The floor appears as one piece: it fades up in the work light and settles into place, one calm
+     moment (the picture shows the result, never how a floor is built) */
+  :root .bs-floor {
     --bs-e: pow(1 - var(--bs-t), 3);
-    translate: 0 calc(var(--bs-e) * -30px);
-    opacity: min(1, var(--bs-t) * 5);
-  }
-  /* Sheets are laid from the far end back to the hatch; each lands flat */
-  :root .bs-sheet {
-    --bs-e: pow(1 - var(--bs-t), 3);
-    translate: 0 calc(var(--bs-e) * -24px);
-    opacity: min(1, var(--bs-t) * 4);
+    translate: 0 calc(var(--bs-e) * -16px);
+    opacity: calc(1 - pow(1 - min(1, var(--bs-t) * 1.8), 2));
   }
 
   /* The ladder: the lid swings down about its hinge, then the sections unfold in turn; at the end they

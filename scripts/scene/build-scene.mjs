@@ -19,6 +19,9 @@
    the ridge, so the trusses (600 mm centres) recede as a tunnel of A-frames. Everything is modelled in
    metres at real sizes and projected here; the SVG's units are centimetres of the cut plane.
 
+   The story shows what changes, not how a floor is built: the floor simply appears and settles as one
+   calm moment, with no framing stage, no sheets laid one by one and no batten grid.
+
    Motion: every moving part carries its window of the scroll (--a start, --l length, both in units of
    --p) and the travel it needs (SVG units, degrees, factors). styles.css computes every pose from
    --p. The geometry in the file is the finished state (floor down, things up, ladder away, car in,
@@ -33,31 +36,32 @@ const ROOT = path.resolve(HERE, '../..');
 const INDEX = path.join(ROOT, 'index.html');
 
 /* ---------- Timeline (units of --p). The captions' data-at values in index.html must match. ---------- */
-/* Windows below are authored on the real timeline. DRAFT stays as a hook: set it to old beat positions to
-   map parts authored on another timeline onto BEATS (piecewise linear), so a beat can be given more or less
-   of the scroll without retiming its parts. Pacing (1440x900, 470vh, the last 12% of the track a hold: about
-   2930px of scroll per unit of p): no scrubbed move gets less than 0.04 (about 120px, more than a wheel
-   notch), and a ladder section's half turn gets 0.05 (the swing is the fastest thing on screen); the roller
+/* Parts are authored on the DRAFT timeline (the story's first cut, which had a framing beat and a sheet-by-
+   sheet beat between the light and the ladder) and mapped onto the real one piecewise linearly, knot by
+   knot, so a beat can be given more or less of the scroll without retiming its parts. The floor's beat now
+   spans the draft's 0.155..0.39. Pacing (1440x900, 430vh, the last 12% of the track a hold: about 2610px of
+   scroll per unit of p): the scroll the old framing and sheet beats used goes to the light coming on, the
+   floor's one moment, the carry and the car. No scrubbed move gets less than 0.04 of the draft (about 100px),
+   and a ladder section's half turn gets 0.05 of it (the swing is the fastest thing on screen); the roller
    door and the garage light are timed transitions that start as the car stops (data-shut), like the
    flicker. */
 export const BEATS = [
   { id: 'dusk', at: 0 },
-  { id: 'light', at: 0.055 },
-  { id: 'frame', at: 0.155 },
-  { id: 'sheets', at: 0.252 },
-  { id: 'ladder', at: 0.39 },
-  { id: 'store', at: 0.57 },
-  { id: 'car', at: 0.825 },
+  { id: 'light', at: 0.06 },
+  { id: 'floor', at: 0.19 },
+  { id: 'ladder', at: 0.31 },
+  { id: 'store', at: 0.51 },
+  { id: 'car', at: 0.8 },
 ];
+const DRAFT = [0, 0.055, 0.155, 0.39, 0.57, 0.825, 1];
 const REAL = BEATS.map((b) => b.at).concat(1);
-const DRAFT = REAL;
-const SHUT_AT = 0.978;                              // the car stops: the door comes down, then the light settles
 function T_(p) {
   for (let i = 0; i < DRAFT.length - 1; i++) {
     if (p <= DRAFT[i + 1] || i === DRAFT.length - 2) return REAL[i] + ((p - DRAFT[i]) * (REAL[i + 1] - REAL[i])) / (DRAFT[i + 1] - DRAFT[i]);
   }
   return p;
 }
+const SHUT_AT = Math.round(T_(0.978) * 1000) / 1000;                      // the car stops: the door comes down, then the light settles
 /* a window [a, a + l] on the draft timeline, on the real one */
 const win = (a, l) => { const A = T_(a); return [A, T_(a + l) - A]; };
 /* every time-like pair in a part's custom properties: start + length */
@@ -111,7 +115,7 @@ const C = {
   cut: '#117e79',
   brick: '#5f4236', concrete: '#77827e', render: '#a9a496',
   roomWall: '#a99476', roomFloor: '#6a4a33', sofa: '#36524e',
-  pine: '#d39b5e', h2: '#a3b99b', board: '#d4cbb6', insul: '#dcc68c', sheetUnder: '#596867',
+  pine: '#d39b5e', timber: '#cfa46e', board: '#d4cbb6', insul: '#dcc68c', sheetUnder: '#596867',
   kraft: '#bd915c', band2: '#5f8fb3', tub: '#d3dcd9', lid: '#117e79', tealtub: '#2b8a84',
   suitcase: '#4b7391', esky: '#e2e7e4', eskyLid: '#2f7d95', bin: '#2c5038', binLid: '#6f6532',
   car: '#c8d0ce', glass: '#1b3033', glassTop: '#2e4649', tyre: '#0b1213', rim: '#7d8c8a',
@@ -132,7 +136,8 @@ const yU = (x) => H.chord + (x <= H.ridge ? x - H.front : H.back1 - x) * T; // t
 const CH = 0.09 / Math.cos((PITCH * Math.PI) / 180);                       // top chord, vertical depth
 const yO = (x) => yU(x) + CH + 0.07;                                         // roof sheet, outside
 
-/* Floor: H2 battens on packers over the bottom chords, 19 mm sheets (2400 x 600) on top */
+/* Floor: 19 mm sheets (2400 x 600) on plain framing timber, lifted clear of the batts (the timber shows only
+   as the floor's edge at the cut) */
 const F = { x0: 2.15, x1: 6.95, z0: 0, z1: 4.8, battenB: 2.88, battenT: 2.98, top: 3.0, row: 0.6 };
 /* The manhole sits between the trusses at z 0.6 and 1.2 (no chord is cut), long side along x */
 const HATCH = { x0: 4.05, x1: 5.05, z0: 0.64, z1: 1.16 };
@@ -458,11 +463,11 @@ function stepOpen() {
 
 /* ---------- The scene ---------- */
 const STATES = {
-  dusk: { light: 0, framing: 0, sheets: 0, ladder: 0, things: 'garage', car: 'out', door: 0, garageLight: 0 },
-  light: { light: 1, framing: 0, sheets: 0, ladder: 0, things: 'garage', car: 'out', door: 0, garageLight: 0 },
-  floor: { light: 1, framing: 1, sheets: 9, ladder: 0, things: 'garage', car: 'out', door: 0, garageLight: 0 },
-  ladder: { light: 1, framing: 1, sheets: 99, ladder: 1, things: 'garage', car: 'out', door: 0, garageLight: 0 },
-  final: { light: 1, framing: 1, sheets: 99, ladder: 0, things: 'roof', car: 'in', door: 1, garageLight: 1 },
+  dusk: { light: 0, sheets: 0, ladder: 0, things: 'garage', car: 'out', door: 0, garageLight: 0 },
+  light: { light: 1, sheets: 0, ladder: 0, things: 'garage', car: 'out', door: 0, garageLight: 0 },
+  floor: { light: 1, sheets: 1, ladder: 0, things: 'garage', car: 'out', door: 0, garageLight: 0 },
+  ladder: { light: 1, sheets: 99, ladder: 1, things: 'garage', car: 'out', door: 0, garageLight: 0 },
+  final: { light: 1, sheets: 99, ladder: 0, things: 'roof', car: 'in', door: 1, garageLight: 1 },
 };
 
 function scene(state) {
@@ -613,7 +618,7 @@ function scene(state) {
     // Batts (R4/R5 wool) laid between the ceiling joists, a row per bay, far first. Each row is a soft hump:
     // seen this low across them, its crest bows up once per 1160 mm batt (joints staggered row to row) over
     // the shadowed gap at the foot of the row behind, so the joints show as dark notches and the joists just
-    // show between rows. The floor's battens later lift the sheets clear of them.
+    // show between rows. The new floor stands clear of them.
     const xa = 0.05, xb = 9.05, yB = H.insul, hsh = (i) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
     for (let b = bays - 1; b >= 0; b--) {
       const z0 = b * H.gap, z1 = z0 + H.gap, kk = lampK(H.ridge, 3.2, z0 + 0.3), zc = z1 - 0.03;
@@ -671,25 +676,11 @@ function scene(state) {
     else add(body + (L ? glow + lit : ''));
   }
 
-  /* ----- The new floor: battens, then the sheets, far row first (the front row comes later) ----- */
-  const battens = [];
-  for (let i = 0; i <= 8; i++) battens.push(F.x0 + i * 0.6);
-  const bOrder = battens.map((x, i) => ({ x, i, d: Math.abs(x - 4.55) })).sort((a, b) => a.d - b.d || a.x - b.x);
-  battens.forEach((x, i) => {
-    const k = lampK(x, 3, 2);
-    const svg = boxSVG(x - 0.0175, x + 0.0175, F.battenB, F.battenT, F.z0, F.z1, mul(C.h2, k));
-    const n = bOrder.findIndex((b) => b.i === i);
-    if (fin) add(part('bs-batten', { a: 0.16 + n * 0.0068, l: 0.032 }, leaves(svg)));
-    else if (state.framing) add(svg);
-  });
-  {
-    // trimmers round the hatch and the far rim
-    const trims = [boxSVG(3.95, 5.15, F.battenB, F.battenT, 0.6, 0.635, mul(C.h2, 0.74)), boxSVG(3.95, 5.15, F.battenB, F.battenT, 1.165, 1.2, mul(C.h2, 0.7)), boxSVG(F.x0, F.x1, F.battenB, F.battenT, F.z1 - 0.035, F.z1, mul(C.h2, 0.62))];
-    if (fin) add(part('bs-batten', { a: 0.222, l: 0.028 }, leaves(trims.join(''))));
-    else if (state.framing) add(trims.join(''));
-  }
+  /* ----- The new floor: it appears and settles as one piece (one calm moment, not a build sequence) ----- */
   // 2400 x 600 sheets, joints staggered: even rows a full sheet between two halves, odd rows two full sheets
-  // (the hatch row is cut round the manhole). Every end joint lands on a batten; none sits in front of the hatch.
+  // (the hatch row is cut round the manhole). The finished floor shows its joints faintly, as a real one
+  // does; it arrives whole. The front row is painted later (over the loads passing up through the hatch),
+  // so it is a second part with the same window.
   const rows = Math.round((F.z1 - F.z0) / F.row);
   const sheets = [];
   for (let r = rows - 1; r >= 0; r--) {
@@ -697,11 +688,12 @@ function scene(state) {
     const pieces = z0 < HATCH.z1 && z1 > HATCH.z0 ? [[F.x0, HATCH.x0], [HATCH.x1, F.x1]] : r % 2 ? [[F.x0, 4.55], [4.55, F.x1]] : [[F.x0, 3.35], [3.35, 5.75], [5.75, F.x1]];
     for (const [x0, x1] of pieces) sheets.push({ r, x0, x1, z0, z1 });
   }
-  const sheetA = (j) => 0.256 + j * 0.0054;
-  const frontRow = [];
-  sheets.forEach((sh, j) => {
+  const FLOOR = { a: 0.165, l: 0.17 };              // (draft time: the old framing and sheet beats)
+  const floorPart = (svg) => (fin ? part('bs-floor', FLOOR, leaves(svg)) : state.sheets ? svg : '');
+  let floorBack = '', floorFront = '';
+  sheets.forEach((sh) => {
     const k = lampK((sh.x0 + sh.x1) / 2, 3, (sh.z0 + sh.z1) / 2);
-    const g = 0.007;
+    const g = 0.004;
     let svg = boxFaces(sh.x0 + g, sh.x1 - g, F.battenT, F.top, sh.z0 + g, sh.z1 - g, mul(C.board, k), { top: 1, front: 0.7, side: 0.7 }).map(([d, f]) => pth(d, f)).join('');
     if (sh.r === 1 && sh.x0 === F.x0) {
       // the hatch lining (pine), seen from above: its far side and both ends
@@ -709,9 +701,9 @@ function scene(state) {
       svg += pth(rectYZ(HATCH.x0, H.ceil, F.top, HATCH.z0, HATCH.z1), mul(C.pine, 0.75));
       svg += pth(rectYZ(HATCH.x1, H.ceil, F.top, HATCH.z0, HATCH.z1), mul(C.pine, 0.66));
     }
-    const s = fin ? part('bs-sheet', { a: sheetA(j), l: 0.028 }, leaves(svg)) : j < state.sheets ? svg : '';
-    if (sh.r === 0) frontRow.push(s); else add(s);
+    if (sh.r === 0) floorFront += svg; else floorBack += svg;
   });
+  add(floorPart(floorBack));
   {
     // while the lid is down the hatch reads as an opening: the lining falls into shadow, a hinge arm shows
     const hole = pth(rectXY(HATCH.x0 + 0.012, HATCH.x1 - 0.012, H.ceil, F.top - 0.035, HATCH.z1 - 0.003), 'url(#bs-hole)')
@@ -1005,7 +997,8 @@ function scene(state) {
     if (fin) add(el('g', { class: 'bs-clip', 'clip-path': 'url(#bs-above)' }, lits.join('')));
   }
 
-  frontRow.forEach(add);
+  const floorEdge = pth(rectXY(F.x0, F.x1, F.top - 0.022, F.top, 0), '#d9cfb9') + pth(rectXY(F.x0, F.x1, F.battenB, F.top - 0.022, 0), mix(C.timber, C.cut, 0.3));
+  add(floorPart(floorFront));
 
   /* ----- The section cut (brand teal): ground, slab, walls, ceiling, the cut truss and the roof ----- */
   const cut = [];
@@ -1029,10 +1022,8 @@ function scene(state) {
     add(pth(d + 'L' + fmt(P(H.back1, H.chord, 0)) + 'Z', mul(C.insul, 0.72)));
   }
   add(pth(cut.join(''), C.cut, { class: 'bs-cut' }));
-  // the floor's own cut edge: sheet on battens (comes with the front row)
-  const edge = pth(rectXY(F.x0, F.x1, F.top - 0.022, F.top, 0), '#d9cfb9') + pth(rectXY(F.x0, F.x1, F.battenB, F.top - 0.022, 0), mix(C.h2, C.cut, 0.35));
-  if (fin) add(part('bs-sheet', { a: sheetA(sheets.length - 1), l: 0.028 }, edge));
-  else if (state.sheets >= sheets.length) add(edge);
+  // the floor's own cut edge: the sheet on its plain timber frame (comes with the floor)
+  add(floorPart(floorEdge));
 
   if (!fin) return out.join('\n');
   // Runs of still parts go in groups (.bs-still): fewer children for the svg, and they pin --p

@@ -4,6 +4,12 @@
 dusk, seen from inside its roof, and writes it into `index.html` between `<!-- scene:start -->` and
 `<!-- scene:end -->`. Plain Node, no dependencies.
 
+The story is told in six beats: the full garage at dusk, the light goes on, a floor goes in, the ladder
+comes down, everything goes up, the car's back in. It shows what changes, not how a floor is built: the
+floor appears and settles as one calm moment, with no framing stage, no sheets laid one by one and no
+batten grid, and the captions name no materials or methods (the client asked for this, so the page doesn't
+teach a visitor to install a floor themselves).
+
 ```sh
 node scripts/scene/build-scene.mjs            # regenerate the inline SVG in index.html
 node scripts/scene/build-scene.mjs --check    # exit 1 if index.html is out of date
@@ -26,9 +32,10 @@ Everything is in metres at real sizes and projected in one-point perspective (a 
   on the dusk), 25° roof, Colorbond on battens, attic-style trusses, R4/R5 batts between the ceiling
   joists (soft humps, staggered 1160 mm joints). Outside: the driveway with its control joints, the
   footpath and kerb running into the picture, a hedge and a brick letterbox pier.
-- Floor: H2 battens (35 × 90, packers included) at 600 centres over the bottom chords, lifting the floor
-  clear of the batts, then 2400 × 600 × 19 mm sheets with staggered joints (a full sheet between two halves,
-  then two full sheets), every end joint on a batten, a strip 4.8 m wide and 8 bays deep. The manhole sits
+- Floor: 2400 × 600 × 19 mm sheets on plain framing timber (pine), clear of the batts, a strip 4.8 m wide
+  and 8 bays deep. The timber isn't drawn, except as the floor's edge at the cut; the sheets' joints show
+  faintly, as a finished floor's do. It is two moving parts with one window (the front row is painted over
+  the loads passing up through the hatch). The manhole sits
   between two trusses (no chord is cut), long side along x, so the pull-down ladder (three sections,
   2.98 m) unfolds in the picture's plane. While it's open the hatch reads as an opening from above.
 - Things: twelve loads (stacks of archive boxes, kraft boxes, clear tubs with teal lids, a teal tub, a
@@ -78,13 +85,18 @@ camera's two windows (`--cam-a/--cam-l`, `--cam-b/--cam-m` on the svg). The roll
 light are timed transitions keyed on `data-shut` (the svg's `data-shut`: the moment the car stops), like
 the work light's flicker.
 
-The beats (`BEATS`) must match the captions' `data-at` in `index.html`; the generator warns if they don't.
+The beats (`BEATS`) must match the captions' `data-at` in `index.html`, and the rail's six segments (`--at`,
+`--to`) follow them; the generator warns if the captions don't. Parts are authored on a draft timeline
+(`DRAFT`: the story's first cut, which had separate framing and sheet beats) and mapped knot by knot onto
+the real one, so the floor's beat spans the draft's 0.155..0.39 and the carry's own timing (and its
+checks) are unchanged.
 
 ## Changing it
 
 Edit the dimensions, colours (`C`), loads (`LOADS`) or windows in the script, run it, and scroll
 through `#build` in a browser at a wide size and a phone size (the `--concept` stills show what each beat
-should look like). Keep the inline SVG under ~70 KB (it's ~62 KB, ~16 KB gzipped) and
-the moving parts under ~250 (90). Pacing: the track is 470vh (375vh on portrait stages) and its last 12% holds
-the finished picture, so a unit of `--p` is about 2930px of scroll at 1440 × 900. Keep every scrubbed move
+should look like). Keep the inline SVG under ~70 KB (it's ~58 KB) and
+the moving parts under ~250 (62). Pacing: the track is 430vh (345vh on portrait stages) and its last 12% holds
+the finished picture, so a unit of `--p` is about 2610px of scroll at 1440 × 900. The scroll the old framing
+and sheet beats used went to the light coming on, the floor's moment, the carry and the drive in. Keep every scrubbed move
 at 0.04 or more, and a ladder section's half turn at about 0.05.

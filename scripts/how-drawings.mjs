@@ -268,8 +268,9 @@ function drawing2() {
 
 /* ---------------------------------------------------------------------------------------------
    3 · We install: a section through the house. Room below, roof above, the manhole in the ceiling,
-   the folding ladder down (its stiles converge as it leans away), the new floor on H2 battens over
-   the ceiling joists with boxes on it. A dimension from the room floor to the new floor: 4–5 hours.
+   the folding ladder down (its stiles converge as it leans away), the new floor over the ceiling
+   joists with boxes on it. The floor is one plain shape: the drawing shows what you get, not how it's
+   built. A dimension from the room floor to the new floor: 4–5 hours.
    New work is teal; the house is ink. The house goes down in ~0.45s, the new work by ~1s, the
    dimension by ~1.3s.
    --------------------------------------------------------------------------------------------- */
@@ -328,15 +329,9 @@ function drawing3() {
     }
     D.s(bat, 'k3', 0.8, 0.25);
   }
-  // the new floor (teal): H2 battens in section, then the 19mm sheet laid left to right
-  const FX0 = 66, FX1 = OL - 6, ST = 95, SB = 99.5;
-  const battens = [];
-  for (let i = 0; i < 6; i++) {
-    const x = 70 + i * 24.5;
-    battens.push(x);
-    D.s(RR(x, SB, 7, CT - SB, 0) + L(x, CT, x + 7, SB), 'k3 ac', 0.8 + i * 0.04, 0.16);
-  }
-  D.s(RR(FX0, ST, FX1 - FX0, SB - ST, 0.8), 'k2 ac', 0.95, 0.4);
+  // the new floor (teal): one shape over the ceiling joists
+  const FX0 = 66, FX1 = OL - 6, ST = 95;
+  D.s(RR(FX0, ST, FX1 - FX0, CT - ST, 0.8), 'k2 ac', 0.85, 0.45);
   // boxes, a tub
   const bx = [[106, 140, 22], [146, 172, 16]];
   bx.forEach(([a, b, h], i) => {
@@ -374,9 +369,9 @@ function drawing3() {
   const J = [168, 222];
   D.s(J.map((jy) => L(at(stile.lo, jy), jy + 1.5, at(stile.li, jy), jy - 1.5) + L(at(stile.ri, jy), jy - 1.5, at(stile.ro, jy), jy + 1.5)).join(''), 'k3 ac', 1.75, 0.12);
   D.s(RR(at(stile.lo, LB) - 0.5, LB, 7, FL - LB, 1.5) + RR(at(stile.ri, LB) - 0.5, LB, 7, FL - LB, 1.5), 'k2', 1.8, 0.14);
-  // dimension: room floor to the top of the new floor, 4–5 hours. It stands inboard, between two
-  // battens, so it reads off the sheet's top face and stays clear of the rafter.
-  const dx = (battens[0] + 7 + battens[1]) / 2;
+  // dimension: room floor to the top of the new floor, 4–5 hours. It stands inboard, so it reads off
+  // the floor's top face and stays clear of the rafter.
+  const dx = 86;
   D.s(V(dx, ST, FL), 'dm', 1.95, 0.4);
   D.s(tick(dx, ST, 3.5) + tick(dx, FL, 3.5), 'dm', 2.3, 0.1);
   D.text(dx + 9, 203, '4–5 hours', 'lb-lg', 2.15, 0.45);

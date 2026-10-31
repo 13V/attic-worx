@@ -842,7 +842,7 @@ window.AW.section(function () {
     };
   });
 
-  // A resize mid-story (a desktop window resized, DevTools opened) changes the track's length (it's 470vh)
+  // A resize mid-story (a desktop window resized, DevTools opened) changes the track's length (it's 430vh)
   // and often what's above it: the reader stays at the same point of the story, not wherever the old scroll
   // position now falls. Only when the track itself moved or changed length, so a phone's address bar
   // showing or hiding (neither changes) never pulls a fling back.
