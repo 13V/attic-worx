@@ -15,3 +15,6 @@
 
 /assets/js/*
   Cache-Control: public, max-age=3600
+
+/assets/video/*
+  Cache-Control: public, max-age=2592000
