@@ -8,16 +8,16 @@ It is plain static HTML, CSS and JavaScript: one page (`index.html`), one styles
 
 In order, top to bottom. The page alternates "in the roof" (dark bands) and "in the home" (white and pale bands).
 
-1. **Hero with a 3-step quote form.** It opens dark, as in a roof: mint lines trace the photo's real edges (the walkway, the trusses, the hatch), then the work light flickers on and the lines fade. Visitors pick services as tiles, answer two quick questions about their home, then leave a name and mobile. Each service card further down has a "Price my…" link that ticks that service in the form and scrolls back to it.
+1. **Hero with a 3-step quote form.** It opens dark, as in a roof: the work light flickers on over the poster, then a short muted reel of real Attic Worx footage fades in behind the copy and loops (the work lights over a new floor and its manhole, a walk across a finished floor, a stocked roof space). A pause button sits in the hero's corner (beside the phone number on phones). See "Video" below. Visitors pick services as tiles, answer two quick questions about their home, then leave a name and mobile. Each service card further down has a "Price my…" link that ticks that service in the form and scrolls back to it.
 2. **Trust strip:** same-day installs, priced online, no council approval, no space no charge.
    **Reviews band** under it: the stars, "90+ five-star reviews on Google and Facebook" and a link to the reviews, then a slow line of the real quotes. main.js copies the line from the Reviews section, so it needs no editing of its own. It pauses on hover, on keyboard focus, off screen and with its pause button; with reduced motion or without JavaScript it holds still (without JavaScript the band is just the rating and the link). The hero's review line is a link to the reviews too.
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review. Its first paragraph is the page's one "statement": its words darken as you read down.
-4. **Services bento:** storage floors, ladders, roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation.
+4. **Services bento:** storage floors, ladders (an installer pulls down and unfolds a ladder: a muted loop that plays while the card is on screen, with a pause button), roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation. Under the cards, the **SolarKing promo**: the client's own 24-second video, with sound, that plays only when tapped.
 5. **How much room?** (`#room`): a slider sizes a storage floor from 2 to 20 m², the picture lays the floor and fills it with boxes, tubs and gear (two lanes either side of the walkway, the low edges clear), and a rough figure says how many archive boxes fit: about 5 per m² (8 m² → 40, 12 m² → 60, 20 m² → 100), counting about a third of the floor as holding boxes. "Price a floor this size" ticks Attic storage and the matching size in the quote form, then takes you there. At 12 m² it notes that's the size of Kyle M's floor.
 6. **"Boxes up. Car in."** (`#build`): a cutaway of a house at dusk. On screens with motion the picture stays put while you scroll and the change plays out in six steps: the full garage, the light goes on, a floor goes in (it simply appears and settles), the ladder comes down, everything goes up, the car's back in. It shows the result, not how a floor is built (no framing, no sheets laid one by one, no materials or methods in the captions).
 7. **How it works** (`#how`): three steps. The line through them is a folding attic ladder that swings down as each step lights. Wide screens have a sticky panel beside the steps showing each step's drawing; narrower screens show each drawing under its step.
 8. **Before and after** (`#results`): three real jobs as still pairs (never a drag slider). The before sits muted, the after lit, and a work light passes once from one to the other as the pair scrolls in. Tabs switch jobs.
-9. **Recent work** (`#work`): on wide screens with motion the section holds still while the photos run sideways, and a warm work light travels along them. Elsewhere it's a swipe strip. It opens with a link to the Facebook page and ends with a quote button.
+9. **Recent work** (`#work`): ten photos. On wide screens with motion the section holds still while the photos run sideways, and a warm work light travels along them. Elsewhere it's a swipe strip. It opens with a link to the Facebook page and ends with a quote button.
 10. **Reviews, FAQ, final call to action, footer.**
 11. **Mobile action bar:** Call and Get my free quote buttons stay at the bottom of the screen on phones and tablets. They step aside while the hero buttons or the form are on screen.
 
@@ -75,11 +75,11 @@ If Google Tag Manager (or anything else that sets up `window.dataLayer`) is adde
 - **Reviews:** to add one, copy the commented pattern just above `.reviews-grid` in the Reviews section and paste it into the grid (the newest can go first), changing only the quote, the initial and the name. Use real reviews only, word for word. It appears in the grid and, automatically, in the reviews band near the top. If the count changes ("90+"), update it in the hero, the reviews band and the Reviews heading.
 - **FAQ:** if you change a question, update the matching entry in the `FAQPage` JSON-LD in `<head>` so Google sees the same text.
 - **Styles** are all in `assets/css/styles.css`: the tokens at the top (colours, type sizes, spacing, motion), then the base and the sections in page order, then the "Motion" part (the shared primitives below), then one part per animated section, in page order: Hero sequence, How much room?, Roof build scene, How it works, Before & after, Recent work. Each of those is scoped to its own section and comes last on purpose, because it builds on the rules above it.
-- **Behaviour** is all in `assets/js/main.js`: the motion engine first, then the page (header, menu, FAQ, quote form, "Price my…" links, whirlybird, action bar), then one block per animated section (Reviews band, Roof build scene, How it works, Before & after, Recent work, How much room?), each queued with `AW.section`. The hero's sequence is CSS only.
+- **Behaviour** is all in `assets/js/main.js`: the motion engine first, then the page (header, menu, FAQ, quote form, "Price my…" links, whirlybird, action bar), then one block per section (Videos, Reviews band, Roof build scene, How it works, Before & after, Recent work, How much room?), each queued with `AW.section`. The hero's opening (the flicker, the headline) is CSS only; its reel is the Videos block.
 
 ### Motion
 
-Motion is a small system. The idea is "drawn, then lit, then built": lines draw, the work light comes on, timber goes down. Nothing bounces, nothing loops (the whirlybird spins while the page moves and winds down a few seconds after it stops), and nothing follows the cursor.
+Motion is a small system. The idea is "drawn, then lit, then built": lines draw, the work light comes on, timber goes down. Nothing bounces, nothing loops (the whirlybird spins while the page moves and winds down a few seconds after it stops; the two muted videos loop, each with a pause button), and nothing follows the cursor.
 
 The engine is the first part of `main.js`, exposed as `window.AW`:
 
@@ -115,8 +115,8 @@ Rules the system keeps, so it stays fast and calm:
 
 ### Reduced motion and no JavaScript
 
-- **Reduced motion** (read live): everything rests in its final state, fully visible, with no waiting. Nothing pins: the build shows its finished picture (car in, boxes up) with the six steps as a numbered list, and Recent work is the swipe strip. The hero is lit with no drawing, the slider's picture changes instantly, the before/after tabs swap at once, the header doesn't hide, and the whirlybird is still.
-- **No JavaScript:** everything is visible and usable. The form shows all three steps at once, How much room? shows 8 m² and its button goes straight to the form, the build shows its finished picture and the step list, How it works shows every step lit, Before and after shows all three pairs one under the other with their captions, Recent work is the swipe strip, and the header keeps a solid background (`<noscript>` rules in `<head>`).
+- **Reduced motion** (read live): everything rests in its final state, fully visible, with no waiting. Nothing pins: the build shows its finished picture (car in, boxes up) with the six steps as a numbered list, and Recent work is the swipe strip. The hero is lit and still (its poster; the reel never loads), the ladder card shows its poster, the slider's picture changes instantly, the before/after tabs swap at once, the header doesn't hide, and the whirlybird is still.
+- **No JavaScript:** everything is visible and usable. The hero and the ladder card show their posters (no video loads), the SolarKing promo is a plain player with a poster (a `<noscript>` copy). The form shows all three steps at once, How much room? shows 8 m² and its button goes straight to the form, the build shows its finished picture and the step list, How it works shows every step lit, Before and after shows all three pairs one under the other with their captions, Recent work is the swipe strip, and the header keeps a solid background (`<noscript>` rules in `<head>`).
 
 ### The drawings (generated: don't hand-edit them)
 
@@ -145,7 +145,9 @@ Font: [Archivo](https://github.com/Omnibus-Type/Archivo) (SIL Open Font License,
 
 ### Photos
 
-The master photos are in `source/photos/` (2400px JPEGs taken from the current site). The site uses responsive AVIF and WebP versions in `assets/img/`, plus one JPEG fallback each (the hero's tall crop shares the wide crop's JPEG).
+The master photos are in `source/photos/`: 2400px JPEGs taken from the current site, the client's own photos (`floor-hatch-room`, `ladder-folded`, `floor-shelving`, `hatch-rail`: converted to sRGB, every bit of metadata, location included, stripped), and the video posters that `scripts/build-video.sh` writes (`hero-reel-wide`, `hero-reel-tall`, `ladder-pull`, `solarking`: frames of the videos, so a poster and its video line up exactly). The site uses responsive AVIF and WebP versions in `assets/img/`, plus one JPEG fallback each (the hero's tall crop shares the wide crop's JPEG).
+
+Before publishing any new photo, strip its metadata (phone photos carry GPS): open it with Pillow, apply `ImageOps.exif_transpose`, and save a fresh copy without `exif`, as the masters here are.
 
 To add or re-crop a photo:
 
@@ -154,25 +156,53 @@ To add or re-crop a photo:
 3. Run `python3 scripts/build-images.py` (needs Pillow 11.3 or newer).
 4. Reference the new files in `index.html` with a `<picture>` element, following the existing ones.
 
+### Video
+
+The videos are in `assets/video/`, cut and encoded from the client's phone clips by `scripts/build-video.sh` (ffmpeg; the original .mov files are not in the repo, as they are large and carry location data; every output is written without metadata). Each looping video comes as AV1 WebM (smaller; Chrome, Edge, Firefox, recent Safari) and H.264 MP4 (everything else); the browser takes the first it can play.
+
+| File | Size | Where |
+| --- | --- | --- |
+| `hero-reel-wide.webm` / `.mp4` | 0.66 / 1.7 MB, 1280×720, 8.7 s | Hero, screens wider than 960px |
+| `hero-reel-tall.webm` / `.mp4` | 0.78 / 1.45 MB, 720×1280 | Hero, phones and tablets |
+| `ladder-pull.webm` / `.mp4` | 0.39 / 0.64 MB, 528×1278, 9.2 s | Ladder card |
+| `solarking.mp4` | 2.8 MB, 720×720, 24 s, with sound | SolarKing promo (loads only when played) |
+
+**How they load** (the Videos block in `main.js`):
+
+- The hero's poster (`hero-wide` / `hero-tall`, the reel's first frame) is preloaded and painted from the first frame, so it stays the LCP image. The `<video>` has no source in the HTML: main.js gives it one after the page's `load` event and the work light's flicker (about 2.3 s in), picking the wide or tall cut by the screen, and fades it in once it is actually playing.
+- The ladder card's video gets its source as the card comes within 300px of the screen.
+- Each plays only while its section is on screen and the tab is visible, and stays paused once the visitor presses its pause button.
+- With reduced motion (read live), with Save-Data (`navigator.connection.saveData` or `prefers-reduced-data`), without IntersectionObserver or without JavaScript, no video loads: the posters stay.
+- The SolarKing promo is `preload="none"` with a lazy-loaded poster, so it costs nothing until someone taps "Play with sound". Its captions are burnt in; a visually hidden description (`#promo-desc`) tells screen-reader users what it shows and says.
+
+**To swap the hero reel:** put the original clips in a folder outside the repo, edit `CLIPS` at the top of `scripts/build-video.sh` (file, start second, length, and where the 16:9 crop sits vertically), then run
+
+```sh
+scripts/build-video.sh /path/to/originals   # writes assets/video/* and the poster masters
+python3 scripts/build-images.py             # turns the posters into AVIF/WebP/JPEG
+```
+
+The reel loops without a seam: the last clip crossfades into the first clip's opening half second, and the reel starts just after it. Keep it between 8 and 14 seconds, keep the first frame a calm, readable shot (it is the poster), and keep the hero files under about 2 MB each. If the poster's look changes a lot, check the hero's `alt` text in `index.html`.
+
 ## Hosting
 
-Upload the repository root to any static host: Netlify, Cloudflare Pages, Vercel, GitHub Pages or plain cPanel hosting. `index.html` is the homepage and `404.html` is the not-found page. `_headers` sets cache and security headers on Netlify and Cloudflare Pages; other hosts ignore it. Make sure the host compresses HTML, CSS and JS (gzip or Brotli; all of the hosts above do): the page's inline drawings make the HTML about 209 KB raw but about 48 KB compressed.
+Upload the repository root to any static host: Netlify, Cloudflare Pages, Vercel, GitHub Pages or plain cPanel hosting. `index.html` is the homepage and `404.html` is the not-found page. `_headers` sets cache and security headers on Netlify and Cloudflare Pages; other hosts ignore it. The videos need a host that answers range requests (every host above does; Safari won't play video without them). Make sure the host compresses HTML, CSS and JS (gzip or Brotli; all of the hosts above do): the page's inline drawings make the HTML about 244 KB raw but about 51 KB compressed.
 
 ## Performance
 
-Lighthouse 12.8.2, run locally on the full page served with gzip (as a real host serves it), median of three runs each:
+Lighthouse 12.8.2, run locally on the full page served with gzip (as a real host serves it), with the hero reel and the new photos (1 November 2026):
 
 | | Performance | Accessibility | Best practices | SEO | LCP | CLS | TBT | Transferred |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Mobile | 96 | 100 | 100 | 100 | 2.6 s | 0 | 69 ms | 318 KiB, 12 requests |
-| Desktop | 99 | 100 | 100 | 100 | 0.6 s | 0 | 0 ms | 425 KiB, 13 requests |
+| Mobile (six runs) | 88–96, median 93.5 | 100 | 100 | 100 | 2.4–2.7 s | 0 | 140–190 ms | 1038 KiB, 16 requests |
+| Desktop (three runs) | 100 | 100 | 100 | 100 | 0.5–0.6 s | 0 | 0 ms | 1005 KiB |
 
-Mobile scores move a few points from run to run (a busy machine can drop a single run much lower). Before the motion work the page scored 99 (mobile) and 100 (desktop); the difference is mostly the hero's opening, which starts dark and lights up (it lowers Speed Index), and the larger HTML and stylesheet.
+The transfer now includes the hero reel (about 760 KiB on phones, 650 KiB on desktop), which starts loading after the page's `load` event, so it doesn't hold up the first paint or the LCP; the page itself is about 280 KiB. Mobile scores move a few points from run to run on a busy machine: in the same session the page before the videos measured 91–96. Before the motion work the page scored 99 (mobile) and 100 (desktop); the difference is mostly the hero's opening, which starts dark and lights up (it lowers Speed Index), and the larger HTML and stylesheet.
 
 What keeps it fast:
 
-- No frameworks. One stylesheet (about 37 KB compressed), one deferred script (about 29 KB compressed) and one font file (preloaded).
-- The hero photo is preloaded and painted from the first frame, under the darkness. On phones the browser takes the lede as the largest paint, so the lede doesn't animate.
+- No frameworks. One stylesheet (about 40 KB compressed), one deferred script (about 32 KB compressed) and one font file (preloaded).
+- The hero poster is preloaded and painted from the first frame, under the darkness. On phones the browser takes the lede as the largest paint, so the lede doesn't animate. The reel loads only after the page's `load` event (and never with reduced motion or Save-Data); the ladder video only near its card; the promo only when played.
 - Images are AVIF/WebP sized per screen, everything below the hero is lazy-loaded, and every image has fixed dimensions.
 - The page has its full length from the first frame (nothing that changes the layout waits for the script), so nothing jumps, including when a visitor arrives on a link to a section further down.
 - Only `transform` and `opacity` (and SVG stroke offsets) animate. There's one scroll loop, each section goes idle when it's off screen, and the section scripts start up as separate short tasks. Each band paints on its own (`contain: paint`), so a scroll-linked drawing repaints its band, not the whole page.
