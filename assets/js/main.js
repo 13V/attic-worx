@@ -2,7 +2,8 @@
    1. The motion engine (window.AW): scroll jobs, reveals, word splitting.
    2. The page: header, menu, FAQ, quote form, service links, whirlybird, action bar.
    3. After that block, one block per animated section, each its own function using window.AW and queued
-      with AW.section, in this order: Reviews band, Roof build scene (#build), How it works (#how), Before & after
+      with AW.section, in this order: Videos (the hero's reel, the ladder card's loop, the SolarKing promo),
+      Reviews band, Roof build scene (#build), How it works (#how), Before & after
       (#results), Recent work (#work), How much room? (#room). They run right after this file, in order, one
       task each (as separate scripts would, so start-up is a few short tasks rather than one long one), and
       the engine's start-up hold (.aw-still, .is-instant) lasts until they have all run. The hero's
@@ -708,6 +709,139 @@
   var year = $('[data-year]');
   if (year) year.textContent = String(new Date().getFullYear());
 })();
+
+/* ==================== Videos ==================== */
+/* Two kinds, both muted and decorative (aria-hidden), both with a pause button (WCAG 2.2.2):
+   - the hero's reel (video[data-video="hero"]): it gets its source once the page has loaded and the hero's
+     light has come on, so it never competes with the poster (the LCP image) or the first paint. It picks
+     the wide or the tall cut by the screen (data-wide / data-tall, swapped if that changes), and loops.
+   - inline loops (video[data-video="inline"], the ladder card): the source is set as it nears the screen.
+   Each plays only while it is on screen and the tab is visible, fades in over its poster once it is
+   actually playing, and stops for good with reduced motion (read live: the poster comes back) or when the
+   visitor has asked to save data. A video that fails to load just leaves its poster.
+   Also the SolarKing promo (video[data-promo]): a big "Play with sound" button over its poster. */
+window.AW.section(function () {
+  'use strict';
+  var AW = window.AW;
+  var conn = navigator.connection || {};
+  var saveData = conn.saveData === true ||
+    (window.matchMedia && window.matchMedia('(prefers-reduced-data: reduce)').matches);
+  var motionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var onChange = function (mq, fn) { if (mq.addEventListener) mq.addEventListener('change', fn); else if (mq.addListener) mq.addListener(fn); };
+
+  /* ---------- The promo: tap to play, with sound (works without this too: native controls) ---------- */
+  var promo = document.querySelector('video[data-promo]');
+  var promoBtn = document.querySelector('[data-promo-play]');
+  if (promo && promoBtn) {
+    // one way to start it: the big button (the player's own controls come back once it plays)
+    promo.controls = false;
+    promoBtn.hidden = false;
+    promoBtn.addEventListener('click', function () {
+      promoBtn.hidden = true;
+      promo.controls = true;
+      var p = promo.play();
+      if (p && p.catch) p.catch(function () { promoBtn.hidden = false; }); // (controls stay, as a way in)
+      promo.focus({ preventScroll: true }); // keyboard users land on the player's own controls
+    });
+    promo.addEventListener('play', function () { promoBtn.hidden = true; promo.controls = true; });
+    promo.addEventListener('ended', function () { promoBtn.hidden = false; });
+  }
+
+  /* ---------- The looping videos ---------- */
+  var vids = Array.prototype.slice.call(document.querySelectorAll('video[data-video]'));
+  if (!vids.length || saveData || !('IntersectionObserver' in window)) return;
+
+  var AV1 = 'video/webm; codecs="av01.0.05M.08"';
+  var wideMQ = window.matchMedia('(min-width: 961px)'); // the hero's breakpoint, as in styles.css
+
+  vids.forEach(function (v) {
+    var isHero = v.getAttribute('data-video') === 'hero';
+    var box = v.closest('section, article') || v.parentNode;
+    var btn = box.querySelector('[data-video-toggle]');
+    var label = btn && btn.querySelector('.sr-only');
+    var labelPause = label ? label.textContent : '';
+    var labelPlay = labelPause.replace(/^Pause/, 'Play');
+    var base = '';
+    var wanted = false;  // allowed to load (hero: after load + the light; inline: near the screen)
+    var inView = false;
+    var userPaused = false;
+
+    var srcFor = function () {
+      return isHero ? v.getAttribute(wideMQ.matches ? 'data-wide' : 'data-tall') : v.getAttribute('data-src');
+    };
+    var load = function () {
+      var b = srcFor();
+      if (!b || b === base) return;
+      base = b;
+      v.textContent = '';
+      var last;
+      [[AV1, '.webm'], ['video/mp4', '.mp4']].forEach(function (t) {
+        last = document.createElement('source');
+        last.type = t[0];
+        last.src = b + t[1];
+        v.appendChild(last);
+      });
+      // the last source failing means no video: keep the poster, drop the button
+      last.addEventListener('error', function () { show(false); if (btn) btn.hidden = true; });
+      v.load();
+    };
+    var show = function (on) {
+      v.classList.toggle('is-playing', on);
+      if (btn) btn.hidden = !on && !userPaused;
+    };
+    var update = function () {
+      if (!AW.motionOK()) {
+        v.pause();
+        show(false);
+        if (btn) btn.hidden = true;
+        return;
+      }
+      if (!wanted) return;
+      load();
+      if (inView && !userPaused && !document.hidden) {
+        var p = v.play();
+        if (p && p.catch) p.catch(function () {}); // blocked or failed: the poster stays
+      } else {
+        v.pause();
+      }
+    };
+
+    v.addEventListener('playing', function () { show(true); });
+
+    if (btn) {
+      btn.addEventListener('click', function () {
+        userPaused = !userPaused;
+        btn.setAttribute('aria-pressed', String(userPaused));
+        if (label) label.textContent = userPaused ? labelPlay : labelPause;
+        update();
+      });
+    }
+
+    new IntersectionObserver(function (entries) {
+      inView = entries[entries.length - 1].isIntersecting;
+      update();
+    }).observe(box);
+    if (!isHero) {
+      // set the source a little before the card arrives, so it is ready to play when it does
+      var near = new IntersectionObserver(function (entries) {
+        if (!entries[entries.length - 1].isIntersecting) return;
+        near.disconnect();
+        wanted = true;
+        update();
+      }, { rootMargin: '300px 0px' });
+      near.observe(box);
+    } else {
+      // after the page's load event and the work light's flicker (2.1 s from the start, in CSS)
+      var go = function () {
+        setTimeout(function () { wanted = true; update(); }, Math.max(0, 2300 - performance.now()));
+      };
+      if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
+      onChange(wideMQ, function () { if (wanted && base) { show(false); update(); } });
+    }
+    document.addEventListener('visibilitychange', update);
+    onChange(motionMQ, update);
+  });
+});
 
 /* ==================== Reviews band (the proof, early) ==================== */
 /* Uses window.AW (above). Copies every review in #reviews (its quote and name) into the band's line, twice,

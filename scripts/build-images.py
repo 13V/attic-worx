@@ -16,8 +16,9 @@ OUT = ROOT / "assets" / "img"
 
 # name, master photo, aspect ratio (width / height), vertical focus (0 top, 1 bottom), widths
 VARIANTS = [
-    ("hero-wide",      "walkway-after",     16 / 10, 0.50, [800, 1200, 1800]),
-    ("hero-tall",      "walkway-after",      4 / 5,  0.62, [480, 800, 1200]),
+    # the hero's poster: the reel's first frame (scripts/build-video.sh writes these masters)
+    ("hero-wide",      "hero-reel-wide",    16 / 9,  0.50, [800, 1280]),
+    ("hero-tall",      "hero-reel-tall",     9 / 16, 0.50, [480, 720]),
     ("ba1-before",     "open-floor-before",  4 / 5,  0.55, [480, 800, 1200]),
     ("ba1-after",      "open-floor-after",   4 / 5,  0.55, [480, 800, 1200]),
     ("ba2-before",     "walkway-before",     4 / 5,  0.55, [480, 800, 1200]),
@@ -25,7 +26,7 @@ VARIANTS = [
     ("ba3-before",     "deck-before",        4 / 5,  0.55, [480, 800, 1200]),
     ("ba3-after",      "deck-after",         4 / 5,  0.55, [480, 800, 1200]),
     ("svc-storage",    "floor-edge",        16 / 10, 0.66, [600, 1000, 1400]),
-    ("svc-ladder",     "ladder-hallway",     9 / 16, 0.50, [400, 800]),
+    ("svc-ladder",     "ladder-pull",      528 / 1278, 0.50, [400, 528]),  # the ladder clip's poster
     ("svc-insulation", "walkway-before",     1 / 1,  0.74, [400, 800]),
     ("story-garage",   "garage-clutter",     1 / 1,  0.50, [480, 800, 1200]),
     ("story-roof",     "storage-boxes",      1 / 1,  0.62, [480, 790]),
@@ -35,6 +36,11 @@ VARIANTS = [
     ("work-boxes",     "storage-boxes",      3 / 4,  0.55, [400, 700]),
     ("work-garage",    "ladder-garage",      3 / 4,  0.45, [400, 700, 1000]),
     ("work-floor",     "open-floor-after",   3 / 4,  0.55, [400, 700, 1000]),
+    ("work-hatchroom", "floor-hatch-room",   3 / 4,  0.50, [400, 700, 1000]),
+    ("work-folded",    "ladder-folded",      3 / 4,  0.50, [400, 700, 1000]),
+    ("work-shelving",  "floor-shelving",     3 / 4,  0.50, [400, 700, 1000]),
+    ("work-rail",      "hatch-rail",         3 / 4,  0.50, [400, 700, 1000]),
+    ("promo-solarking", "solarking",         1 / 1,  0.50, [480, 720]),  # the SolarKing video's poster
 ]
 
 AVIF_Q, WEBP_Q, JPEG_Q = 52, 74, 76

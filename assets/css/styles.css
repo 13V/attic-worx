@@ -395,7 +395,7 @@ main > section, .site-footer { contain: paint; }
   .hero-media img { object-position: 50% 58%; }
   .hero::after {
     background:
-      linear-gradient(180deg, rgba(12, 33, 34, 0.7) 0%, rgba(12, 33, 34, 0.55) 30%, rgba(12, 33, 34, 0.92) 62%, var(--roof) 100%);
+      linear-gradient(180deg, rgba(12, 33, 34, 0.72) 0%, rgba(12, 33, 34, 0.64) 30%, rgba(12, 33, 34, 0.92) 62%, var(--roof) 100%);
   }
 }
 /* Short desktop windows (a 1366x768 or 1536x864 laptop's browser, a 1440x900 MacBook's): less room above,
@@ -730,6 +730,83 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
   .svc-vent { min-height: 0; }
 }
 
+/* ---------- Videos: the ladder card's loop, the SolarKing promo, the pause buttons ----------
+   main.js (the "Videos" block) gives a looping video its source as it nears the screen, plays it only while
+   it is on screen, and fades it in over its poster (the clip's own frame, so nothing jumps). Never with
+   reduced motion or Save-Data: the poster stays. */
+.svc-video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity 900ms var(--ease-out), transform 1100ms var(--ease-out);
+}
+.svc-video.is-playing { opacity: 1; }
+
+/* Pause / play for a looping video (WCAG 2.2.2). It says what it does and is pressed while the video is
+   paused; main.js shows it once the video plays. Two bars (pause) or a triangle (play), drawn. */
+.vid-toggle {
+  position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.34); background: rgba(8, 22, 22, 0.42); color: var(--white);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  transition: border-color var(--t-hover) var(--ease-out), background-color var(--t-hover) var(--ease-out);
+}
+.vid-toggle[hidden] { display: none; }
+.vid-toggle:hover { border-color: var(--mint); background: rgba(8, 22, 22, 0.62); }
+.vid-toggle::before, .vid-toggle::after {
+  content: ""; position: absolute; top: 15px; width: 3px; height: 12px; border-radius: 1px; background: currentColor;
+}
+.vid-toggle::before { left: 16px; }
+.vid-toggle::after { left: 23px; }
+.vid-toggle[aria-pressed="true"]::before {
+  left: 17px; width: 0; height: 0; border-radius: 0; background: none;
+  border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor;
+}
+.vid-toggle[aria-pressed="true"]::after { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .vid-toggle:not([hidden]) { animation: aw-fade 600ms var(--ease-out) both; }
+}
+/* The hero's sits in the button row on phones (beside the phone number) and in the hero's corner on wide
+   screens */
+.hero-toggle { align-self: center; }
+@media (min-width: 961px) {
+  .hero-toggle { position: absolute; bottom: clamp(20px, 3vw, 32px); right: max(var(--gutter), calc((100% - var(--max)) / 2)); }
+}
+.svc-toggle { position: absolute; top: 16px; right: 16px; z-index: 2; }
+
+/* The SolarKing promo: the client's own video, played only on request, with sound */
+.promo {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+  margin-top: 16px; padding: clamp(16px, 2vw, 24px);
+  border-radius: var(--r-card); background: var(--roof-2); color: var(--white);
+}
+.promo-media { position: relative; border-radius: 14px; overflow: hidden; background: var(--roof); aspect-ratio: 1; }
+.promo-poster, .promo-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.promo-video { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
+.promo-play {
+  position: absolute; left: 50%; top: 24%; translate: -50% -50%; white-space: nowrap; /* over the sky, clear of the face and the captions */
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 10px 22px 10px 10px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--white); color: var(--ink); font: inherit; font-weight: 700; font-size: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  transition: background-color var(--t-hover) var(--ease-out), scale var(--t-press) var(--ease-out);
+}
+.promo-play[hidden] { display: none; }
+.promo-play:hover { background: var(--mint); }
+.promo-play:active { scale: 0.97; }
+.promo-play-icon { position: relative; width: 40px; height: 40px; border-radius: 50%; background: var(--teal); }
+.promo-play-icon::before {
+  content: ""; position: absolute; left: 15px; top: 12px;
+  border-style: solid; border-width: 8px 0 8px 13px; border-color: transparent transparent transparent var(--white);
+}
+.promo-copy { display: grid; gap: 14px; padding: clamp(4px, 2vw, 24px) clamp(4px, 1.5vw, 16px) clamp(8px, 2vw, 24px) 0; }
+.promo-copy .eyebrow { color: var(--mint); }
+.promo-copy h3 { font-size: clamp(1.9rem, 1.3rem + 2vw, 3rem); line-height: 0.95; max-width: 11em; }
+.promo-copy p { color: rgba(255, 255, 255, 0.82); max-width: 32em; }
+.promo-copy .text-link { color: var(--mint); }
+@media (max-width: 760px) {
+  .promo { grid-template-columns: minmax(0, 1fr); }
+  .promo-copy { padding: 4px 6px 10px; }
+}
+
 /* ---------- How much room?, Roof build, How it works, Before & after, Recent work ----------
    Each has its own part at the end of this file. Shared bits they use: */
 .how-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 32px; }
@@ -1056,7 +1133,7 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 
   /* Services: photos lean in slowly under a fine pointer */
   @media (hover: hover) {
-    .svc:hover .svc-media img { transform: scale(1.04); }
+    .svc:hover .svc-media :is(img, video) { transform: scale(1.04); }
   }
 
   /* Reviews: no card fade-ups; the stars fill gold left to right as each card comes in */
@@ -1149,88 +1226,48 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
   100% { transform: none; }
 }
 
-/* ==================== Hero sequence: "drawn, then lit" (.hero) ==================== */
-/* It is dark in the roof. Mint lines draw themselves over the photo's real edges (the walkway and its far end
-   first, then the trusses from the middle outwards, then the sheet joints and the hatch), the work light
-   flickers on, the lines stay on the lit photo for a beat and fade. The headline rises word by word from the
-   first paint, the buttons follow, and the quote card rises in, form and all, alongside the copy, so the
-   drawing plays around a settled card and an early tap on "Get my free quote" lands on a usable form.
-   All CSS, from the first frame: it needs no script, but it only plays where scripts run (scripting: enabled)
-   and motion is welcome. Without JS or with reduced motion the photo is lit, there is no drawing and
-   everything is at rest. The photo (the LCP image) is painted from the first frame, under the darkness. */
+/* ==================== Hero sequence: "lit, then moving" (.hero) ==================== */
+/* It is dark in the roof. The work light flickers on over the poster (the reel's first frame), the headline
+   rises word by word from the first paint, the buttons follow and the quote card rises in, form and all.
+   Then the reel (real footage from Attic Worx jobs: the work lights over a new floor, a walk across one, a
+   stocked roof space) fades in over the poster and loops, muted, under the same shade.
+   The flicker and the copy are CSS only, from the first frame; they play only where scripts run
+   (scripting: enabled) and motion is welcome. The reel is main.js's (the "Videos" block): it gets its
+   source once the page has loaded and the light is on, never with reduced motion or Save-Data, and it
+   plays only while the hero is on screen and the tab is visible. Without JS or with reduced motion the
+   poster is lit and everything is at rest. The poster (the LCP image) is painted from the first frame,
+   under the darkness. */
 
 /* A clip, not a scroll container, so the photo's view timeline follows the page (the drift below) */
 .hero { overflow: clip; --t-light: 2.1s; /* the work light's flicker; the text shade steps with it */ }
 
-/* The drawing: one SVG in master-photo coordinates (walkway-after.jpg, 1800 x 2400), laid over the photo the
-   way object-fit: cover lays each crop: the crop's rendered width is max(100cqw, 100cqh * aspect), centred
-   across, at the object-position's 42% (wide) or 58% (tall) down; the SVG is the whole master, so it sits
-   the crop's top (638 or 93 master px) above that. Strokes scale with the photo (vector-effect would break
-   pathLength dashes in Chromium), so --k converts screen px to master units, stepped by layout. */
-.hero-trace {
-  position: absolute; inset: 0; z-index: -2; /* over the darkness (::before), under the text shade (::after) */
-  display: none;
-  container-type: size;
-  overflow: hidden;
-  pointer-events: none;
+/* The reel lies exactly over the poster (same box, same fit, same crop) and fades in once it plays */
+.hero-video {
+  position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 42%;
+  opacity: 0; pointer-events: none;
+  transition: opacity 1200ms var(--ease-out);
 }
-.hero-trace svg {
-  --ar: 1.6;   /* hero-wide: master (0, 638) to (1800, 1763) */
-  --cy: 638;
-  --py: 0.42;
-  --k: 1.25;   /* master px per screen px, ~1800 / the photo's rendered width */
-  --cw: max(100cqw, 100cqh * var(--ar));
-  position: absolute;
-  left: calc((100cqw - var(--cw)) / 2);
-  top: calc((100cqh - var(--cw) / var(--ar)) * var(--py) - var(--cw) * var(--cy) / 1800);
-  width: var(--cw);
-  height: calc(var(--cw) * 4 / 3);
-  max-width: none;
-  fill: none;
-  stroke: var(--mint);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-@media (min-width: 1700px) { .hero-trace svg { --k: 1; } }
-@media (min-width: 2200px) { .hero-trace svg { --k: 0.8; } }
+.hero-video.is-playing { opacity: 1; }
+/* Phones and tablets: the copy and the form stack, so the hero runs much taller than the screen. The poster
+   and the reel fill the first screen only (a 9:16 frame stays nearly whole instead of being cropped to a
+   sliver) and fade into the roof colour below it, where the shade is near solid anyway. */
 @media (max-width: 960px) {
-  .hero-trace svg { --ar: 0.8; --cy: 93; --py: 0.58; --k: 1.85; } /* hero-tall: (0, 93) to (1800, 2343) */
-}
-.hero-trace .l-main { stroke-width: calc(var(--k) * 1.7px); }
-.hero-trace .l-detail { stroke-width: calc(var(--k) * 1.2px); stroke-opacity: 0.8; }
-.hero-trace stop { stop-color: var(--mint); }
-.hero-trace .l-guide {
-  stroke: url(#aw-trace-guide); /* fades out short of the vanishing point, clear of the header */
-  stroke-width: calc(var(--k) * 1px); stroke-opacity: 0.42;
-  stroke-dasharray: calc(var(--k) * 5px) calc(var(--k) * 6px);
-}
-/* Phones and tablets: the copy sits over the top of the photo and the truss chords run behind the headline and
-   lede, so they stay faint and the floor (walkway, battens, joints, hatch) is drawn bright: its far end meets
-   the lede's foot at every width from 320 to 960px. The guides would sit wholly behind the lede, so they go.
-   (Plain opacity, not a gradient paint: a url() stroke on every path cost ~0.2 s of simulated LCP.) */
-@media (max-width: 960px) {
-  .hero-trace .ch { stroke-opacity: 0.24; }
-  .hero-trace .l-guide { display: none; }
+  .hero-media, .hero-video { bottom: auto; height: min(100%, 100vh); height: min(100%, 100svh); }
+  .hero-media img, .hero-video { object-position: 50% 50%; }
+  .hero-media, .hero-video {
+    -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+    mask-image: linear-gradient(180deg, #000 70%, transparent);
+  }
 }
 
 /* No JS, reduced motion: the light is simply on (.hero::before rests at opacity 0) */
 
 @media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
-  /* Dark roof, then the work light flickers on (the darkness lifts in steps). In the dark the copy needs
-     less shade, so the drawing reads; the shade steps with the flicker (same duration, same keyframe stops),
-     so the lines behind the copy dim with the light, never before it. */
+  /* Dark roof, then the work light flickers on (the darkness lifts in steps). The shade over the photo
+     steps with the flicker (same duration, same keyframe stops), so it never darkens before the light. */
   .hero::before { animation: aw-hero-lights var(--t-light) steps(1, end) both; }
   .hero::after { animation: aw-hero-shade var(--t-light) steps(1, end); }
-
-  /* The drawing: guides fade in, every other stroke is drawn with a pen; it lingers on the lit photo, then goes */
-  .hero-trace { display: block; }
-  .hero-trace svg { animation: aw-hero-trace-out 700ms var(--ease-in) 2.45s both; }
-  .hero-trace .l-guide { animation: aw-fade 500ms ease 60ms both; }
-  .hero-trace [pathLength] {
-    stroke-dasharray: 1 2;
-    animation: aw-draw 700ms var(--ease-draw) var(--d, 0s) both;
-  }
-  .hero-trace .l-detail [pathLength] { animation-duration: 600ms; }
 
   /* Copy: the stamp fades in and the headline rises out of its masks word by word, both from the first frame,
      the buttons and the reviews line follow. The lede is painted from the first frame (wherever the photo
@@ -1245,16 +1282,15 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
   .hero-actions { animation: aw-fade-up 900ms var(--ease-out) 560ms backwards; }
   .hero .proof { animation: aw-fade-up 900ms var(--ease-out) 680ms backwards; }
 
-  /* The quote card rises in with the copy, its form inside it, and is settled before the drawing reaches
-     the floor */
+  /* The quote card rises in with the copy, its form inside it, settled before the light comes on */
   .hero .quote-card { animation: aw-hero-card 900ms var(--ease-out) 240ms backwards; }
 }
 
-/* Desktop: as the hero leaves, the photo (and the drawing with it) drifts down a little behind the copy */
+/* Desktop: as the hero leaves, the poster (and the reel with it) drifts down a little behind the copy */
 @media (prefers-reduced-motion: no-preference) and (scripting: enabled) and (min-width: 961px) {
   @supports (animation-timeline: view()) {
     .hero-media img,
-    .hero-trace {
+    .hero-video {
       animation: aw-hero-drift linear both;
       animation-timeline: view(block 0px); /* no inset: the page's scroll-padding would start it early */
       animation-range: exit 0% exit 100%;
@@ -1279,7 +1315,6 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
   77% { opacity: 0.8; }
   85%, 100% { opacity: 1; }
 }
-@keyframes aw-hero-trace-out { to { opacity: 0; visibility: hidden; } }
 @keyframes aw-hero-card { from { opacity: 0; transform: translateY(32px); } }
 @keyframes aw-hero-settle { from { transform: translateY(14px); } }
 @keyframes aw-hero-drift { to { translate: 0 10%; scale: 1.06; } }
