@@ -12,7 +12,7 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 2. **Trust strip:** same-day installs, priced online, no council approval, no space no charge.
    **Reviews band** under it: the stars, "90+ five-star reviews on Google and Facebook" and a link to the reviews, then a slow line of the real quotes. main.js copies the line from the Reviews section, so it needs no editing of its own. It pauses on hover, on keyboard focus, off screen and with its pause button; with reduced motion or without JavaScript it holds still (without JavaScript the band is just the rating and the link). The hero's review line is a link to the reviews too.
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review. Its first paragraph is the page's one "statement": its words darken as you read down.
-4. **Services bento:** storage floors, ladders (an installer pulls down and unfolds a ladder: a muted loop that plays while the card is on screen, with a pause button), roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation. Under the cards, the **SolarKing promo**: the client's own 24-second video, with sound, that plays only when tapped.
+4. **Services bento:** storage floors, ladders (an installer pulls down and unfolds a ladder: a muted loop that plays while the card is on screen, with a pause button), roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation. Under the cards, the **solar fan promo**: 14 seconds of the installer on a roof explaining the solar fans they fit, with captions and sound, that plays only when tapped.
 5. **How much room?** (`#room`): a slider sizes a storage floor from 2 to 20 m², the picture lays the floor and fills it with boxes, tubs and gear (two lanes either side of the walkway, the low edges clear), and a rough figure says how many archive boxes fit: about 5 per m² (8 m² → 40, 12 m² → 60, 20 m² → 100), counting about a third of the floor as holding boxes. "Price a floor this size" ticks Attic storage and the matching size in the quote form, then takes you there. At 12 m² it notes that's the size of Kyle M's floor.
 6. **"Boxes up. Car in."** (`#build`): a cutaway of a house at dusk. On screens with motion the picture stays put while you scroll and the change plays out in six steps: the full garage, the light goes on, a floor goes in (it simply appears and settles), the ladder comes down, everything goes up, the car's back in. It shows the result, not how a floor is built (no framing, no sheets laid one by one, no materials or methods in the captions).
 7. **How it works** (`#how`): three steps. The line through them is a folding attic ladder that swings down as each step lights. Wide screens have a sticky panel beside the steps showing each step's drawing; narrower screens show each drawing under its step.
@@ -116,7 +116,7 @@ Rules the system keeps, so it stays fast and calm:
 ### Reduced motion and no JavaScript
 
 - **Reduced motion** (read live): everything rests in its final state, fully visible, with no waiting. Nothing pins: the build shows its finished picture (car in, boxes up) with the six steps as a numbered list, and Recent work is the swipe strip. The hero is lit and still (its poster; the reel never loads), the ladder card shows its poster, the slider's picture changes instantly, the before/after tabs swap at once, the header doesn't hide, and the whirlybird is still.
-- **No JavaScript:** everything is visible and usable. The hero and the ladder card show their posters (no video loads), the SolarKing promo is a plain player with a poster (a `<noscript>` copy). The form shows all three steps at once, How much room? shows 8 m² and its button goes straight to the form, the build shows its finished picture and the step list, How it works shows every step lit, Before and after shows all three pairs one under the other with their captions, Recent work is the swipe strip, and the header keeps a solid background (`<noscript>` rules in `<head>`).
+- **No JavaScript:** everything is visible and usable. The hero and the ladder card show their posters (no video loads), the solar fan promo is a plain player with a poster (a `<noscript>` copy). The form shows all three steps at once, How much room? shows 8 m² and its button goes straight to the form, the build shows its finished picture and the step list, How it works shows every step lit, Before and after shows all three pairs one under the other with their captions, Recent work is the swipe strip, and the header keeps a solid background (`<noscript>` rules in `<head>`).
 
 ### The drawings (generated: don't hand-edit them)
 
@@ -145,7 +145,7 @@ Font: [Archivo](https://github.com/Omnibus-Type/Archivo) (SIL Open Font License,
 
 ### Photos
 
-The master photos are in `source/photos/`: 2400px JPEGs taken from the current site, the client's own photos (`floor-hatch-room`, `ladder-folded`, `floor-shelving`, `hatch-rail`: converted to sRGB, every bit of metadata, location included, stripped), and the video posters that `scripts/build-video.sh` writes (`hero-reel-wide`, `hero-reel-tall`, `ladder-pull`, `solarking`: frames of the videos, so a poster and its video line up exactly). The site uses responsive AVIF and WebP versions in `assets/img/`, plus one JPEG fallback each (the hero's tall crop shares the wide crop's JPEG).
+The master photos are in `source/photos/`: 2400px JPEGs taken from the current site, the client's own photos (`floor-hatch-room`, `ladder-folded`, `floor-shelving`, `hatch-rail`: converted to sRGB, every bit of metadata, location included, stripped), and the video posters (`hero-reel-wide`, `hero-reel-tall` and `ladder-pull` from `scripts/build-video.sh`, `promo-solar-fan` from `scripts/promo/build.sh`: frames of the videos, so a poster and its video line up exactly). The site uses responsive AVIF and WebP versions in `assets/img/`, plus one JPEG fallback each (the hero's tall crop shares the wide crop's JPEG).
 
 Before publishing any new photo, strip its metadata (phone photos carry GPS): open it with Pillow, apply `ImageOps.exif_transpose`, and save a fresh copy without `exif`, as the masters here are.
 
@@ -158,14 +158,14 @@ To add or re-crop a photo:
 
 ### Video
 
-The videos are in `assets/video/`, cut and encoded from the client's phone clips by `scripts/build-video.sh` (ffmpeg; the original .mov files are not in the repo, as they are large and carry location data; every output is written without metadata). Each looping video comes as AV1 WebM (smaller; Chrome, Edge, Firefox, recent Safari) and H.264 MP4 (everything else); the browser takes the first it can play.
+The videos are in `assets/video/`, cut and encoded from the client's phone clips by `scripts/build-video.sh` (the promo by `scripts/promo/build.sh`, below; ffmpeg; the original .mov files are not in the repo, as they are large and carry location data; every output is written without metadata). Each looping video comes as AV1 WebM (smaller; Chrome, Edge, Firefox, recent Safari) and H.264 MP4 (everything else); the browser takes the first it can play.
 
 | File | Size | Where |
 | --- | --- | --- |
 | `hero-reel-wide.webm` / `.mp4` | 0.66 / 1.7 MB, 1280×720, 8.7 s | Hero, screens wider than 960px |
 | `hero-reel-tall.webm` / `.mp4` | 0.78 / 1.45 MB, 720×1280 | Hero, phones and tablets |
 | `ladder-pull.webm` / `.mp4` | 0.39 / 0.64 MB, 528×1278, 9.2 s | Ladder card |
-| `solarking.mp4` | 2.8 MB, 720×720, 24 s, with sound | SolarKing promo (loads only when played) |
+| `promo-solar-fan.webm` / `.mp4` | 2.7 / 5.2 MB, 1080×1080, 14 s, with sound | Solar fan promo (loads only when played) |
 
 **How they load** (the Videos block in `main.js`):
 
@@ -173,7 +173,7 @@ The videos are in `assets/video/`, cut and encoded from the client's phone clips
 - The ladder card's video gets its source as the card comes within 300px of the screen.
 - Each plays only while its section is on screen and the tab is visible, and stays paused once the visitor presses its pause button.
 - With reduced motion (read live), with Save-Data (`navigator.connection.saveData` or `prefers-reduced-data`), without IntersectionObserver or without JavaScript, no video loads: the posters stay.
-- The SolarKing promo is `preload="none"` with a lazy-loaded poster, so it costs nothing until someone taps "Play with sound". Its captions are burnt in; a visually hidden description (`#promo-desc`) tells screen-reader users what it shows and says.
+- The solar fan promo is `preload="none"` with a lazy-loaded poster (its own first frame, so nothing jumps when it starts), so it costs nothing until someone taps "Play with sound". It comes as AV1 WebM and H.264 MP4, like the loops. Its captions are burnt in; a visually hidden description (`#promo-desc`) tells screen-reader users what it shows and says.
 
 **To swap the hero reel:** put the original clips in a folder outside the repo, edit `CLIPS` at the top of `scripts/build-video.sh` (file, start second, length, and where the 16:9 crop sits vertically), then run
 
@@ -183,6 +183,22 @@ python3 scripts/build-images.py             # turns the posters into AVIF/WebP/J
 ```
 
 The reel loops without a seam: the last clip crossfades into the first clip's opening half second, and the reel starts just after it. Keep it between 8 and 14 seconds, keep the first frame a calm, readable shot (it is the poster), and keep the hero files under about 2 MB each. If the poster's look changes a lot, check the hero's `alt` text in `index.html`.
+
+**The promo** (`promo-solar-fan.*`) has its own build in `scripts/promo/`, because it is an edit rather than a cut: the installer's 13.5-second phone clip (on a roof, to camera) becomes a 14-second promo with captions and graphics in Attic Worx's type and colours.
+
+```sh
+scripts/promo/build.sh /path/to/IMG_2780.mov   # writes assets/video/promo-solar-fan.* and the poster master
+python3 scripts/build-images.py                # turns the poster into AVIF/WebP/JPEG
+```
+
+It needs ffmpeg (libx264, libsvtav1, libopus), Python 3 with numpy and opencv-python-headless, and Node with Playwright. A second argument (a folder) also writes 9:16 and 4:5 cuts for social ads, whose end card says "Message us" instead of "Get your free quote".
+
+- `edl.json` is the cut list: source frames in and out, and each shot's framing. Every pause is cut to about 40 ms before a word and 50 ms after, and each cut changes the framing, so it reads as a new shot. The sound and the picture both follow this file, so they can't drift apart.
+- `prep.py` takes the clip from HDR (HLG) to standard range, grades it warmer, removes the sun's lens flare from the sky and upscales it 2x. It also cuts the vent shots from the client's earlier promo (`source/video/solarking-promo.mp4`), cropped clear of that video's own badge and captions.
+- `audio.py` joins the voice by the cut list, cleans it and levels it to −14 LUFS (peaks at −1.5 dBTP).
+- `promo.html` draws each frame (the hook, the captions word by word, the vent card, the airflow figure, the offer, the end card) and `render.cjs` captures them. `node scripts/promo/render.cjs 1x1 --stills out --work <frames folder> 6.9` draws a still of any moment.
+- It is 1080×1080 because the promo shows at up to 540 CSS px on desktop and full width on phones: about pixel for pixel on retina screens, so the burnt-in captions stay sharp. The first frame carries the whole hook, so it doubles as the poster, and the play button sits low, over his shirt.
+- Claims: the airflow figure is on screen as "Up to 2,000 m³ of air out per hour", marked as the manufacturer's rated airflow (SolarKing lists its 320mm V3 at 2,100 m³/hr). If the fans fitted change, check the figure. The captions are his words, verbatim.
 
 ## Hosting
 

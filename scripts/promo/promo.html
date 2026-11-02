@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Attic Worx solar fan promo</title>
+<!-- One frame of the promo, drawn for a given time. render.cjs loads this page, injects the edit list
+     (edl.json) as window.EDL and the frames folder (prep.py's output) as window.WORK, then calls
+     renderAt(t) and screenshots each frame.
+     ?fmt=1x1 (the website), 9x16 (Reels, Stories) or 4x5 (feed); ?cta=web|ad picks the end card's line. -->
+<style>
+@font-face {
+  font-family: "Archivo";
+  src: url("../../assets/fonts/archivo-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+}
+:root {
+  --teal: #117E79; --teal-deep: #0B5E5A; --mint: #8FD6CC; --roof: #0C2122; --ink: #0A0C0C;
+  --cap: 68px; --h1: 150px; --chip: 56px; --endScale: 1;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: var(--W); height: var(--H); overflow: hidden; background: #000; }
+body { font-family: "Archivo", sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+#stage { position: absolute; inset: 0; overflow: hidden; }
+
+/* Presenter */
+#pres { position: absolute; left: 0; top: 0; width: 1184px; height: 1920px; transform-origin: 0 0; }
+#scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(12,33,34,.30) 0%, rgba(12,33,34,.10) 30%, rgba(12,33,34,0) 46%); }
+
+/* Logo lockup */
+.lockup { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 18px; }
+.lockup img.mark { width: 66px; height: 66px; filter: drop-shadow(0 4px 14px rgba(12,33,34,.35)); }
+.lockup img.word { width: 330px; height: auto; filter: brightness(0) invert(1) drop-shadow(0 3px 12px rgba(12,33,34,.45)); }
+
+/* Hook: on screen from the first frame (it is the website's poster) */
+#hook { position: absolute; left: 50px; right: 50px; text-align: center; }
+.chip { display: inline-block; background: var(--teal); color: #fff; font-weight: 750; font-stretch: 80%;
+  text-transform: uppercase; letter-spacing: .06em; border-radius: 12px; }
+#hook .chip { font-size: var(--chip); padding: .25em .54em .27em; box-shadow: 0 10px 30px rgba(12,33,34,.25); }
+#hook h1 { margin-top: 22px; font-weight: 850; font-stretch: 66%; text-transform: uppercase; font-size: var(--h1);
+  line-height: .94; letter-spacing: -.005em; text-shadow: 0 6px 30px rgba(12,33,34,.40); }
+#hook h1 .line { display: block; padding-bottom: 6px; }
+#hook h1 .hlwrap { position: relative; z-index: 0; display: inline-block; }
+#hook h1 .hlwrap::before { content: ""; position: absolute; left: -10px; right: -10px; top: 14%; bottom: 4%;
+  background: var(--teal); border-radius: 10px; z-index: -1; transform-origin: 0 50%; transform: scaleX(var(--hl, 0)); }
+
+/* B-roll card */
+#card { position: absolute; border-radius: 28px; overflow: hidden; background: var(--roof);
+  box-shadow: 0 30px 70px rgba(12,33,34,.38), 0 0 0 1px rgba(255,255,255,.14) inset; }
+#card img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 45%; }
+#card .tag { position: absolute; left: 22px; top: 22px; font-size: 34px; padding: 10px 18px 11px; border-radius: 10px; }
+#statShade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(12,33,34,.55), rgba(12,33,34,.86)); }
+#stat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+#stat .eyebrow { font-size: 40px; font-weight: 750; font-stretch: 80%; letter-spacing: .14em; color: var(--mint); }
+#stat .num { font-weight: 850; font-stretch: 66%; font-size: 236px; line-height: .9; margin-top: 6px; font-variant-numeric: tabular-nums; }
+#stat .num sup { font-size: .42em; vertical-align: top; position: relative; top: .12em; margin-left: .04em; font-weight: 800; }
+#stat .sub { font-size: 50px; font-weight: 650; font-stretch: 85%; margin-top: 14px; }
+#stat .fine { position: absolute; right: 22px; bottom: 16px; font-size: 22px; font-weight: 500; color: rgba(255,255,255,.66); letter-spacing: .02em; }
+
+/* Lower captions, word by word */
+#cap { position: absolute; left: 50px; right: 50px; display: flex; justify-content: center; }
+#cap .pill { background: rgba(12,33,34,.86); border-radius: 22px; padding: .24em .44em .27em; max-width: 960px; text-align: center;
+  font-size: var(--cap); font-weight: 760; font-stretch: 80%; line-height: 1.08; box-shadow: 0 14px 40px rgba(12,33,34,.30);
+  transform-origin: 50% 100%; }
+#cap .w { display: inline-block; }
+
+/* The offer, as he asks for the quote */
+#chips { position: absolute; left: 50px; right: 50px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+#chips .chip { font-size: var(--chip); padding: .25em .54em .27em; box-shadow: 0 12px 32px rgba(12,33,34,.28); }
+#chips .chip.alt { background: #fff; color: var(--roof); }
+
+/* End card */
+#end { position: absolute; inset: 0; background: var(--roof); overflow: hidden; }
+#end .glow { position: absolute; left: 50%; top: 38%; width: 1400px; height: 1400px; margin: -700px 0 0 -700px;
+  background: radial-gradient(closest-side, rgba(17,126,121,.55), rgba(17,126,121,0)); }
+#end .rays { position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, transparent 2px 46px); }
+#end .col { position: absolute; left: 66px; right: 66px; display: flex; flex-direction: column; align-items: center; text-align: center;
+  transform-origin: 50% 0; transform: scale(var(--endScale)); }
+#end .mark { width: 150px; height: 150px; }
+#end .word { width: 560px; margin-top: 34px; filter: brightness(0) invert(1); }
+#end h2 { margin-top: 64px; font-weight: 850; font-stretch: 66%; text-transform: uppercase; font-size: 128px; line-height: .94; }
+#end h2 span { color: var(--mint); }
+#end .sub { margin-top: 28px; font-size: 44px; font-weight: 500; font-stretch: 90%; line-height: 1.25; color: rgba(255,255,255,.86); max-width: 860px; text-wrap: balance; }
+#end .rule { width: 120px; height: 4px; background: var(--teal); border-radius: 2px; margin-top: 44px; }
+#end .cta { margin-top: 40px; font-size: 54px; font-weight: 760; font-stretch: 85%; color: var(--mint); }
+#end .cta svg { width: 44px; height: 44px; vertical-align: -6px; margin-left: 6px; }
+#end .phone { margin-top: 14px; font-size: 44px; font-weight: 600; font-stretch: 90%; color: #fff; letter-spacing: .01em; }
+#end .phone b { font-weight: 800; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="pres" alt="">
+  <div id="scrim"></div>
+
+  <div class="lockup" id="logoTop"><img class="mark" src="../../source/logo/logo-mark.svg" alt=""><img class="word" src="../../source/logo/logo-wordmark.svg" alt=""></div>
+
+  <div id="hook">
+    <span class="chip" id="hookChip">Adelaide homeowners</span>
+    <h1><span class="line">Are you ready</span><span class="line">for <span class="hlwrap" id="hlSummer">summer?</span></span></h1>
+  </div>
+
+  <div id="card">
+    <img id="broll" alt="">
+    <span class="chip tag" id="tagA">Solar powered</span>
+    <span class="chip tag" id="tagB">Brushless fan</span>
+    <div id="statShade"></div>
+    <div id="stat">
+      <div class="eyebrow">UP TO</div>
+      <div class="num"><span id="statNum">2,000</span><sup>m³</sup></div>
+      <div class="sub">of air out per hour</div>
+      <div class="fine">Manufacturer's rated airflow</div>
+    </div>
+  </div>
+
+  <div id="chips">
+    <span class="chip" id="chipQuote">Free quotes</span>
+    <span class="chip alt" id="chipInstall">Supplied &amp; installed</span>
+  </div>
+
+  <div id="cap"><div class="pill" id="pill"></div></div>
+
+  <div id="end">
+    <div class="glow"></div>
+    <div class="rays"></div>
+    <div class="col" id="endCol">
+      <img class="mark rise" src="../../source/logo/logo-mark.svg" alt="">
+      <img class="word rise" src="../../source/logo/logo-wordmark.svg" alt="">
+      <h2 class="rise">Beat the heat<br><span>this summer</span></h2>
+      <p class="sub rise">Solar roof fans, supplied and installed across Adelaide.</p>
+      <div class="rule rise"></div>
+      <p class="cta rise"><span id="ctaText"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></p>
+      <p class="phone rise">or call <b>0485 065 143</b></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const P = new URLSearchParams(location.search);
+const FMT = P.get("fmt") || "1x1";
+const CTA = P.get("cta") || (FMT === "1x1" ? "web" : "ad");
+const EDL = window.EDL;                 // injected by render.cjs from edl.json
+const WORK = "file://" + window.WORK;    // the frames prep.py wrote
+const FPS = EDL.fps, TOTAL = EDL.total;
+
+// Layout per format. F: where the face anchor sits on screen at zoom 1. Text stays inside the platform's
+// safe area: 9x16 keeps it out of the top 15% and bottom 35% (Reels and Stories interface); 1x1 keeps the
+// captions above the bottom 22%, where browsers draw the player's controls (tallest on phones).
+const L = {
+  "1x1":  { W: 1080, H: 1080, s0: 1080 / 1184, F: [437.8, 618], logoY: 30, hookY: 104, card: [120, 30, 840, 432],
+            capBottom: 838, chipsY: 120, endY: 151, endScale: 0.85, cap: 56, h1: 128, chip: 50 },
+  "9x16": { W: 1080, H: 1920, s0: 1, F: [480, 902], logoY: 300, hookY: 400, card: [66, 300, 948, 487],
+            capBottom: 1236, chipsY: 420, endY: 330, endScale: 1, cap: 68, h1: 150, chip: 56 },
+  "4x5":  { W: 1080, H: 1350, s0: 1080 / 1184, F: [437.8, 760], logoY: 64, hookY: 156, card: [66, 70, 948, 487],
+            capBottom: 1290, chipsY: 170, endY: 225, endScale: 1, cap: 68, h1: 150, chip: 56 },
+}[FMT];
+const root = document.documentElement.style;
+root.setProperty("--W", L.W + "px"); root.setProperty("--H", L.H + "px");
+root.setProperty("--cap", L.cap + "px"); root.setProperty("--h1", L.h1 + "px");
+root.setProperty("--chip", L.chip + "px"); root.setProperty("--endScale", L.endScale);
+const A = [480, 902]; // face anchor in the 1184x1920 presenter frames
+
+// Edit list -> output timeline
+const SEGS = EDL.segs.map(s => ({ ...s }));
+let acc = 0;
+for (const s of SEGS) { s.o0 = acc / FPS; acc += s.out - s.in; s.o1 = acc / FPS; s.off = s.in / FPS - s.o0; }
+const segAt = t => SEGS.find(s => t < s.o1) || SEGS[SEGS.length - 1];
+// source second -> output second; a time inside a removed gap goes to the next shot (starts) or the last (ends)
+function mapT(src, isEnd) {
+  for (let i = 0; i < SEGS.length; i++) {
+    const s = SEGS[i];
+    if (src < s.in / FPS) return isEnd && i > 0 ? SEGS[i - 1].o1 : s.o0;
+    if (src < s.out / FPS) return src - s.off;
+  }
+  return SEGS[SEGS.length - 1].o1;
+}
+const S0 = src => mapT(src, false), S1 = src => mapT(src, true);
+
+// Word timings (source seconds, from the transcript), in caption chunks. The hook's words are the headline.
+const CH = [
+  [[2.50,2.70,"Our"],[2.70,2.92,"solar"],[2.92,3.26,"fan"],[3.26,3.52,"helps"],[3.52,3.70,"draw"]],
+  [[3.70,3.84,"the"],[3.84,4.08,"hot"],[4.08,4.28,"air"],[4.28,4.56,"out"]],
+  [[4.56,4.70,"of"],[4.70,4.74,"your"],[4.74,4.90,"roof"],[4.90,5.26,"space,"]],
+  [[5.77,5.88,"with"],[5.88,6.04,"this"],[6.04,6.44,"brushless"],[6.44,6.84,"fan"]],
+  [[6.84,7.28,"drawing"],[7.28,7.98,"2,000"],[7.98,8.16,"cubic"],[8.16,8.46,"metres"]],
+  [[8.46,8.66,"of"],[8.66,8.84,"air"],[8.84,9.06,"out"],[9.06,9.30,"per"],[9.30,9.58,"hour."]],
+  [[10.05,10.06,"If"],[10.06,10.12,"you"],[10.12,10.24,"want"],[10.24,10.40,"a"],[10.40,10.62,"quote"]],
+  [[10.62,10.90,"or"],[10.90,11.02,"an"],[11.02,11.50,"installation,"]],
+  [[11.68,11.88,"message"],[11.88,12.08,"us"],[12.08,12.40,"today."]],
+].map(ws => ({ ws: ws.map(([a, b, w]) => [S0(a) - 0.05, S1(b) + 0.03, w]) }));
+
+// Key moments (output seconds)
+const T = {
+  hl: S0(1.78) - 0.18,              // the marker sweeps under "summer?" as he says it
+  hookOut: SEGS[2].o0 - 0.06,       // the hook leaves on the cut to "Our solar fan"
+  cardIn: SEGS[2].o0 + 0.06,        // the vent card takes its place, on "solar fan"
+  shotB: SEGS[3].o0,                // the card cuts to the second vent shot with the cut to "brushless fan"
+  stat: S0(7.28) - 0.08,            // "2,000"
+  cardOut: SEGS[3].o1 - 0.14,
+  quote: S0(10.40) - 0.08,
+  install: S0(11.02) - 0.08,
+  endIn: S1(12.40) + 0.03,          // after "today."
+};
+CH.forEach((c, i) => { c.t0 = c.ws[0][0] - 0.02; });
+CH.forEach((c, i) => { c.t1 = i < CH.length - 1 ? CH[i + 1].t0 : T.endIn + 0.25; });
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ramp = (t, a, b) => clamp((t - a) / (b - a));
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(4, "0");
+
+const pres = $("pres"), broll = $("broll");
+async function setSrc(img, src) {
+  if (img.dataset.src === src) return;
+  img.dataset.src = src; img.src = src;
+  try { await img.decode(); } catch (e) {}
+}
+
+(function place() {
+  const [x, y, w, h] = L.card;
+  Object.assign($("card").style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
+  $("logoTop").style.top = L.logoY + "px";
+  $("hook").style.top = L.hookY + "px";
+  $("chips").style.top = L.chipsY + "px";
+  $("cap").style.bottom = (L.H - L.capBottom) + "px";
+  $("endCol").style.top = L.endY + "px";
+  $("ctaText").textContent = CTA === "web" ? "Get your free quote" : "Message us for a free quote";
+})();
+
+window.TOTAL = TOTAL;
+window.renderAt = async function (t) {
+  const seg = segAt(t);
+  // Presenter: the shot's source frame, a slow push within the shot, each cut a new framing (zoom about the face)
+  const srcFrame = Math.min(seg.out - 1, seg.in + Math.round((t - seg.o0) * FPS));
+  const s = L.s0 * (seg.z[0] + (seg.z[1] - seg.z[0]) * eio(ramp(t, seg.o0, seg.o1)));
+  let ox = L.F[0] - s * A[0], oy = L.F[1] - s * A[1];
+  ox = clamp(ox, L.W - s * 1184, 0); oy = clamp(oy, L.H - s * 1920, 0);
+  pres.style.transform = `translate(${ox}px, ${oy}px) scale(${s})`;
+  const loads = [setSrc(pres, `${WORK}/p/${pad(srcFrame)}.jpg`)];
+
+  // Logo: with the hook, and again with the offer
+  const logoA = 1 - eo(ramp(t, T.hookOut, T.hookOut + 0.16));
+  const logoD = eo(ramp(t, SEGS[4].o0 + 0.03, SEGS[4].o0 + 0.30));
+  $("logoTop").style.opacity = Math.max(logoA, logoD);
+  $("logoTop").style.transform = `translateY(${t < SEGS[3].o0 ? -24 * (1 - logoA) : 20 * (1 - logoD)}px)`;
+
+  // Hook: whole from frame 0; the chip settles, the marker sweeps on "summer?", then it all lifts away
+  const out = eo(ramp(t, T.hookOut, T.hookOut + 0.16));
+  $("hook").style.opacity = 1 - out;
+  $("hook").style.transform = `translateY(${-44 * out}px)`;
+  $("hookChip").style.transform = `scale(${0.95 + 0.05 * eo(ramp(t, 0, 0.25))})`;
+  $("hlSummer").style.setProperty("--hl", eo(ramp(t, T.hl, T.hl + 0.16)));
+
+  // B-roll card: vent shot A on "solar fan", shot B from the next cut, the stat on "2,000"
+  const cin = eo(ramp(t, T.cardIn, T.cardIn + 0.28));
+  const cout = eio(ramp(t, T.cardOut, T.cardOut + 0.20));
+  const card = $("card");
+  const vis = t >= T.cardIn && t < T.cardOut + 0.20;
+  card.style.display = vis ? "block" : "none";
+  if (vis) {
+    card.style.opacity = cin * (1 - cout);
+    card.style.transform = `translateY(${30 * (1 - cin) - 28 * cout}px) scale(${0.97 + 0.03 * cin})`;
+    card.style.clipPath = `inset(0 0 ${100 * (1 - cin)}% 0 round 28px)`;
+    let k, z;
+    if (t < T.shotB) { k = 12 + Math.round((t - T.cardIn) * FPS); z = 1.0 + 0.05 * ramp(t, T.cardIn, T.shotB); }
+    else { k = 156 + Math.round((t - T.shotB) * FPS); z = 1.0 + 0.06 * ramp(t, T.shotB, T.cardOut); }
+    broll.style.transform = `scale(${z})`;
+    loads.push(setSrc(broll, `${WORK}/b/${pad(Math.min(335, k))}.jpg`));
+    const st = eo(ramp(t, T.stat, T.stat + 0.24));
+    $("tagA").style.opacity = t < T.shotB ? eo(ramp(t, T.cardIn + 0.18, T.cardIn + 0.40)) : 0;
+    $("tagB").style.opacity = t < T.shotB ? 0 : (1 - st) * eo(ramp(t, T.shotB + 0.10, T.shotB + 0.32));
+    $("statShade").style.opacity = st;
+    $("stat").style.opacity = st;
+    $("stat").style.transform = `translateY(${(1 - st) * 22}px) scale(${0.96 + 0.04 * st})`;
+    const n = Math.round(2000 * eo(ramp(t, T.stat, T.stat + 0.62)) / 10) * 10;
+    $("statNum").textContent = n.toLocaleString("en-AU");
+  }
+
+  // Captions: the pill pops a touch on each new chunk; the word being said is mint, words to come are dimmed
+  const ci = CH.findIndex(c => t >= c.t0 && t < c.t1);
+  const pill = $("pill");
+  if (ci >= 0) {
+    const c = CH[ci];
+    if (pill.dataset.c !== String(ci)) {
+      pill.dataset.c = ci;
+      pill.innerHTML = c.ws.map(w => `<span class="w">${w[2]}</span>`).join(" ");
+    }
+    const pop = eo(ramp(t, c.t0, c.t0 + 0.10));
+    const first = ci === 0;
+    pill.style.opacity = first ? pop : 1;
+    pill.style.transform = `translateY(${first ? (1 - pop) * 16 : 0}px) scale(${0.965 + 0.035 * pop})`;
+    pill.querySelectorAll(".w").forEach((el, i) => {
+      const [a, b] = c.ws[i];
+      el.style.color = t >= a && t < b ? "#8FD6CC" : "#fff";
+      el.style.opacity = t < a ? 0.5 : 1;
+    });
+    $("cap").style.display = "flex";
+  } else {
+    $("cap").style.display = "none";
+  }
+
+  // The offer chips (covered by the end card, never removed before it)
+  const q = eo(ramp(t, T.quote, T.quote + 0.22)), ins = eo(ramp(t, T.install, T.install + 0.22));
+  $("chipQuote").style.opacity = q;
+  $("chipQuote").style.transform = `translateY(${(1 - q) * 26}px)`;
+  $("chipInstall").style.opacity = ins;
+  $("chipInstall").style.transform = `translateY(${(1 - ins) * 26}px)`;
+
+  // End card: a panel rises from the bottom, then each line settles in turn
+  const e = eio(ramp(t, T.endIn, T.endIn + 0.38));
+  const end = $("end");
+  end.style.display = e > 0 ? "block" : "none";
+  end.style.clipPath = `inset(${100 * (1 - e)}% 0 0 0)`;
+  end.querySelectorAll(".rise").forEach((el, i) => {
+    const a = eo(ramp(t, T.endIn + 0.18 + i * 0.06, T.endIn + 0.53 + i * 0.06));
+    el.style.opacity = a;
+    el.style.transform = `translateY(${(1 - a) * 30}px)`;
+  });
+  end.querySelector(".glow").style.transform = `scale(${0.9 + 0.1 * ramp(t, T.endIn, TOTAL)})`;
+
+  await Promise.all(loads);
+};
+
+window.ready = document.fonts.ready.then(() => Promise.all([...document.images].filter(i => i.src).map(i => i.decode().catch(() => {}))));
+</script>
+</body>
+</html>

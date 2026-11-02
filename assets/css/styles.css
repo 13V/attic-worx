@@ -730,7 +730,7 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
   .svc-vent { min-height: 0; }
 }
 
-/* ---------- Videos: the ladder card's loop, the SolarKing promo, the pause buttons ----------
+/* ---------- Videos: the ladder card's loop, the solar fan promo, the pause buttons ----------
    main.js (the "Videos" block) gives a looping video its source as it nears the screen, plays it only while
    it is on screen, and fades it in over its poster (the clip's own frame, so nothing jumps). Never with
    reduced motion or Save-Data: the poster stays. */
@@ -771,7 +771,7 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 }
 .svc-toggle { position: absolute; top: 16px; right: 16px; z-index: 2; }
 
-/* The SolarKing promo: the client's own video, played only on request, with sound */
+/* The solar fan promo: played only on request, with sound */
 .promo {
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: center;
   gap: clamp(24px, 4vw, 56px);
@@ -782,7 +782,7 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 .promo-poster, .promo-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .promo-video { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
 .promo-play {
-  position: absolute; left: 50%; top: 24%; translate: -50% -50%; white-space: nowrap; /* over the sky, clear of the face and the captions */
+  position: absolute; left: 50%; top: 84%; translate: -50% -50%; white-space: nowrap; /* over his shirt, clear of the headline and his face */
   display: inline-flex; align-items: center; gap: 12px;
   padding: 10px 22px 10px 10px; border: 0; border-radius: 999px; cursor: pointer;
   background: var(--white); color: var(--ink); font: inherit; font-weight: 700; font-size: 1rem;

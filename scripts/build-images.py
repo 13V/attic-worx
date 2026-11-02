@@ -40,7 +40,7 @@ VARIANTS = [
     ("work-folded",    "ladder-folded",      3 / 4,  0.50, [400, 700, 1000]),
     ("work-shelving",  "floor-shelving",     3 / 4,  0.50, [400, 700, 1000]),
     ("work-rail",      "hatch-rail",         3 / 4,  0.50, [400, 700, 1000]),
-    ("promo-solarking", "solarking",         1 / 1,  0.50, [480, 720]),  # the SolarKing video's poster
+    ("promo-solar-fan", "promo-solar-fan",   1 / 1,  0.50, [480, 720, 1080]),  # the promo's poster: its first frame
 ]
 
 AVIF_Q, WEBP_Q, JPEG_Q = 52, 74, 76

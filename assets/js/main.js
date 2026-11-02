@@ -2,7 +2,7 @@
    1. The motion engine (window.AW): scroll jobs, reveals, word splitting.
    2. The page: header, menu, FAQ, quote form, service links, whirlybird, action bar.
    3. After that block, one block per animated section, each its own function using window.AW and queued
-      with AW.section, in this order: Videos (the hero's reel, the ladder card's loop, the SolarKing promo),
+      with AW.section, in this order: Videos (the hero's reel, the ladder card's loop, the solar fan promo),
       Reviews band, Roof build scene (#build), How it works (#how), Before & after
       (#results), Recent work (#work), How much room? (#room). They run right after this file, in order, one
       task each (as separate scripts would, so start-up is a few short tasks rather than one long one), and
@@ -719,7 +719,7 @@
    Each plays only while it is on screen and the tab is visible, fades in over its poster once it is
    actually playing, and stops for good with reduced motion (read live: the poster comes back) or when the
    visitor has asked to save data. A video that fails to load just leaves its poster.
-   Also the SolarKing promo (video[data-promo]): a big "Play with sound" button over its poster. */
+   Also the solar fan promo (video[data-promo]): a big "Play with sound" button over its poster. */
 window.AW.section(function () {
   'use strict';
   var AW = window.AW;

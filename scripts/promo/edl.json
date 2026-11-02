@@ -1,0 +1,12 @@
+{
+  "fps": 30,
+  "total": 14.0,
+  "segs": [
+    { "in": 0,   "out": 30,  "z": [1.00, 1.02],  "note": "Adelaide homeowners," },
+    { "in": 36,  "out": 64,  "z": [1.09, 1.11],  "note": "are you ready for summer?" },
+    { "in": 72,  "out": 159, "z": [1.04, 1.065], "note": "Our solar fan helps draw the hot air out of your roof space," },
+    { "in": 172, "out": 289, "z": [1.16, 1.19],  "note": "with this brushless fan drawing 2,000 cubic metres of air out per hour." },
+    { "in": 300, "out": 348, "z": [1.05, 1.065], "note": "If you want a quote or an installation," },
+    { "in": 348, "out": 381, "z": [1.13, 1.15],  "note": "message us today. (same take: a punch-in, no time cut)" }
+  ]
+}
