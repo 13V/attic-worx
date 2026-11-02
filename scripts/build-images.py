@@ -41,6 +41,7 @@ VARIANTS = [
     ("work-shelving",  "floor-shelving",     3 / 4,  0.50, [400, 700, 1000]),
     ("work-rail",      "hatch-rail",         3 / 4,  0.50, [400, 700, 1000]),
     ("promo-solarking", "solarking",         1 / 1,  0.50, [480, 720]),  # the SolarKing video's poster
+    ("promo-solarking-tall", "solarking-tall", 9 / 16, 0.50, [480, 720]),  # the phone cut's poster
 ]
 
 AVIF_Q, WEBP_Q, JPEG_Q = 52, 74, 76

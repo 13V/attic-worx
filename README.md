@@ -12,7 +12,7 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 2. **Trust strip:** same-day installs, priced online, no council approval, no space no charge.
    **Reviews band** under it: the stars, "90+ five-star reviews on Google and Facebook" and a link to the reviews, then a slow line of the real quotes. main.js copies the line from the Reviews section, so it needs no editing of its own. It pauses on hover, on keyboard focus, off screen and with its pause button; with reduced motion or without JavaScript it holds still (without JavaScript the band is just the rating and the link). The hero's review line is a link to the reviews too.
 3. **Garage story:** the problem (a cluttered garage) and the fix (storage in the roof), with Kyle M's review. Its first paragraph is the page's one "statement": its words darken as you read down.
-4. **Services bento:** storage floors, ladders (an installer pulls down and unfolds a ladder: a muted loop that plays while the card is on screen, with a pause button), roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation. Under the cards, the **SolarKing promo**: the client's own 24-second video, with sound, that plays only when tapped.
+4. **Services bento:** storage floors, ladders (an installer pulls down and unfolds a ladder: a muted loop that plays while the card is on screen, with a pause button), roof ventilation (the whirlybird spins faster while you scroll, and winds down a few seconds after the page goes still), insulation. Under the cards, the **SolarKing promo**: the client's own 14-second video, with sound, that plays only when tapped: square on wider screens, 9:16 on phones (760px and under).
 5. **How much room?** (`#room`): a slider sizes a storage floor from 2 to 20 m², the picture lays the floor and fills it with boxes, tubs and gear (two lanes either side of the walkway, the low edges clear), and a rough figure says how many archive boxes fit: about 5 per m² (8 m² → 40, 12 m² → 60, 20 m² → 100), counting about a third of the floor as holding boxes. "Price a floor this size" ticks Attic storage and the matching size in the quote form, then takes you there. At 12 m² it notes that's the size of Kyle M's floor.
 6. **"Boxes up. Car in."** (`#build`): a cutaway of a house at dusk. On screens with motion the picture stays put while you scroll and the change plays out in six steps: the full garage, the light goes on, a floor goes in (it simply appears and settles), the ladder comes down, everything goes up, the car's back in. It shows the result, not how a floor is built (no framing, no sheets laid one by one, no materials or methods in the captions).
 7. **How it works** (`#how`): three steps. The line through them is a folding attic ladder that swings down as each step lights. Wide screens have a sticky panel beside the steps showing each step's drawing; narrower screens show each drawing under its step.
@@ -145,7 +145,7 @@ Font: [Archivo](https://github.com/Omnibus-Type/Archivo) (SIL Open Font License,
 
 ### Photos
 
-The master photos are in `source/photos/`: 2400px JPEGs taken from the current site, the client's own photos (`floor-hatch-room`, `ladder-folded`, `floor-shelving`, `hatch-rail`: converted to sRGB, every bit of metadata, location included, stripped), and the video posters that `scripts/build-video.sh` writes (`hero-reel-wide`, `hero-reel-tall`, `ladder-pull`, `solarking`: frames of the videos, so a poster and its video line up exactly). The site uses responsive AVIF and WebP versions in `assets/img/`, plus one JPEG fallback each (the hero's tall crop shares the wide crop's JPEG).
+The master photos are in `source/photos/`: 2400px JPEGs taken from the current site, the client's own photos (`floor-hatch-room`, `ladder-folded`, `floor-shelving`, `hatch-rail`: converted to sRGB, every bit of metadata, location included, stripped), and the video posters that `scripts/build-video.sh` writes (`hero-reel-wide`, `hero-reel-tall`, `ladder-pull`: frames of the videos, so a poster and its video line up exactly), and `solarking` / `solarking-tall`, frames of the client's two promo cuts. The site uses responsive AVIF and WebP versions in `assets/img/`, plus one JPEG fallback each (the hero's tall crop shares the wide crop's JPEG).
 
 Before publishing any new photo, strip its metadata (phone photos carry GPS): open it with Pillow, apply `ImageOps.exif_transpose`, and save a fresh copy without `exif`, as the masters here are.
 
@@ -165,7 +165,10 @@ The videos are in `assets/video/`, cut and encoded from the client's phone clips
 | `hero-reel-wide.webm` / `.mp4` | 0.66 / 1.7 MB, 1280×720, 8.7 s | Hero, screens wider than 960px |
 | `hero-reel-tall.webm` / `.mp4` | 0.78 / 1.45 MB, 720×1280 | Hero, phones and tablets |
 | `ladder-pull.webm` / `.mp4` | 0.39 / 0.64 MB, 528×1278, 9.2 s | Ladder card |
-| `solarking.mp4` | 2.8 MB, 720×720, 24 s, with sound | SolarKing promo (loads only when played) |
+| `solarking.mp4` | 1.5 MB, 720×720, 14 s, with sound | SolarKing promo, wider screens (loads only when played) |
+| `solarking-tall.mp4` | 2.2 MB, 720×1280, 14 s, with sound | SolarKing promo, phones (loads only when played) |
+
+The two promo files were supplied already edited (website and 9×16 cuts) and are only re-encoded (H.264 CRF 24, AAC 96k, metadata stripped); `scripts/build-video.sh` doesn't make them, and its old `solarking` entry no longer applies. Their posters (`promo-solarking-*`, `promo-solarking-tall-*`) are frames at 0.6 s.
 
 **How they load** (the Videos block in `main.js`):
 

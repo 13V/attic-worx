@@ -11,13 +11,11 @@
 #   hero-reel-wide.{mp4,webm}  1280x720  the hero's background reel on wide screens (over 960px)
 #   hero-reel-tall.{mp4,webm}  720x1280  the same cut, framed for phones and tablets
 #   ladder-pull.{mp4,webm}     528x1278  the ladder card's loop: a timber attic ladder pulled down and unfolded
-#   solarking.mp4              720x720   the SolarKing promo, with sound (captions burnt in)
 # The .webm files are AV1 (smaller); the .mp4 files are H.264 for every other browser.
 #
 # Poster masters (source/photos, JPEG, no metadata); scripts/build-images.py makes the AVIF/WebP/JPEG posters:
 #   hero-reel-wide.jpg, hero-reel-tall.jpg  the reel's first frame (the hero's poster and LCP image)
 #   ladder-pull.jpg                         the ladder card's poster (its last frame: the ladder down)
-#   solarking.jpg                           the promo's poster (5.5 s in)
 #
 # To change the hero reel, edit CLIPS below (file, start, length, wide-crop focus), run this, then run
 # python3 scripts/build-images.py so the posters match the reel's first frame.
@@ -96,11 +94,7 @@ ffmpeg -v error -y -ss 0 -t 9.2 -i "$SRC/IMG_2849.mov" -an -map_metadata -1 \
 enc "$TMP/ladder.mp4" "$OUT/ladder-pull" 27 1100k
 ffmpeg -v error -y -sseof -0.05 -i "$TMP/ladder.mp4" -frames:v 1 -update 1 -q:v 2 source/photos/ladder-pull.jpg
 
-# The SolarKing promo (captions are burnt in), with its sound levelled
-ffmpeg -v error -y -i "$SRC/attic-worx-solar-king-video-no-chrome.mov" -map_metadata -1 \
-  -vf "scale=720:720:flags=lanczos,setsar=1" -c:v libx264 -profile:v high -preset veryslow -crf 25 \
-  -maxrate 1300k -bufsize 2600k -pix_fmt yuv420p -g 60 \
-  -af "loudnorm=I=-16:TP=-1.5:LRA=11" -c:a aac -b:a 96k -ar 48000 -movflags +faststart "$OUT/solarking.mp4"
-ffmpeg -v error -y -ss 5.5 -i "$OUT/solarking.mp4" -frames:v 1 -q:v 2 source/photos/solarking.jpg
+# The SolarKing promo is no longer made here: the client supplied edited cuts (website 1:1 and 9:16),
+# re-encoded once into assets/video/solarking.mp4 and solarking-tall.mp4 (see README, Videos).
 
 ls -l "$OUT"

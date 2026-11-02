@@ -405,24 +405,24 @@
         </article>
       </div>
 
-      <!-- SolarKing promo: the client's own 24-second video, with sound, played only on request. Its captions
+      <!-- SolarKing promo: the client's own 14-second video (square on wider screens, 9:16 on phones via <source media>), with sound, played only on request. Its captions
            are burnt in; #promo-desc describes it for screen readers. The poster is a lazy <picture> under the
            video (transparent until it plays), so it costs nothing at load; main.js hides the native controls
            behind a big play button until then. Without JS, the <noscript> copy (with a poster) shows instead. -->
       <div class="promo">
         <div class="promo-media">
-          <picture class="promo-poster"><source type="image/avif" srcset="assets/img/promo-solarking-480.avif 480w, assets/img/promo-solarking-720.avif 720w" sizes="(min-width: 1320px) 540px, (min-width: 761px) 42vw, 100vw"><source type="image/webp" srcset="assets/img/promo-solarking-480.webp 480w, assets/img/promo-solarking-720.webp 720w" sizes="(min-width: 1320px) 540px, (min-width: 761px) 42vw, 100vw"><img src="assets/img/promo-solarking-720.jpg" width="720" height="720" alt="" loading="lazy" decoding="async"></picture>
-          <video class="promo-video" controls preload="none" playsinline width="720" height="720" aria-label="SolarKing solar vents: a 24-second video with sound" aria-describedby="promo-desc" data-promo>
-            <source src="assets/video/solarking.mp4" type="video/mp4">
+          <picture class="promo-poster"><source media="(max-width: 760px)" type="image/avif" srcset="assets/img/promo-solarking-tall-480.avif 480w, assets/img/promo-solarking-tall-720.avif 720w" sizes="100vw"><source media="(max-width: 760px)" type="image/webp" srcset="assets/img/promo-solarking-tall-480.webp 480w, assets/img/promo-solarking-tall-720.webp 720w" sizes="100vw"><source media="(max-width: 760px)" srcset="assets/img/promo-solarking-tall-720.jpg"><source type="image/avif" srcset="assets/img/promo-solarking-480.avif 480w, assets/img/promo-solarking-720.avif 720w" sizes="(min-width: 1320px) 540px, 42vw"><source type="image/webp" srcset="assets/img/promo-solarking-480.webp 480w, assets/img/promo-solarking-720.webp 720w" sizes="(min-width: 1320px) 540px, 42vw"><img src="assets/img/promo-solarking-720.jpg" width="720" height="720" alt="" loading="lazy" decoding="async"></picture>
+          <video class="promo-video" controls preload="none" playsinline width="720" height="720" aria-label="SolarKing solar fans: a 14-second video with sound" aria-describedby="promo-desc" data-promo>
+            <source src="assets/video/solarking-tall.mp4" type="video/mp4" media="(max-width: 760px)"><source src="assets/video/solarking.mp4" type="video/mp4">
           </video>
-          <noscript><video class="promo-video" controls preload="none" playsinline width="720" height="720" poster="assets/img/promo-solarking-720.jpg" aria-label="SolarKing solar vents: a 24-second video with sound" aria-describedby="promo-desc"><source src="assets/video/solarking.mp4" type="video/mp4"></video></noscript>
+          <noscript><video class="promo-video" controls preload="none" playsinline width="720" height="720" poster="assets/img/promo-solarking-720.jpg" aria-label="SolarKing solar fans: a 14-second video with sound" aria-describedby="promo-desc"><source src="assets/video/solarking-tall.mp4" type="video/mp4" media="(max-width: 760px)"><source src="assets/video/solarking.mp4" type="video/mp4"></video></noscript>
           <button class="promo-play" type="button" data-promo-play hidden><span class="promo-play-icon" aria-hidden="true"></span>Play with sound</button>
         </div>
         <div class="promo-copy">
           <p class="eyebrow">SolarKing solar vents</p>
           <h3 class="display" data-split>Heat out of the roof, on solar power.</h3>
           <p>A short look at the SolarKing solar vents we fit. They push trapped heat out of your roof space and move 30× more airflow than a whirlybird.</p>
-          <p class="sr-only" id="promo-desc">Video description: a man in an Attic Worx shirt speaks to camera outside, in a street of houses. The on-screen captions read: Adelaide homeowners. Our solar fan draws the hot air out of your roof space, with a brushless fan, drawing 2000 cubic metres/hr. Want a quote or install? Then a solar vent, a round fan housing with a solar panel on top, is shown on two steel roofs, with the captions Solar powered and Beats the heat.</p>
+          <p class="sr-only" id="promo-desc">Video description: a man in an Attic Worx shirt speaks to camera on a steel roof in an Adelaide street. The on-screen text reads: Adelaide homeowners, are you ready for summer? Our solar fan helps draw, with this brushless fan, up to 2,000 cubic metres of air out per hour (manufacturer's rated airflow). Free quotes, supplied and installed. If you want a quote, message us today. It ends on: Beat the heat this summer. Solar roof fans, supplied and installed across Adelaide. Get your free quote, or call 0485 065 143.</p>
           <a class="text-link" href="#quote" data-service="svc-vent">Price a SolarKing vent <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
         </div>
       </div>
