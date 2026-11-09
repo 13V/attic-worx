@@ -848,6 +848,7 @@ html.js .vanes { animation-iteration-count: infinite; } /* main.js speeds it up 
 .review-feature .avatar { background: rgba(255,255,255,.16); color: var(--white); }
 .reviews-more { margin-top: clamp(20px, 3vw, 32px); }
 .review-src { display: block; font-size: .78rem; color: var(--ink-3); }
+.review-feature .review-src { color: rgba(255, 255, 255, 0.78); }
 /* The rest of the reviews: a native <details>, so it opens with or without JS */
 .reviews-all { margin-top: clamp(8px, 1.5vw, 16px); }
 .reviews-all > summary {
