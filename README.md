@@ -211,11 +211,11 @@ The reel loops without a seam: the last clip crossfades into the first clip's op
 
 ## Hosting
 
-**Where it lives:** Vercel, the Lumen team's `attic-worx` project, connected to the GitHub repo `13V/attic-worx`. Every push to `main` deploys to production (currently https://attic-worx-nu.vercel.app until the domain moves); other branches get preview deployments.
+**Where it lives:** Vercel, the Lumen team's `attic-worx` project, connected to the GitHub repo `13V/attic-worx`. Every push to `main` deploys to production (live at https://atticworx.com.au since 9 November 2026; www and http redirect there); other branches get preview deployments.
 
 The site is set up for **Vercel** (the quote form needs `api/quote.js`, a serverless function, so a purely static host won't send leads). `vercel.json` sets the security and cache headers and redirects `www.atticworx.com.au` to `atticworx.com.au` (the canonical address). `.vercelignore` keeps `source/`, `scripts/` and this README off the live site. `index.html` is the homepage and `404.html` the not-found page. Vercel compresses HTML, CSS and JS and answers range requests for the videos.
 
-**Moving the domain:** in Vercel → Project → Domains add `atticworx.com.au` and `www.atticworx.com.au`, then at the domain's DNS host change only the website records (`A` for the bare domain, `CNAME` for `www`) to the values Vercel shows. **Leave the `MX` and other email records alone**, or the business email stops working. If the old site is hosted in GHL, remove the domain from GHL's Sites settings after the switch so the two don't fight over it. Before switching, update `<lastmod>` in `sitemap.xml` to the launch date.
+**Moving the domain:** in Vercel → Project → Domains add `atticworx.com.au` and `www.atticworx.com.au`, then at the domain's DNS host change only the website records (`A` for the bare domain, `CNAME` for `www`) to the values Vercel shows. **Leave the `MX` and other email records alone**, or the business email stops working. If the old site is hosted in GHL, remove the domain from GHL's Sites settings after the switch so the two don't fight over it.
 
 `_headers` is kept for Netlify or Cloudflare Pages, which read it; there the form would need its own endpoint instead of `/api/quote`.
 
