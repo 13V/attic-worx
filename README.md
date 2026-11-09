@@ -41,6 +41,18 @@ The form posts JSON to `/api/quote` (`api/quote.js`, a Vercel serverless functio
 
 Redeploy, then send a real test from the live site and check the contact appears in GHL.
 
+**What's set up now (tested end to end, November 2026):** the GHL workflow **"Website quote form (atticworx.com.au)"** is published. In order, it:
+
+1. Triggers on the Inbound Webhook.
+2. Creates or updates the contact (first and last name, phone, email, city), with source "Website quote form".
+3. Adds the tag `website-lead`.
+4. Adds the note "Website quote request" with the job summary.
+5. Creates the opportunity in **Marketing Pipeline → New Lead**, set up the same as the older "Form → Opportunity" workflow.
+6. Emails Nathan Dunn: "New website quote: …".
+7. Texts Nathan's mobile, sent from the business number 0485 065 143 (that number is the GHL account's own line, so it can't text itself).
+
+`GHL_WEBHOOK_URL` is set in Vercel (Production and Preview). GHL counts Inbound Webhook as a premium trigger, charged per run.
+
 What the function sends to GHL (flat keys, ready to map):
 
 ```json
