@@ -500,6 +500,10 @@
         showTop();
         done.focus({ preventScroll: true });
         if (window.dataLayer) window.dataLayer.push({ event: 'quote_submitted', services: payload.services });
+        // Meta: a Lead, only now that GHL has the enquiry (never for a send that failed)
+        if (typeof window.fbq === 'function') {
+          try { window.fbq('track', 'Lead', { content_name: payload.services }, { eventID: 'aw-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) }); } catch (err) {}
+        }
       };
       var fail = function () {
         submit.disabled = false;
@@ -703,6 +707,43 @@
     } else {
       heroVisible = false;
     }
+  }
+
+  /* ---------- Tracking: the Meta pixel and Google Tag Manager (IDs in index.html, window.AW_TRACKING) ----------
+     Carried over from the old site. Loaded once the page has loaded (and the browser is idle), so they never hold
+     up the first screen; only on atticworx.com.au, so previews and tests don't count as visits (?tracking=on
+     forces it, to check with Meta's Pixel Helper or GTM's preview). If a blocker stops them, nothing else changes. */
+  var tracking = window.AW_TRACKING || {};
+  var trackingLive = /(^|\.)atticworx\.com\.au$/.test(window.location.hostname) || /[?&]tracking=on\b/.test(window.location.search);
+  var loadTracking = function () {
+    if (tracking.gtm) {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      var g = document.createElement('script');
+      g.async = true;
+      g.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(tracking.gtm);
+      document.head.appendChild(g);
+    }
+    if (tracking.metaPixel && typeof window.fbq !== 'function') {
+      // Meta's standard base code, written out: a queue that fbevents.js picks up once it arrives
+      var fbq = window.fbq = function () {
+        if (fbq.callMethod) fbq.callMethod.apply(fbq, arguments); else fbq.queue.push(arguments);
+      };
+      if (!window._fbq) window._fbq = fbq;
+      fbq.push = fbq; fbq.loaded = true; fbq.version = '2.0'; fbq.queue = [];
+      var f = document.createElement('script');
+      f.async = true;
+      f.src = 'https://connect.facebook.net/en_US/fbevents.js';
+      document.head.appendChild(f);
+      fbq('init', tracking.metaPixel);
+      fbq('track', 'PageView');
+    }
+  };
+  if (trackingLive && (tracking.gtm || tracking.metaPixel)) {
+    var trackWhenIdle = function () {
+      if (window.requestIdleCallback) window.requestIdleCallback(loadTracking, { timeout: 3000 }); else setTimeout(loadTracking, 1);
+    };
+    if (document.readyState === 'complete') trackWhenIdle(); else window.addEventListener('load', trackWhenIdle, { once: true });
   }
 
   /* ---------- Footer year ---------- */

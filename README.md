@@ -57,13 +57,17 @@ What the function sends to GHL (flat keys, ready to map):
 
 The browser sends the function the form's own fields (`services`, `storage_size`, `hatch_location`, `suburb`, `timing`, `name`, `phone`, `email`, `notes`, `source`, `page`, plus the `company` spam trap). The function checks them (a service, a name and a phone number are required), drops spam, and only accepts requests from the site itself. To use a different CRM later, change only `api/quote.js`.
 
-### 2. Tracking (optional)
+### 2. Tracking
 
-If Google Tag Manager (or anything else that sets up `window.dataLayer`) is added, the page pushes two events:
+The old site's tracking is carried over: the **Meta pixel `1235239581493374`** and **Google Tag Manager `GTM-WDL55GG4`** (the IDs are in `index.html`, in `window.AW_TRACKING`). `main.js` loads both once the page has loaded, so they never slow the first screen, and only on `atticworx.com.au`, so previews and tests don't count as visits. Add `?tracking=on` to any address to load them anyway (to check with Meta's Pixel Helper or GTM's preview mode). Without JavaScript, the usual `<noscript>` fallbacks at the top of `<body>` still count the visit.
+
+Meta gets a `PageView` on every visit (as before) and a **`Lead`** each time a quote request reaches GHL (never for one that failed to send), with the services as `content_name` and an `eventID`. If GHL also sends leads to Meta (a Conversions API action in a workflow), turn one of them off so leads aren't counted twice.
+
+The page also pushes these to `window.dataLayer`, for GTM:
 
 | Event | When | Fields |
 | --- | --- | --- |
-| `quote_submitted` | The form was sent (the thank-you shows) | `services` |
+| `quote_submitted` | The form was sent and GHL accepted it (the thank-you shows) | `services` |
 | `room_price_floor` | "Price a floor this size" was clicked in How much room? | `size_m2` (the slider's value), `size_option` (the form size it picked) |
 
 `room_price_floor` lets you count leads that started at the visualiser. The form's payload is the same either way.
