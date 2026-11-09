@@ -23,33 +23,39 @@ In order, top to bottom. The page alternates "in the roof" (dark bands) and "in 
 
 ## Before going live
 
-### 1. Connect the quote form (required)
+### 1. Connect the quote form to GoHighLevel (required)
 
-The form needs somewhere to send leads. Open `index.html`, find `id="quote-form"`, and paste your endpoint into `data-endpoint`:
+The form posts JSON to `/api/quote` (`api/quote.js`, a Vercel serverless function), which passes each lead to Attic Worx's GoHighLevel account through an **inbound webhook**. The visitor only sees "thanks" once GHL has accepted the lead; if GHL errors or the webhook isn't set, they see "That didn't send…" with the phone number.
 
-```html
-<form class="quote-form" id="quote-form" data-endpoint="https://your-endpoint-here" novalidate aria-labelledby="qf-title">
-```
+**In GHL** (Automation → Workflows → Create workflow → Start from scratch):
 
-Any service that accepts a JSON `POST` works: a GoHighLevel / LeadConnector inbound webhook, Zapier or Make, Formspree, or your own endpoint. The form sends:
+1. Trigger: **Inbound Webhook**. Copy its URL (`https://services.leadconnectorhq.com/hooks/…`).
+2. Submit one test lead from the site (step 4 below) so GHL sees a sample, then click **Fetch sample requests** in the trigger and pick it.
+3. Action: **Create/Update Contact**. Map `first_name`, `last_name`, `phone` (already +61…), `email`, `city` (the suburb). Add a tag such as `website-lead` and the source.
+4. Optional actions: **Create/Update Opportunity** in his pipeline; **Add note** with `summary` (services, storage size, manhole, suburb, timing, notes in one block); **Internal notification** (SMS/email to the team); a reply SMS to the customer if he uses one on the old site.
+5. Publish the workflow.
+
+**In Vercel** (Project → Settings → Environment Variables), for Production and Preview:
+
+- `GHL_WEBHOOK_URL` = the webhook URL from step 1. It is a secret: never commit it.
+
+Redeploy, then send a real test from the live site and check the contact appears in GHL.
+
+What the function sends to GHL (flat keys, ready to map):
 
 ```json
 {
-  "services": "Attic storage floor, Attic ladder",
-  "storage_size": "About 6–12 m²",
-  "hatch_location": "Garage",
-  "suburb": "Marion",
-  "timing": "ASAP",
-  "name": "Sam Citizen",
-  "phone": "0412 345 678",
-  "email": "",
-  "notes": "",
-  "source": "atticworx.com.au quote form",
-  "page": "https://atticworx.com.au/"
+  "first_name": "Sam", "last_name": "Citizen", "full_name": "Sam Citizen",
+  "phone": "+61412345678", "email": "", "city": "Marion",
+  "services": "Attic storage floor, Attic ladder", "storage_size": "About 6–12 m²",
+  "hatch_location": "Garage", "suburb": "Marion", "timing": "ASAP", "notes": "",
+  "summary": "Services: …\nStorage size: …\nManhole: …\nSuburb: …\nWhen: …",
+  "source": "atticworx.com.au quote form", "page_url": "https://atticworx.com.au/",
+  "submitted_at": "2026-11-09T08:20:15.304Z"
 }
 ```
 
-While `data-endpoint` is empty, the form still shows its thank-you screen (so the flow can be reviewed) but **nothing is sent**, and the browser console shows a warning. The exception is the live domain (`atticworx.com.au` and its subdomains): there an empty endpoint shows the "That didn't send" message with the phone number instead, so a visitor is never thanked for a lead that went nowhere. If the endpoint returns an error, the visitor sees the same message.
+The browser sends the function the form's own fields (`services`, `storage_size`, `hatch_location`, `suburb`, `timing`, `name`, `phone`, `email`, `notes`, `source`, `page`, plus the `company` spam trap). The function checks them (a service, a name and a phone number are required), drops spam, and only accepts requests from the site itself. To use a different CRM later, change only `api/quote.js`.
 
 ### 2. Tracking (optional)
 
@@ -189,7 +195,11 @@ The reel loops without a seam: the last clip crossfades into the first clip's op
 
 ## Hosting
 
-Upload the repository root to any static host: Netlify, Cloudflare Pages, Vercel, GitHub Pages or plain cPanel hosting. `index.html` is the homepage and `404.html` is the not-found page. `_headers` sets cache and security headers on Netlify and Cloudflare Pages; other hosts ignore it. The videos need a host that answers range requests (every host above does; Safari won't play video without them). Make sure the host compresses HTML, CSS and JS (gzip or Brotli; all of the hosts above do): the page's inline drawings make the HTML about 244 KB raw but about 51 KB compressed.
+The site is set up for **Vercel** (the quote form needs `api/quote.js`, a serverless function, so a purely static host won't send leads). `vercel.json` sets the security and cache headers and redirects `www.atticworx.com.au` to `atticworx.com.au` (the canonical address). `.vercelignore` keeps `source/`, `scripts/` and this README off the live site. `index.html` is the homepage and `404.html` the not-found page. Vercel compresses HTML, CSS and JS and answers range requests for the videos.
+
+**Moving the domain:** in Vercel → Project → Domains add `atticworx.com.au` and `www.atticworx.com.au`, then at the domain's DNS host change only the website records (`A` for the bare domain, `CNAME` for `www`) to the values Vercel shows. **Leave the `MX` and other email records alone**, or the business email stops working. If the old site is hosted in GHL, remove the domain from GHL's Sites settings after the switch so the two don't fight over it. Before switching, update `<lastmod>` in `sitemap.xml` to the launch date.
+
+`_headers` is kept for Netlify or Cloudflare Pages, which read it; there the form would need its own endpoint instead of `/api/quote`.
 
 ## Performance
 
