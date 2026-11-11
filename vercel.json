@@ -1,9 +1,40 @@
 {
+  "cleanUrls": true,
   "redirects": [
     {
       "source": "/:path(.*)",
-      "has": [{ "type": "host", "value": "www.atticworx.com.au" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "www.atticworx.com.au"
+        }
+      ],
       "destination": "https://atticworx.com.au/:path",
+      "permanent": true
+    },
+    {
+      "source": "/home585642",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/form-7195",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/thank-you275096",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/thank-you",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/solar-king-installation/",
+      "destination": "/solar-king-installation",
       "permanent": true
     }
   ],
@@ -11,15 +42,64 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
       ]
     },
-    { "source": "/assets/img/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000" }] },
-    { "source": "/assets/video/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000" }] },
-    { "source": "/assets/fonts/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
-    { "source": "/assets/css/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }] },
-    { "source": "/assets/js/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }] }
+    {
+      "source": "/assets/img/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000"
+        }
+      ]
+    },
+    {
+      "source": "/assets/video/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000"
+        }
+      ]
+    },
+    {
+      "source": "/assets/fonts/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/css/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/assets/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
   ]
 }

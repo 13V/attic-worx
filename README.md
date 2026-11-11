@@ -209,6 +209,12 @@ python3 scripts/build-images.py             # turns the posters into AVIF/WebP/J
 
 The reel loops without a seam: the last clip crossfades into the first clip's opening half second, and the reel starts just after it. Keep it between 8 and 14 seconds, keep the first frame a calm, readable shot (it is the poster), and keep the hero files under about 2 MB each. If the poster's look changes a lot, check the hero's `alt` text in `index.html`.
 
+### SolarKing installation page
+
+`solar-king-installation.html` (served at `/solar-king-installation`) is the page Nathan texts to customers who have accepted a SolarKing quote. It carries over the old GHL site's page of the same address, with Attic Worx's own GoHighLevel form **"Solar King"** (`VE92T8z9XNzhtlDCFxgZ`) embedded as before, so submissions, the "Form Submitted" workflows and notifications in GHL work as they always did. To change the form's questions, edit that form in GHL (Sites → Forms); the page picks the change up by itself. The page is `noindex` and not in the sitemap. It loads the site's stylesheet and the same tracking, but not `main.js`.
+
+The old GHL site's other addresses redirect to the homepage (`vercel.json`): `/home585642`, `/form-7195` (its old contact form), `/thank-you275096` and `/thank-you`.
+
 ## Hosting
 
 **Where it lives:** Vercel, the Lumen team's `attic-worx` project, connected to the GitHub repo `13V/attic-worx`. Every push to `main` deploys to production (live at https://atticworx.com.au since 9 November 2026; www and http redirect there); other branches get preview deployments.
